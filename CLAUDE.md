@@ -16,6 +16,33 @@ pnpm lint          # eslint + prettier check
 pnpm typecheck     # tsc --noEmit
 ```
 
+## Workflow Git — RÈGLE ABSOLUE
+
+**COMMIT APRÈS CHAQUE ÉTAPE SIGNIFICATIVE**
+
+Après toute étape significative (feature ajoutée, bug fixé, migration appliquée), créer un commit :
+
+```bash
+git add -A
+git commit -m "description courte
+
+Détails du changement.
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+```
+
+**Critères pour committer :**
+- Feature complète (même partielle mais fonctionnelle)
+- Migration de DB appliquée
+- Configuration majeure ajoutée
+- Bug critique fixé
+- Refactoring terminé
+
+**NE PAS committer :**
+- Code qui ne compile pas
+- Tests qui échouent
+- Changements incomplets (WIP)
+
 ## Architecture critique — à connaître absolument
 
 ### Multi-tenant routing (middleware.ts)
