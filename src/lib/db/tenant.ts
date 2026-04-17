@@ -40,7 +40,7 @@ export async function withTenantContext<T>(
  */
 export function getTenantDb(tenantId: string) {
   return {
-    async transaction<T>(fn: (tx: typeof db) => Promise<T>): Promise<T> {
+    async transaction<T>(fn: Parameters<typeof db.transaction>[0]): Promise<T> {
       return withTenantContext(tenantId, (db) => db.transaction(fn));
     },
     query: new Proxy(db.query, {
