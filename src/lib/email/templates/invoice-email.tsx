@@ -56,7 +56,7 @@ export function InvoiceEmail({
           </Text>
 
           <Section style={invoiceBox}>
-            <Text style={invoiceNumber}>Facture {invoiceNumber}</Text>
+            <Text style={invoiceNumberStyle}>Facture {invoiceNumber}</Text>
             <Text style={invoiceAmount}>Montant : {total}€ TTC</Text>
             <Text style={invoiceDue}>
               À payer avant le {formattedDueDate}
@@ -127,7 +127,7 @@ const invoiceBox = {
   textAlign: "center" as const,
 };
 
-const invoiceNumber = {
+const invoiceNumberStyle = {
   fontSize: "14px",
   color: "#6b7280",
   margin: "0 0 8px 0",
