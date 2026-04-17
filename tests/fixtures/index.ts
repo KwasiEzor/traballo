@@ -4,6 +4,12 @@
  * Pattern : objet de base + builder avec overrides
  */
 
+import type { InferSelectModel } from "drizzle-orm";
+import { invoices, appointments } from "@/db/schema";
+
+type Invoice = InferSelectModel<typeof invoices>;
+type Appointment = InferSelectModel<typeof appointments>;
+
 // ─── Tenant ───────────────────────────────────────────────────────────────
 
 export const mockTenant = {
@@ -62,9 +68,9 @@ export const mockInvoice = {
   tenantId: "tenant_test_001",
   clientId: "client_test_001",
   invoiceNumber: "FAC-2026-001",
-  status: "draft" as const,
-  issueDate: new Date("2026-04-01"),
-  dueDate: new Date("2026-05-01"),
+  status: "draft",
+  issueDate: "2026-04-01",
+  dueDate: "2026-05-01",
   subtotal: "100.00",
   taxAmount: "21.00",
   total: "121.00",
@@ -76,16 +82,16 @@ export const mockInvoice = {
   updatedAt: new Date("2026-04-01T10:00:00Z"),
 };
 
-export const buildInvoice = (o: Partial<typeof mockInvoice> = {}) => ({
+export const buildInvoice = (o: Partial<Invoice> = {}): Invoice => ({
   ...mockInvoice,
   ...o,
-});
+} as Invoice);
 
 export const mockOverdueInvoice = buildInvoice({
   id: "inv_test_overdue",
   invoiceNumber: "FAC-2026-000",
   status: "overdue",
-  dueDate: new Date("2026-01-01"), // passé
+  dueDate: "2026-01-01", // passé
   sentAt: new Date("2026-01-15"),
 });
 
@@ -118,15 +124,15 @@ export const mockAppointment = {
   title: "Réparation fuite cuisine",
   startTime: new Date("2026-04-20T09:00:00Z"),
   endTime: new Date("2026-04-20T11:00:00Z"),
-  status: "confirmed" as const,
+  status: "confirmed",
   notes: "Accès par la porte de derrière",
   reminderSent: false,
 };
 
-export const buildAppointment = (o: Partial<typeof mockAppointment> = {}) => ({
+export const buildAppointment = (o: Partial<Appointment> = {}): Appointment => ({
   ...mockAppointment,
   ...o,
-});
+} as Appointment);
 
 // ─── AI Agent Config ──────────────────────────────────────────────────────
 

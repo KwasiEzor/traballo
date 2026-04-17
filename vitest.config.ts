@@ -51,7 +51,7 @@ export default defineConfig({
     testTimeout: 10_000,
 
     // Reporter — verbeux en CI, compact en local
-    reporter: process.env.CI ? "verbose" : "default",
+    reporters: process.env.CI ? "verbose" : "default",
 
     // Désactiver les threads pour les tests DB (évite les conflits de connexion)
     pool: "forks",
