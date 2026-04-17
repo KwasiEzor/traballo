@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     // jsdom pour les tests de composants React
     environment: "jsdom",
+    globals: true,
 
     // Setup global — mocks, MSW, jest-dom matchers
     setupFiles: ["./tests/setup.ts"],

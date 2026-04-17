@@ -22,6 +22,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx src/db/seed.ts",
+    "db:audit-rls": "tsx scripts/audit-rls.ts",
     "db:check-indexes": "tsx scripts/check-indexes.ts",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",

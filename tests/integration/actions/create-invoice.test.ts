@@ -24,7 +24,7 @@ vi.mock("@/lib/db", () => ({
     insert: vi.fn().mockReturnThis(),
     values: vi.fn().mockReturnThis(),
     returning: vi.fn().mockResolvedValue([
-      buildInvoice({ id: "new_inv_001", invoiceNumber: "FAC-2026-002" }),
+      { id: "new_inv_001", invoiceNumber: "FAC-2026-002", tenantId: "tenant_test_001" },
     ]),
     select: vi.fn().mockReturnThis(),
     from: vi.fn().mockReturnThis(),
