@@ -7,13 +7,17 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "@/db/schema";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is not set");
-}
+// During Next.js build, DATABASE_URL may not be available
+// Use placeholder for build, will error at runtime if not set
+const connectionString = process.env.DATABASE_URL || "postgresql://placeholder";
 
 // Create postgres client
-const client = postgres(process.env.DATABASE_URL, {
+const client = postgres(connectionString, {
   prepare: false, // Required for pgBouncer
+  onnotice: () => {}, // Suppress notices during build
+  connection: {
+    connect_timeout: process.env.DATABASE_URL ? 10 : 0,
+  },
 });
 
 // Create drizzle instance
