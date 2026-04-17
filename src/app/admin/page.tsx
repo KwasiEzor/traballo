@@ -1,5 +1,5 @@
 /**
- * Admin home page (admin.traballo.be/admin)
+ * Admin home page (admin.traballo.pro/admin)
  * Super admin dashboard
  */
 
@@ -9,7 +9,7 @@ export default function AdminPage() {
       <div className="text-center">
         <h1 className="text-4xl font-bold">Admin Dashboard</h1>
         <p className="mt-4 text-gray-600">
-          Super admin - admin.traballo.be
+          Super admin - admin.traballo.pro
         </p>
       </div>
     </div>

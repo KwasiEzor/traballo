@@ -1,5 +1,5 @@
 /**
- * Root page (traballo.be)
+ * Root page (traballo.pro)
  * Landing/marketing page
  */
 
@@ -13,13 +13,13 @@ export default function HomePage() {
         </p>
         <div className="mt-8 flex gap-4 justify-center">
           <a
-            href="https://app.traballo.be"
+            href="https://app.traballo.pro"
             className="rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700"
           >
             Dashboard
           </a>
           <a
-            href="https://admin.traballo.be"
+            href="https://admin.traballo.pro"
             className="rounded-lg border border-gray-300 bg-white px-6 py-3 text-gray-700 hover:bg-gray-50"
           >
             Admin

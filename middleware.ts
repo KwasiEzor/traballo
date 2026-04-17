@@ -3,9 +3,9 @@
  * Multi-tenant routing middleware
  *
  * Routes requests based on hostname:
- * - app.traballo.be → /dashboard/* (artisan dashboard)
- * - admin.traballo.be → /admin/* (super admin)
- * - [slug].traballo.be → /sites/[slug]/* (public artisan site)
+ * - app.traballo.pro → /dashboard/* (artisan dashboard)
+ * - admin.traballo.pro → /admin/* (super admin)
+ * - [slug].traballo.pro → /sites/[slug]/* (public artisan site)
  * - custom.domain → /sites/[slug]/* (resolved via DB)
  */
 
@@ -15,7 +15,7 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const url = request.nextUrl;
   const hostname = request.headers.get("host") || "";
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.be";
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro";
 
   // Admin subdomain → /admin/*
   if (hostname === `admin.${rootDomain}`) {
@@ -46,7 +46,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Custom domain (not *.traballo.be)
+  // Custom domain (not *.traballo.pro)
   // TODO: Query DB to resolve custom domain to slug
   // For now, serve as-is
   return NextResponse.next();

@@ -46,9 +46,9 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 ## Architecture critique — à connaître absolument
 
 ### Multi-tenant routing (middleware.ts)
-- `app.traballo.be` → dashboard artisan (`/dashboard/*`)
-- `admin.traballo.be` → super admin (`/admin/*`)
-- `[slug].traballo.be` → site public artisan (`/sites/[slug]/*`)
+- `app.traballo.pro` → dashboard artisan (`/dashboard/*`)
+- `admin.traballo.pro` → super admin (`/admin/*`)
+- `[slug].traballo.pro` → site public artisan (`/sites/[slug]/*`)
 - domaine custom → résolu via table `sites.custom_domain` en DB
 
 ### Isolation des données
@@ -66,8 +66,8 @@ ANTHROPIC_API_KEY              # serveur uniquement
 STRIPE_SECRET_KEY              # serveur uniquement
 STRIPE_WEBHOOK_SECRET
 RESEND_API_KEY
-NEXT_PUBLIC_APP_URL            # ex: https://app.traballo.be
-NEXT_PUBLIC_ROOT_DOMAIN        # traballo.be
+NEXT_PUBLIC_APP_URL            # ex: https://app.traballo.pro
+NEXT_PUBLIC_ROOT_DOMAIN        # traballo.pro
 ```
 
 ## Conventions de code

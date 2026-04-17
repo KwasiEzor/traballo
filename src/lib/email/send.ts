@@ -37,7 +37,7 @@ export async function sendEmail(options: SendEmailOptions) {
     const html = await render(options.react);
 
     const { data, error } = await resend.emails.send({
-      from: options.from || "Traballo <noreply@traballo.be>",
+      from: options.from || "Traballo <noreply@traballo.pro>",
       to: options.to,
       subject: options.subject,
       html,

@@ -27,9 +27,9 @@ export async function getTenantId(): Promise<string | null> {
 
   // Remove port if present (localhost:3000 -> localhost)
   const hostname = host.split(":")[0];
-  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.be";
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro";
 
-  // Check for subdomain (e.g., slug.traballo.be)
+  // Check for subdomain (e.g., slug.traballo.pro)
   if (hostname.endsWith(`.${rootDomain}`)) {
     const slug = hostname.replace(`.${rootDomain}`, "");
 

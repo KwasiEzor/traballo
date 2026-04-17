@@ -1,5 +1,5 @@
 /**
- * Public artisan site page ([slug].traballo.be)
+ * Public artisan site page ([slug].traballo.pro)
  * Public-facing site for each artisan
  */
 
@@ -18,7 +18,7 @@ export default async function PublicSitePage({ params }: PageProps) {
           Artisan: <span className="font-mono">{slug}</span>
         </p>
         <p className="mt-2 text-sm text-gray-500">
-          {slug}.traballo.be
+          {slug}.traballo.pro
         </p>
       </div>
     </div>
