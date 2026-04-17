@@ -22,7 +22,7 @@ export default async function InvoiceDetailPage({ params }: PageProps) {
     return <div>Tenant not found</div>;
   }
 
-  const tenantDb = getTenantDb(tenantId);
+  const tenantDb = await getTenantDb();
   const invoice = await tenantDb.query.invoices.findFirst({
     where: (invoices, { eq }) => eq(invoices.id, id),
     with: {

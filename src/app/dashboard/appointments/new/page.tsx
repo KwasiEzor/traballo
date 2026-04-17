@@ -15,7 +15,7 @@ export default async function NewAppointmentPage() {
     return <div>Tenant not found</div>;
   }
 
-  const tenantDb = getTenantDb(tenantId);
+  const tenantDb = await getTenantDb();
   const clients = await tenantDb.query.clients.findMany({
     orderBy: (clients, { asc }) => [asc(clients.name)],
   });

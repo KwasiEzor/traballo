@@ -23,7 +23,7 @@ export async function generateInvoicePDF(invoiceId: string) {
     }
 
     // Fetch invoice with all data
-    const tenantDb = getTenantDb(tenantId);
+    const tenantDb = await getTenantDb();
     const invoice = await tenantDb.query.invoices.findFirst({
       where: (invoices, { eq }) => eq(invoices.id, invoiceId),
       with: {

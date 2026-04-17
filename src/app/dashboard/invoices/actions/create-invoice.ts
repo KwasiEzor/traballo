@@ -76,6 +76,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
       // Insert items
       await tx.insert(invoiceItems).values(
         itemsWithTotals.map((item) => ({
+          tenantId,
           invoiceId: newInvoice.id,
           description: item.description,
           quantity: String(item.quantity),

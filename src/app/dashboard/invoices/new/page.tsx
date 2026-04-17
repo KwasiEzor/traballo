@@ -16,7 +16,7 @@ export default async function NewInvoicePage() {
   }
 
   // Fetch clients for dropdown
-  const tenantDb = getTenantDb(tenantId);
+  const tenantDb = await getTenantDb();
   const clients = await tenantDb.query.clients.findMany({
     orderBy: (clients, { asc }) => [asc(clients.name)],
   });

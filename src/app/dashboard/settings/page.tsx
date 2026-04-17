@@ -15,7 +15,7 @@ export default async function SettingsPage() {
     return <div>Tenant not found</div>;
   }
 
-  const tenantDb = getTenantDb(tenantId);
+  const tenantDb = await getTenantDb();
   const profile = await tenantDb.query.artisanProfiles.findFirst({
     where: (profiles, { eq }) => eq(profiles.tenantId, tenantId),
   });

@@ -15,7 +15,7 @@ export default async function InvoicesPage() {
     return <div>Tenant not found</div>;
   }
 
-  const tenantDb = getTenantDb(tenantId);
+  const tenantDb = await getTenantDb();
   const invoices = await tenantDb.query.invoices.findMany({
     with: {
       client: true,

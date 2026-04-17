@@ -16,7 +16,7 @@ export default async function AvailabilityPage() {
     return <div>Tenant not found</div>;
   }
 
-  const tenantDb = getTenantDb(tenantId);
+  const tenantDb = await getTenantDb();
   const slots = await tenantDb.query.availability.findMany({
     where: (availability, { eq }) => eq(availability.tenantId, tenantId),
     orderBy: (availability, { asc }) => [asc(availability.dayOfWeek)],

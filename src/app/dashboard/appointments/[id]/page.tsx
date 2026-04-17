@@ -22,7 +22,7 @@ export default async function AppointmentDetailPage({ params }: PageProps) {
     return <div>Tenant not found</div>;
   }
 
-  const tenantDb = getTenantDb(tenantId);
+  const tenantDb = await getTenantDb();
   const appointment = await tenantDb.query.appointments.findFirst({
     where: (appointments, { eq }) => eq(appointments.id, id),
     with: {

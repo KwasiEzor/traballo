@@ -22,7 +22,7 @@ export async function sendInvoiceEmail(invoiceId: string) {
     }
 
     // Fetch invoice
-    const tenantDb = getTenantDb(tenantId);
+    const tenantDb = await getTenantDb();
     const invoice = await tenantDb.query.invoices.findFirst({
       where: (invoices, { eq }) => eq(invoices.id, invoiceId),
       with: {
