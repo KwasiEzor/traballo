@@ -1,6 +1,8 @@
 import { pgTable, text, timestamp, uuid, numeric, date, index } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { tenants } from "./tenants";
 import { clients } from "./clients";
+import { invoiceItems } from "./invoice-items";
 
 export const invoices = pgTable(
   "invoices",
@@ -33,6 +35,18 @@ export const invoices = pgTable(
     tenantIdIdx: index("invoices_tenant_id_idx").on(table.tenantId),
   })
 );
+
+export const invoicesRelations = relations(invoices, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [invoices.tenantId],
+    references: [tenants.id],
+  }),
+  client: one(clients, {
+    fields: [invoices.clientId],
+    references: [clients.id],
+  }),
+  items: many(invoiceItems),
+}));
 
 export type Invoice = typeof invoices.$inferSelect;
 export type NewInvoice = typeof invoices.$inferInsert;
