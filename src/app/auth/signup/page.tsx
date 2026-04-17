@@ -45,11 +45,16 @@ export default function SignUpPage() {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
-    await db.insert(tenants).values({
-      id: authData.user.id,
-      slug,
-      plan: "free",
-    });
+    try {
+      await db.insert(tenants).values({
+        id: authData.user.id,
+        slug,
+        plan: "free",
+      });
+    } catch (error) {
+      console.error("Failed to create tenant:", error);
+      redirect("/auth/signup?error=" + encodeURIComponent("Database error: Failed to create tenant"));
+    }
 
     redirect("/dashboard");
   }
