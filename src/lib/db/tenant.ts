@@ -3,7 +3,7 @@
  * Tenant-aware database operations with automatic RLS context
  */
 
-import { db } from "./index";
+import { db, type DB } from "./index";
 import { sql } from "drizzle-orm";
 
 /**
@@ -15,7 +15,7 @@ import { sql } from "drizzle-orm";
  */
 export async function withTenantContext<T>(
   tenantId: string,
-  operation: (db: typeof db) => Promise<T>
+  operation: (db: DB) => Promise<T>
 ): Promise<T> {
   // Set tenant context for RLS
   await db.execute(sql`SET LOCAL app.current_tenant_id = ${tenantId}`);
