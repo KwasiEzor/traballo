@@ -41,20 +41,27 @@ export function InvoiceActions({ invoice }: InvoiceActionsProps) {
   };
 
   const handleSendEmail = async () => {
+    if (
+      !confirm(
+        `Envoyer la facture ${invoice.invoiceNumber} à ${invoice.client.name}?`
+      )
+    ) {
+      return;
+    }
+
     setLoading(true);
     try {
-      const { updateInvoiceStatus } = await import("../actions/update-status");
-      const result = await updateInvoiceStatus(invoice.id, "sent");
+      const { sendInvoiceEmail } = await import("../actions/send-invoice");
+      const result = await sendInvoiceEmail(invoice.id);
 
       if (result.error) {
-        alert(result.error);
+        alert(`Erreur: ${result.error}`);
       } else {
-        // TODO: Actually send email via Resend
-        alert("Facture marquée comme envoyée (envoi email à venir)");
+        alert("Facture envoyée par email avec succès!");
         router.refresh();
       }
     } catch (error) {
-      alert("Failed to update invoice");
+      alert("Failed to send email");
     } finally {
       setLoading(false);
     }
