@@ -6,11 +6,12 @@
 import { createClient } from "@/lib/auth/supabase-server";
 import { redirect } from "next/navigation";
 
-export default function SignInPage({
+export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: Promise<{ error?: string }>;
 }) {
+  const params = await searchParams;
   async function signIn(formData: FormData) {
     "use server";
 
@@ -58,7 +59,7 @@ export default function SignInPage({
           </div>
 
           {/* Error Message */}
-          {searchParams.error && (
+          {params.error && (
             <div className="mt-6 rounded-lg bg-red-50 border border-red-200 p-4">
               <div className="flex">
                 <svg
@@ -73,7 +74,7 @@ export default function SignInPage({
                   />
                 </svg>
                 <p className="ml-3 text-sm text-red-800">
-                  {decodeURIComponent(searchParams.error)}
+                  {decodeURIComponent(params.error)}
                 </p>
               </div>
             </div>

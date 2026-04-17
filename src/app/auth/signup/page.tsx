@@ -8,11 +8,12 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { tenants } from "@/db/schema";
 
-export default function SignUpPage({
+export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: Promise<{ error?: string }>;
 }) {
+  const params = await searchParams;
   async function signUp(formData: FormData) {
     "use server";
 
@@ -94,7 +95,7 @@ export default function SignUpPage({
           </div>
 
           {/* Error Message */}
-          {searchParams.error && (
+          {params.error && (
             <div className="mt-6 rounded-lg bg-red-50 border border-red-200 p-4">
               <div className="flex">
                 <svg
@@ -109,7 +110,7 @@ export default function SignUpPage({
                   />
                 </svg>
                 <p className="ml-3 text-sm text-red-800">
-                  {decodeURIComponent(searchParams.error)}
+                  {decodeURIComponent(params.error)}
                 </p>
               </div>
             </div>
