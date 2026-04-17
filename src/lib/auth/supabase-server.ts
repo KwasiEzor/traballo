@@ -44,13 +44,14 @@ export async function getCurrentUser() {
 }
 
 /**
- * Require authenticated user or throw
+ * Require authenticated user or redirect
  * Use in protected routes
  */
 export async function requireAuth() {
+  const { redirect } = await import("next/navigation");
   const user = await getCurrentUser();
   if (!user) {
-    throw new Error("Authentication required");
+    redirect("/auth/signin");
   }
   return user;
 }
