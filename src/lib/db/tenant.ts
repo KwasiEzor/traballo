@@ -5,55 +5,50 @@
 
 import { db, type DB } from "./index";
 import { sql } from "drizzle-orm";
+import { requireAuth } from "../auth/require-auth";
 
 /**
- * Execute a DB operation with tenant context set for RLS
- * Sets app.current_tenant_id session variable for RLS policies
- *
- * @param tenantId - UUID of the tenant
- * @param operation - Database operation to execute
+ * Execute a DB operation within a tenant-scoped transaction
+ * This is the most secure way to ensure RLS context is set correctly
+ * for the duration of the operation and isolated from other connections.
  */
-export async function withTenantContext<T>(
+export async function withTenant<T>(
   tenantId: string,
-  operation: (db: DB) => Promise<T>
+  operation: (tx: DB) => Promise<T>
 ): Promise<T> {
-  // Set tenant context for RLS
-  await db.execute(sql`SET LOCAL app.current_tenant_id = ${tenantId}`);
-
-  try {
-    return await operation(db);
-  } finally {
-    // Clear context after operation
-    await db.execute(sql`RESET app.current_tenant_id`);
-  }
+  return await db.transaction(async (tx) => {
+    // Set tenant context for RLS - using SET LOCAL within transaction
+    await tx.execute(sql`SET LOCAL app.current_tenant_id = ${tenantId}`);
+    return await operation(tx as any);
+  });
 }
 
 /**
- * Get a tenant-scoped DB instance
- * Wraps all queries with tenant context
- *
- * Usage:
- * ```ts
- * const tenantDb = getTenantDb(tenantId);
- * const invoices = await tenantDb.query.invoices.findMany();
- * ```
+ * Higher-level helper that gets the current authenticated tenant
+ * and returns a DB client scoped to that tenant.
+ * Use this in Server Actions and protected routes.
  */
-export function getTenantDb(tenantId: string) {
+export async function getTenantDb() {
+  const { tenantId } = await requireAuth();
+  return createTenantClient(tenantId);
+}
+
+/**
+ * Creates a tenant-scoped DB client instance
+ */
+export function createTenantClient(tenantId: string) {
   return {
-    transaction: <T>(fn: (tx: any) => Promise<T>): Promise<T> => {
-      return withTenantContext(tenantId, (db) => db.transaction(fn));
-    },
     query: new Proxy(db.query, {
       get(target, prop) {
-        const original = target[prop as keyof typeof target];
+        const original = (target as any)[prop];
         if (typeof original === "object" && original !== null) {
           return new Proxy(original, {
             get(queryTarget, queryProp) {
               const queryFn = (queryTarget as any)[queryProp];
               if (typeof queryFn === "function") {
                 return async (...args: any[]) => {
-                  return withTenantContext(tenantId, () =>
-                    queryFn.apply(queryTarget, args)
+                  return withTenant(tenantId, (tx) =>
+                    (tx.query as any)[prop][queryProp](...args)
                   );
                 };
               }
@@ -64,5 +59,25 @@ export function getTenantDb(tenantId: string) {
         return original;
       },
     }),
+    // Direct builders
+    insert: (table: any) => ({
+      values: (values: any) => ({
+        returning: () => withTenant(tenantId, (tx) => tx.insert(table).values(values).returning() as any)
+      })
+    }),
+    update: (table: any) => ({
+      set: (values: any) => ({
+        where: (condition: any) => ({
+           returning: () => withTenant(tenantId, (tx) => tx.update(table).set(values).where(condition).returning() as any)
+        })
+      })
+    }),
+    delete: (table: any) => ({
+      where: (condition: any) => ({
+        returning: () => withTenant(tenantId, (tx) => tx.delete(table).where(condition).returning() as any)
+      })
+    }),
+    // The "Gold Standard" for complex operations
+    transaction: <T>(fn: (tx: DB) => Promise<T>): Promise<T> => withTenant(tenantId, fn)
   };
 }

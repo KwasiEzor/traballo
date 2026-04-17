@@ -8,7 +8,6 @@ import postgres from "postgres";
 import * as schema from "@/db/schema";
 
 // During Next.js build, DATABASE_URL may not be available
-// Use placeholder for build, will error at runtime if not set
 const connectionString = process.env.DATABASE_URL || "postgresql://placeholder";
 
 // Create postgres client
@@ -21,7 +20,12 @@ const client = postgres(connectionString, {
 });
 
 // Create drizzle instance
-export const db = drizzle(client, { schema });
+// NOT EXPORTED BY DEFAULT - Use getTenantDb(tenantId) instead
+const internalDb = drizzle(client, { schema });
+
+// Export internal DB for specialized use (e.g., migrations, scripts, tenant resolution)
+// DO NOT use in standard application logic
+export { internalDb as db };
 
 // Type export for use in queries
-export type DB = typeof db;
+export type DB = typeof internalDb;
