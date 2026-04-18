@@ -4,9 +4,8 @@
  */
 
 import { createClient } from "@/lib/auth/supabase-server";
+import { supabaseAdmin } from "@/lib/auth/supabase-admin";
 import { redirect } from "next/navigation";
-import { db } from "@/lib/db";
-import { tenants } from "@/db/schema";
 import { PasswordInput } from "@/components/auth/password-input";
 
 export default async function SignUpPage({
@@ -43,7 +42,7 @@ export default async function SignUpPage({
       redirect("/auth/signup?error=Failed to create user");
     }
 
-    // Create tenant
+    // Create tenant using admin client (bypasses RLS)
     const slug = businessName
       .toLowerCase()
       .normalize("NFD")
@@ -51,17 +50,17 @@ export default async function SignUpPage({
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
-    try {
-      await db.insert(tenants).values({
-        id: authData.user.id,
-        slug,
-        plan: "free",
-      });
-    } catch (error) {
-      console.error("Failed to create tenant:", error);
+    const { error: tenantError } = await supabaseAdmin.from("tenants").insert({
+      id: authData.user.id,
+      slug,
+      plan: "free",
+    });
+
+    if (tenantError) {
+      console.error("Failed to create tenant:", tenantError);
       redirect(
         "/auth/signup?error=" +
-          encodeURIComponent("Database error: Failed to create tenant")
+          encodeURIComponent(tenantError.message || "Failed to create tenant")
       );
     }
 
