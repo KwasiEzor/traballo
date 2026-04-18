@@ -1,126 +1,181 @@
-/**
- * tests/integration/actions/create-invoice.test.ts
- *
- * Exemple de test TDD pour une Server Action.
- * Ce fichier montre le pattern à suivre pour TOUS les tests d'actions.
- *
- * ⚠️  Ce test est un EXEMPLE — la Server Action n'existe pas encore.
- *     Quand on implémentera createInvoiceAction, ce test guidera l'implémentation.
- */
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { createInvoice } from "@/app/dashboard/invoices/actions/create-invoice";
+import { requireAuth } from "@/lib/auth";
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { requireAuth } from "@/lib/auth/require-auth";
-import { mockAuthContext, mockClient, buildInvoice } from "@/tests/fixtures";
+const mocks = vi.hoisted(() => {
+  const invoiceFindFirst = vi.fn();
+  const transaction = vi.fn();
 
-// ─── Ces imports échoueront jusqu'à ce qu'on crée les fichiers ─────────────
-// C'est normal — c'est le principe du TDD (RED)
-// import { createInvoiceAction } from "@/app/(dashboard)/invoices/_actions/create-invoice";
+  return {
+    invoiceFindFirst,
+    transaction,
+  };
+});
 
-// ─── Mocks ────────────────────────────────────────────────────────────────
+vi.mock("@/lib/auth", () => ({
+  requireAuth: vi.fn(),
+}));
 
-vi.mock("@/lib/auth/require-auth");
 vi.mock("@/lib/db", () => ({
   db: {
-    insert: vi.fn().mockReturnThis(),
-    values: vi.fn().mockReturnThis(),
-    returning: vi.fn().mockResolvedValue([
-      { id: "new_inv_001", invoiceNumber: "FAC-2026-002", tenantId: "tenant_test_001" },
-    ]),
-    select: vi.fn().mockReturnThis(),
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    then: vi.fn(),
+    query: {
+      invoices: {
+        findFirst: mocks.invoiceFindFirst,
+      },
+    },
+    transaction: mocks.transaction,
   },
 }));
 
-// ─── Helpers ──────────────────────────────────────────────────────────────
+describe("createInvoice", () => {
+  let insertStep = 0;
+  const invoiceReturning = vi.fn();
+  const invoiceValues = vi.fn(() => ({
+    returning: invoiceReturning,
+  }));
+  const itemsValues = vi.fn();
+  const txInsert = vi.fn(() => {
+    if (insertStep === 0) {
+      insertStep += 1;
+      return { values: invoiceValues };
+    }
 
-function buildValidFormData() {
-  const fd = new FormData();
-  fd.set("clientId", mockClient.id);
-  fd.set("issueDate", "2026-04-16");
-  fd.set("dueDate", "2026-05-16");
-  fd.set("items[0][description]", "Installation chauffe-eau");
-  fd.set("items[0][quantity]", "1");
-  fd.set("items[0][unitPrice]", "450");
-  fd.set("items[0][taxRate]", "21");
-  return fd;
-}
+    return { values: itemsValues };
+  });
 
-// ─── Tests ────────────────────────────────────────────────────────────────
-
-describe("createInvoiceAction", () => {
   beforeEach(() => {
-    vi.mocked(requireAuth).mockResolvedValue(mockAuthContext);
+    insertStep = 0;
+    vi.mocked(requireAuth).mockResolvedValue({
+      tenantId: "tenant_test_001",
+      userId: "user_test_001",
+      email: "owner@test.traballo",
+      plan: "pro",
+      role: "owner",
+    });
+
+    mocks.invoiceFindFirst.mockResolvedValue({
+      invoiceNumber: "INV-0042",
+    });
+
+    invoiceReturning.mockResolvedValue([
+      {
+        id: "inv_new_001",
+        invoiceNumber: "INV-0043",
+      },
+    ]);
+
+    itemsValues.mockResolvedValue(undefined);
+
+    mocks.transaction.mockImplementation(
+      async (callback: (tx: { insert: typeof txInsert }) => Promise<unknown>) =>
+        callback({
+          insert: txInsert,
+        })
+    );
   });
 
-  describe("cas nominal", () => {
-    it.todo("crée une facture avec numéro auto-incrémenté", async () => {
-      // const result = await createInvoiceAction(buildValidFormData());
-      // expect(result.ok).toBe(true);
-      // expect(result.value?.invoiceNumber).toMatch(/^FAC-\d{4}-\d{3}$/);
+  it("creates a tenant-scoped invoice, inserts its items, and redirects to the detail page", async () => {
+    await createInvoice({
+      clientId: "550e8400-e29b-41d4-a716-446655440000",
+      issueDate: "2026-04-16",
+      dueDate: "2026-05-16",
+      items: [
+        {
+          description: "Installation chauffe-eau",
+          quantity: 2,
+          unitPrice: 450,
+          taxRate: 21,
+        },
+      ],
     });
 
-    it.todo("attache le tenantId du contexte auth", async () => {
-      // const result = await createInvoiceAction(buildValidFormData());
-      // expect(db.insert).toHaveBeenCalledWith(
-      //   expect.objectContaining({ tenantId: mockAuthContext.tenantId })
-      // );
+    expect(mocks.invoiceFindFirst).toHaveBeenCalled();
+    expect(invoiceValues).toHaveBeenCalledWith({
+      tenantId: "tenant_test_001",
+      clientId: "550e8400-e29b-41d4-a716-446655440000",
+      invoiceNumber: "INV-0043",
+      issueDate: "2026-04-16",
+      dueDate: "2026-05-16",
+      subtotal: "900.00",
+      taxAmount: "189.00",
+      total: "1089.00",
+      status: "draft",
     });
-
-    it.todo("revalide le path /dashboard/invoices après création", async () => {
-      // await createInvoiceAction(buildValidFormData());
-      // expect(revalidatePath).toHaveBeenCalledWith("/dashboard/invoices");
-    });
+    expect(itemsValues).toHaveBeenCalledWith([
+      {
+        tenantId: "tenant_test_001",
+        invoiceId: "inv_new_001",
+        description: "Installation chauffe-eau",
+        quantity: "2",
+        unitPrice: "450",
+        taxRate: "21",
+        total: "1089.00",
+      },
+    ]);
+    expect(revalidatePath).toHaveBeenCalledWith("/dashboard/invoices");
+    expect(redirect).toHaveBeenCalledWith("/dashboard/invoices/inv_new_001");
   });
 
-  describe("validation", () => {
-    it.todo("retourne VALIDATION_ERROR si clientId manquant", async () => {
-      // const fd = new FormData();
-      // const result = await createInvoiceAction(fd);
-      // expect(result.ok).toBe(false);
-      // expect(result.error?.code).toBe("VALIDATION_ERROR");
+  it("starts numbering at INV-0001 when the tenant has no prior invoice", async () => {
+    mocks.invoiceFindFirst.mockResolvedValueOnce(undefined);
+
+    await createInvoice({
+      clientId: "550e8400-e29b-41d4-a716-446655440000",
+      issueDate: "2026-04-16",
+      dueDate: "2026-05-16",
+      items: [
+        {
+          description: "Diagnostic",
+          quantity: 1,
+          unitPrice: 100,
+          taxRate: 0,
+        },
+      ],
     });
 
-    it.todo("retourne VALIDATION_ERROR si dueDate avant issueDate", async () => {
-      // const fd = buildValidFormData();
-      // fd.set("dueDate", "2026-01-01"); // avant issueDate 2026-04-16
-      // const result = await createInvoiceAction(fd);
-      // expect(result.ok).toBe(false);
-    });
-
-    it.todo("retourne VALIDATION_ERROR si aucun item de prestation", async () => {
-      // const fd = new FormData();
-      // fd.set("clientId", mockClient.id);
-      // fd.set("issueDate", "2026-04-16");
-      // fd.set("dueDate", "2026-05-16");
-      // const result = await createInvoiceAction(fd);
-      // expect(result.ok).toBe(false);
-    });
+    expect(invoiceValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        invoiceNumber: "INV-0001",
+      })
+    );
   });
 
-  describe("sécurité et isolation", () => {
-    it.todo("redirige vers /login si non authentifié", async () => {
-      // vi.mocked(requireAuth).mockRejectedValue(new Error("UNAUTHORIZED"));
-      // await expect(createInvoiceAction(buildValidFormData())).rejects.toThrow();
+  it("returns a validation error when the payload is invalid", async () => {
+    const result = await createInvoice({
+      clientId: "not-a-uuid",
+      issueDate: "",
+      dueDate: "",
+      items: [],
     });
 
-    it.todo("ne peut pas créer de facture pour un autre tenant", async () => {
-      // const fd = buildValidFormData();
-      // fd.set("clientId", "client_autre_tenant"); // client d'un autre artisan
-      // const result = await createInvoiceAction(fd);
-      // expect(result.ok).toBe(false);
-      // expect(result.error?.code).toBe("NOT_FOUND");
+    expect(result).toEqual({
+      error: expect.stringContaining("Client invalide"),
     });
+    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(redirect).not.toHaveBeenCalled();
   });
 
-  describe("plan freemium — limite 5 factures/mois", () => {
-    it.todo("bloque la création si limite atteinte sur plan free", async () => {
-      // vi.mocked(requireAuth).mockResolvedValue({ ...mockAuthContext, plan: "free" });
-      // // Simuler 5 factures déjà créées ce mois
-      // const result = await createInvoiceAction(buildValidFormData());
-      // expect(result.ok).toBe(false);
-      // expect(result.error?.code).toBe("LIMIT_REACHED");
+  it("rejects an invoice whose due date is before the issue date", async () => {
+    const result = await createInvoice({
+      clientId: "550e8400-e29b-41d4-a716-446655440000",
+      issueDate: "2026-05-16",
+      dueDate: "2026-04-16",
+      items: [
+        {
+          description: "Diagnostic",
+          quantity: 1,
+          unitPrice: 100,
+          taxRate: 0,
+        },
+      ],
     });
+
+    expect(result).toEqual({
+      error:
+        "La date d'échéance doit être postérieure ou égale à la date d'émission",
+    });
+    expect(mocks.transaction).not.toHaveBeenCalled();
   });
 });

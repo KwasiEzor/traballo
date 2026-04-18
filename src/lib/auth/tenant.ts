@@ -1,9 +1,9 @@
 /**
  * src/lib/auth/tenant.ts
- * Tenant context helpers for multi-tenant isolation
+ * Tenant context helpers for hostname-based tenant resolution
  *
- * CRITICAL: Always use getTenantId() before any DB operation
- * to ensure tenant isolation
+ * Use this only for public site or custom-domain resolution.
+ * Authenticated dashboard flows must get tenantId from requireAuth().
  */
 
 import { headers } from "next/headers";
@@ -17,7 +17,7 @@ import { eq } from "drizzle-orm";
  *
  * @returns tenantId (UUID) or null if not found
  */
-export async function getTenantId(): Promise<string | null> {
+export async function getTenantIdFromHost(): Promise<string | null> {
   const headersList = await headers();
   const host = headersList.get("host");
 
@@ -52,11 +52,19 @@ export async function getTenantId(): Promise<string | null> {
 }
 
 /**
+ * Backward-compatible alias while authenticated flows are migrated away from
+ * hostname-based tenant resolution.
+ */
+export async function getTenantId(): Promise<string | null> {
+  return getTenantIdFromHost();
+}
+
+/**
  * Require tenant ID or throw error
  * Use in protected routes where tenant context is mandatory
  */
 export async function requireTenantId(): Promise<string> {
-  const tenantId = await getTenantId();
+  const tenantId = await getTenantIdFromHost();
 
   if (!tenantId) {
     throw new Error("Tenant context required but not found");

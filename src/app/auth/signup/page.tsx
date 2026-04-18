@@ -5,6 +5,9 @@
 
 import { createClient } from "@/lib/auth/supabase-server";
 import { supabaseAdmin } from "@/lib/auth/supabase-admin";
+import { db } from "@/lib/db";
+import { tenants, users } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { PasswordInput } from "@/components/auth/password-input";
 
@@ -42,25 +45,34 @@ export default async function SignUpPage({
       redirect("/auth/signup?error=Failed to create user");
     }
 
-    // Create tenant using admin client (bypasses RLS)
-    const slug = businessName
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
+    const authUser = authData.user;
 
-    const { error: tenantError } = await supabaseAdmin.from("tenants").insert({
-      id: authData.user.id,
-      slug,
-      plan: "free",
-    });
+    try {
+      const slug = await buildUniqueTenantSlug(businessName);
 
-    if (tenantError) {
-      console.error("Failed to create tenant:", tenantError);
+      await db.transaction(async (tx) => {
+        const [tenant] = await tx
+          .insert(tenants)
+          .values({
+            slug,
+            plan: "free",
+          })
+          .returning({ id: tenants.id });
+
+        await tx.insert(users).values({
+          id: authUser.id,
+          tenantId: tenant.id,
+          email,
+          fullName: businessName,
+          role: "owner",
+        });
+      });
+    } catch (error) {
+      console.error("Failed to provision account:", error);
+      await supabaseAdmin.auth.admin.deleteUser(authUser.id);
       redirect(
         "/auth/signup?error=" +
-          encodeURIComponent(tenantError.message || "Failed to create tenant")
+          encodeURIComponent("Failed to finish account setup")
       );
     }
 
@@ -198,4 +210,33 @@ export default async function SignUpPage({
       </div>
     </div>
   );
+}
+
+function slugifyBusinessName(value: string) {
+  const slug = value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || "artisan";
+}
+
+async function buildUniqueTenantSlug(businessName: string) {
+  const baseSlug = slugifyBusinessName(businessName);
+
+  for (let suffix = 0; suffix < 100; suffix += 1) {
+    const candidate = suffix === 0 ? baseSlug : `${baseSlug}-${suffix + 1}`;
+    const existing = await db.query.tenants.findFirst({
+      where: eq(tenants.slug, candidate),
+      columns: { id: true },
+    });
+
+    if (!existing) {
+      return candidate;
+    }
+  }
+
+  throw new Error("Could not allocate a unique tenant slug");
 }

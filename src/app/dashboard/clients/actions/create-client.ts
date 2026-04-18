@@ -5,9 +5,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
 import { db } from "@/lib/db";
 import { clients } from "@/db/schema";
 import { z } from "zod";
@@ -22,12 +21,7 @@ const createClientSchema = z.object({
 
 export async function createClient(input: z.infer<typeof createClientSchema>) {
   try {
-    await requireAuth();
-    const tenantId = await getTenantId();
-
-    if (!tenantId) {
-      return { error: "Tenant context required" };
-    }
+    const { tenantId } = await requireAuth();
 
     const validated = createClientSchema.parse(input);
 
@@ -43,6 +37,7 @@ export async function createClient(input: z.infer<typeof createClientSchema>) {
     revalidatePath("/dashboard/clients");
     redirect("/dashboard/clients");
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Create client error:", error);
     return {
       error: error instanceof Error ? error.message : "Failed to create client",

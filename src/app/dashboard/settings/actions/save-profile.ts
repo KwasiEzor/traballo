@@ -5,11 +5,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
 import { db } from "@/lib/db";
 import { artisanProfiles } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 
 const profileSchema = z.object({
@@ -26,12 +26,7 @@ const profileSchema = z.object({
 
 export async function saveProfile(input: z.infer<typeof profileSchema>) {
   try {
-    await requireAuth();
-    const tenantId = await getTenantId();
-
-    if (!tenantId) {
-      return { error: "Tenant context required" };
-    }
+    const { tenantId } = await requireAuth();
 
     const validated = profileSchema.parse(input);
 
@@ -72,6 +67,7 @@ export async function saveProfile(input: z.infer<typeof profileSchema>) {
     revalidatePath("/dashboard/settings");
     return { success: true };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Save profile error:", error);
     return {
       error: error instanceof Error ? error.message : "Failed to save profile",

@@ -3,19 +3,13 @@
  */
 
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
-import { getTenantDb } from "@/lib/db/tenant";
+import { createTenantClient } from "@/lib/db/tenant";
 import { AppointmentForm } from "../components/appointment-form";
 
 export default async function NewAppointmentPage() {
-  await requireAuth();
-  const tenantId = await getTenantId();
+  const { tenantId } = await requireAuth();
 
-  if (!tenantId) {
-    return <div>Tenant not found</div>;
-  }
-
-  const tenantDb = await getTenantDb();
+  const tenantDb = createTenantClient(tenantId);
   const clients = await tenantDb.query.clients.findMany({
     orderBy: (clients, { asc }) => [asc(clients.name)],
   });

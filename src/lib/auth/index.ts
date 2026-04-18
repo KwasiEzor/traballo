@@ -3,5 +3,6 @@
  * Main auth exports
  */
 
-export * from "./supabase-server";
+export { createClient, getCurrentUser, requireSessionUser } from "./supabase-server";
+export { requireAuth } from "./require-auth";
 export * from "./tenant";

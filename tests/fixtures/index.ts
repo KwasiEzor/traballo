@@ -153,7 +153,9 @@ export const mockAiAgentConfig = {
 export const mockAuthContext = {
   tenantId: "tenant_test_001",
   userId: "user_test_001",
+  email: "owner@test.traballo",
   plan: "pro" as const,
+  role: "owner" as const,
 };
 
 export const mockFreemiumAuthContext = {
@@ -163,5 +165,5 @@ export const mockFreemiumAuthContext = {
 
 export const mockBusinessAuthContext = {
   ...mockAuthContext,
-  plan: "business" as const,
+  plan: "enterprise" as const,
 };

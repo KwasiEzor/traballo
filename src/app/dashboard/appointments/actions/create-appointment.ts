@@ -5,9 +5,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
 import { db } from "@/lib/db";
 import { appointments } from "@/db/schema";
 import { z } from "zod";
@@ -25,12 +24,7 @@ export async function createAppointment(
   input: z.infer<typeof createAppointmentSchema>
 ) {
   try {
-    await requireAuth();
-    const tenantId = await getTenantId();
-
-    if (!tenantId) {
-      return { error: "Tenant context required" };
-    }
+    const { tenantId } = await requireAuth();
 
     const validated = createAppointmentSchema.parse(input);
 
@@ -58,6 +52,7 @@ export async function createAppointment(
     revalidatePath("/dashboard/appointments");
     redirect("/dashboard/appointments");
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Create appointment error:", error);
     return {
       error:

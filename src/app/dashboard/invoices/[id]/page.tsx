@@ -4,8 +4,7 @@
 
 import { notFound } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
-import { getTenantDb } from "@/lib/db/tenant";
+import { createTenantClient } from "@/lib/db/tenant";
 import { InvoiceActions } from "../components/invoice-actions";
 import Link from "next/link";
 
@@ -14,15 +13,10 @@ interface PageProps {
 }
 
 export default async function InvoiceDetailPage({ params }: PageProps) {
-  await requireAuth();
-  const tenantId = await getTenantId();
+  const { tenantId } = await requireAuth();
   const { id } = await params;
 
-  if (!tenantId) {
-    return <div>Tenant not found</div>;
-  }
-
-  const tenantDb = await getTenantDb();
+  const tenantDb = createTenantClient(tenantId);
   const invoice = await tenantDb.query.invoices.findFirst({
     where: (invoices, { eq }) => eq(invoices.id, id),
     with: {

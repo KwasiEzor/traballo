@@ -5,7 +5,7 @@
 
 import { getCurrentUser } from "./supabase-server";
 import { db } from "@/lib/db";
-import { users, tenants } from "@/db/schema";
+import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 

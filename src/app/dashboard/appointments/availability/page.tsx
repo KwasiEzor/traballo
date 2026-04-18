@@ -3,20 +3,14 @@
  */
 
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
-import { getTenantDb } from "@/lib/db/tenant";
+import { createTenantClient } from "@/lib/db/tenant";
 import { AvailabilityForm } from "./components/availability-form";
 import Link from "next/link";
 
 export default async function AvailabilityPage() {
-  await requireAuth();
-  const tenantId = await getTenantId();
+  const { tenantId } = await requireAuth();
 
-  if (!tenantId) {
-    return <div>Tenant not found</div>;
-  }
-
-  const tenantDb = await getTenantDb();
+  const tenantDb = createTenantClient(tenantId);
   const slots = await tenantDb.query.availability.findMany({
     where: (availability, { eq }) => eq(availability.tenantId, tenantId),
     orderBy: (availability, { asc }) => [asc(availability.dayOfWeek)],

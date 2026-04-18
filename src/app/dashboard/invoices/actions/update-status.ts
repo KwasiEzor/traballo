@@ -5,8 +5,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
 import { db } from "@/lib/db";
 import { invoices } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -16,12 +16,7 @@ export async function updateInvoiceStatus(
   status: "sent" | "paid" | "cancelled"
 ) {
   try {
-    await requireAuth();
-    const tenantId = await getTenantId();
-
-    if (!tenantId) {
-      return { error: "Tenant context required" };
-    }
+    const { tenantId } = await requireAuth();
 
     const updates: Record<string, any> = { status };
 
@@ -43,6 +38,7 @@ export async function updateInvoiceStatus(
 
     return { success: true };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Update invoice status error:", error);
     return {
       error:

@@ -5,25 +5,20 @@
 "use server";
 
 import { renderToBuffer } from "@react-pdf/renderer";
+import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
-import { getTenantDb } from "@/lib/db/tenant";
+import { createTenantClient } from "@/lib/db/tenant";
 import { InvoicePDFTemplate } from "@/lib/pdf/invoice-template";
 import { db } from "@/lib/db";
 import { invoices } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 export async function generateInvoicePDF(invoiceId: string) {
   try {
-    await requireAuth();
-    const tenantId = await getTenantId();
-
-    if (!tenantId) {
-      return { error: "Tenant context required" };
-    }
+    const { tenantId } = await requireAuth();
 
     // Fetch invoice with all data
-    const tenantDb = await getTenantDb();
+    const tenantDb = createTenantClient(tenantId);
     const invoice = await tenantDb.query.invoices.findFirst({
       where: (invoices, { eq }) => eq(invoices.id, invoiceId),
       with: {
@@ -72,10 +67,11 @@ export async function generateInvoicePDF(invoiceId: string) {
     await db
       .update(invoices)
       .set({ pdfUrl: dataUrl })
-      .where(eq(invoices.id, invoiceId));
+      .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)));
 
     return { success: true, pdfUrl: dataUrl };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Generate PDF error:", error);
     return {
       error: error instanceof Error ? error.message : "Failed to generate PDF",

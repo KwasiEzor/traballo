@@ -5,8 +5,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
 import { db } from "@/lib/db";
 import { availability } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -19,12 +19,7 @@ interface AvailabilitySlot {
 
 export async function saveAvailability(slots: AvailabilitySlot[]) {
   try {
-    await requireAuth();
-    const tenantId = await getTenantId();
-
-    if (!tenantId) {
-      return { error: "Tenant context required" };
-    }
+    const { tenantId } = await requireAuth();
 
     // Delete existing availability for this tenant
     await db.delete(availability).where(eq(availability.tenantId, tenantId));
@@ -44,6 +39,7 @@ export async function saveAvailability(slots: AvailabilitySlot[]) {
     revalidatePath("/dashboard/appointments/availability");
     return { success: true };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Save availability error:", error);
     return {
       error:

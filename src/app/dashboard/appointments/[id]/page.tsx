@@ -4,8 +4,7 @@
 
 import { notFound } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
-import { getTenantDb } from "@/lib/db/tenant";
+import { createTenantClient } from "@/lib/db/tenant";
 import { AppointmentActions } from "../components/appointment-actions";
 import Link from "next/link";
 
@@ -14,15 +13,10 @@ interface PageProps {
 }
 
 export default async function AppointmentDetailPage({ params }: PageProps) {
-  await requireAuth();
-  const tenantId = await getTenantId();
+  const { tenantId } = await requireAuth();
   const { id } = await params;
 
-  if (!tenantId) {
-    return <div>Tenant not found</div>;
-  }
-
-  const tenantDb = await getTenantDb();
+  const tenantDb = createTenantClient(tenantId);
   const appointment = await tenantDb.query.appointments.findFirst({
     where: (appointments, { eq }) => eq(appointments.id, id),
     with: {

@@ -5,23 +5,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
+import { redirect, unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
 import { db } from "@/lib/db";
 import { invoices, invoiceItems } from "@/db/schema";
 import { createInvoiceSchema } from "@/lib/validations/invoice";
 import type { CreateInvoiceInput } from "@/lib/validations/invoice";
+import { ZodError } from "zod";
 
 export async function createInvoice(input: CreateInvoiceInput) {
   try {
     // Auth check
-    await requireAuth();
-    const tenantId = await getTenantId();
-
-    if (!tenantId) {
-      return { error: "Tenant context required" };
-    }
+    const { tenantId } = await requireAuth();
 
     // Validate input
     const validated = createInvoiceSchema.parse(input);
@@ -92,6 +87,14 @@ export async function createInvoice(input: CreateInvoiceInput) {
     revalidatePath("/dashboard/invoices");
     redirect(`/dashboard/invoices/${invoice.id}`);
   } catch (error) {
+    unstable_rethrow(error);
+
+    if (error instanceof ZodError) {
+      return {
+        error: error.issues[0]?.message ?? "Validation failed",
+      };
+    }
+
     console.error("Create invoice error:", error);
     return {
       error: error instanceof Error ? error.message : "Failed to create invoice",

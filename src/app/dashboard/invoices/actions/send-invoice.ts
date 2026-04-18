@@ -5,24 +5,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
-import { getTenantDb } from "@/lib/db/tenant";
+import { createTenantClient } from "@/lib/db/tenant";
 import { sendEmail } from "@/lib/email/send";
 import { InvoiceEmail } from "@/lib/email/templates/invoice-email";
 import { updateInvoiceStatus } from "./update-status";
 
 export async function sendInvoiceEmail(invoiceId: string) {
   try {
-    await requireAuth();
-    const tenantId = await getTenantId();
-
-    if (!tenantId) {
-      return { error: "Tenant context required" };
-    }
+    const { tenantId } = await requireAuth();
 
     // Fetch invoice
-    const tenantDb = await getTenantDb();
+    const tenantDb = createTenantClient(tenantId);
     const invoice = await tenantDb.query.invoices.findFirst({
       where: (invoices, { eq }) => eq(invoices.id, invoiceId),
       with: {
@@ -74,6 +69,7 @@ export async function sendInvoiceEmail(invoiceId: string) {
 
     return { success: true };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Send invoice email error:", error);
     return {
       error: error instanceof Error ? error.message : "Failed to send email",

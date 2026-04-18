@@ -11,7 +11,7 @@ export const invoiceItemSchema = z.object({
   taxRate: z.coerce.number().min(0).max(100).default(21),
 });
 
-export const createInvoiceSchema = z.object({
+const invoiceBaseSchema = z.object({
   clientId: z.string().uuid("Client invalide"),
   issueDate: z.string().min(1, "Date d'émission requise"),
   dueDate: z.string().min(1, "Date d'échéance requise"),
@@ -19,9 +19,18 @@ export const createInvoiceSchema = z.object({
   notes: z.string().optional(),
 });
 
-export const updateInvoiceSchema = createInvoiceSchema.extend({
+export const createInvoiceSchema = invoiceBaseSchema
+  .refine((data) => data.dueDate >= data.issueDate, {
+    message: "La date d'échéance doit être postérieure ou égale à la date d'émission",
+    path: ["dueDate"],
+  });
+
+export const updateInvoiceSchema = invoiceBaseSchema.extend({
   id: z.string().uuid(),
   status: z.enum(["draft", "sent", "viewed", "paid", "overdue", "cancelled"]),
+}).refine((data) => data.dueDate >= data.issueDate, {
+  message: "La date d'échéance doit être postérieure ou égale à la date d'émission",
+  path: ["dueDate"],
 });
 
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;

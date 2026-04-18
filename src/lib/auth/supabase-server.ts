@@ -47,7 +47,7 @@ export async function getCurrentUser() {
  * Require authenticated user or redirect
  * Use in protected routes
  */
-export async function requireAuth() {
+export async function requireSessionUser() {
   const { redirect } = await import("next/navigation");
   const user = await getCurrentUser();
   if (!user) {

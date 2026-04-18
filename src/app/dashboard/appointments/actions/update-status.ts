@@ -5,8 +5,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
 import { db } from "@/lib/db";
 import { appointments } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
@@ -16,12 +16,7 @@ export async function updateAppointmentStatus(
   status: "confirmed" | "cancelled" | "completed"
 ) {
   try {
-    await requireAuth();
-    const tenantId = await getTenantId();
-
-    if (!tenantId) {
-      return { error: "Tenant context required" };
-    }
+    const { tenantId } = await requireAuth();
 
     await db
       .update(appointments)
@@ -38,6 +33,7 @@ export async function updateAppointmentStatus(
 
     return { success: true };
   } catch (error) {
+    unstable_rethrow(error);
     console.error("Update appointment status error:", error);
     return {
       error:

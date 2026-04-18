@@ -3,7 +3,11 @@
  * Super admin dashboard
  */
 
-export default function AdminPage() {
+import { requireAdminAccess } from "@/lib/auth/admin";
+
+export default async function AdminPage() {
+  await requireAdminAccess();
+
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">

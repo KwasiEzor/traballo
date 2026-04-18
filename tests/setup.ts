@@ -39,7 +39,9 @@ vi.mock("next/navigation", () => ({
   usePathname: vi.fn(() => "/dashboard"),
   useSearchParams: vi.fn(() => new URLSearchParams()),
   redirect: vi.fn(),
+  forbidden: vi.fn(),
   notFound: vi.fn(),
+  unstable_rethrow: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({
@@ -66,7 +68,9 @@ vi.mock("@/lib/auth/require-auth", () => ({
   requireAuth: vi.fn().mockResolvedValue({
     tenantId: "tenant_test_001",
     userId: "user_test_001",
+    email: "owner@test.traballo",
     plan: "pro",
+    role: "owner",
   }),
 }));
 
@@ -74,15 +78,16 @@ vi.mock("@/lib/auth/require-auth", () => ({
 // Les tests d'intégration DB utilisent une vraie DB locale (supabase start)
 // Les tests unitaires utilisent ce mock
 
-vi.mock("@/lib/supabase/server", () => ({
-  createServerClient: vi.fn(() => ({
-    auth: {
-      getUser: vi.fn().mockResolvedValue({
-        data: { user: { id: "user_test_001", app_metadata: { tenant_id: "tenant_test_001" } } },
-        error: null,
-      }),
-    },
-  })),
+vi.mock("@/lib/auth/supabase-server", () => ({
+  createClient: vi.fn(),
+  getCurrentUser: vi.fn().mockResolvedValue({
+    id: "user_test_001",
+    email: "owner@test.traballo",
+  }),
+  requireSessionUser: vi.fn().mockResolvedValue({
+    id: "user_test_001",
+    email: "owner@test.traballo",
+  }),
 }));
 
 // ─── Console — supprimer les erreurs attendues ──────────────────────────────

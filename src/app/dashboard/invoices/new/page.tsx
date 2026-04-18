@@ -3,20 +3,14 @@
  */
 
 import { requireAuth } from "@/lib/auth";
-import { getTenantId } from "@/lib/auth/tenant";
-import { getTenantDb } from "@/lib/db/tenant";
+import { createTenantClient } from "@/lib/db/tenant";
 import { InvoiceForm } from "../components/invoice-form";
 
 export default async function NewInvoicePage() {
-  await requireAuth();
-  const tenantId = await getTenantId();
-
-  if (!tenantId) {
-    return <div>Tenant not found</div>;
-  }
+  const { tenantId } = await requireAuth();
 
   // Fetch clients for dropdown
-  const tenantDb = await getTenantDb();
+  const tenantDb = createTenantClient(tenantId);
   const clients = await tenantDb.query.clients.findMany({
     orderBy: (clients, { asc }) => [asc(clients.name)],
   });
