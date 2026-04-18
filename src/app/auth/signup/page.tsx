@@ -7,6 +7,7 @@ import { createClient } from "@/lib/auth/supabase-server";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { tenants } from "@/db/schema";
+import { PasswordInput } from "@/components/auth/password-input";
 
 export default async function SignUpPage({
   searchParams,
@@ -159,15 +160,14 @@ export default async function SignUpPage({
               >
                 Mot de passe <span className="text-red-500">*</span>
               </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                minLength={6}
-                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                placeholder="••••••••"
-              />
+              <div className="mt-1">
+                <PasswordInput
+                  id="password"
+                  name="password"
+                  minLength={6}
+                  autoComplete="new-password"
+                />
+              </div>
               <p className="mt-1.5 text-xs text-gray-500">
                 Minimum 6 caractères
               </p>

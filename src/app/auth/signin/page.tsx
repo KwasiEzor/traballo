@@ -5,6 +5,7 @@
 
 import { createClient } from "@/lib/auth/supabase-server";
 import { redirect } from "next/navigation";
+import { PasswordInput } from "@/components/auth/password-input";
 
 export default async function SignInPage({
   searchParams,
@@ -115,15 +116,13 @@ export default async function SignInPage({
                   Mot de passe oublié ?
                 </a>
               </div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                autoComplete="current-password"
-                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                placeholder="••••••••"
-              />
+              <div className="mt-1">
+                <PasswordInput
+                  id="password"
+                  name="password"
+                  autoComplete="current-password"
+                />
+              </div>
             </div>
 
             <button
