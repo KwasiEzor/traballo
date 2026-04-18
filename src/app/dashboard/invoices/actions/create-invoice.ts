@@ -7,7 +7,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { withTenant } from "@/lib/db/tenant";
 import { invoices, invoiceItems } from "@/db/schema";
 import { createInvoiceSchema } from "@/lib/validations/invoice";
 import type { CreateInvoiceInput } from "@/lib/validations/invoice";
@@ -42,17 +42,16 @@ export async function createInvoice(input: CreateInvoiceInput) {
     const total = subtotal + taxAmount;
 
     // Generate invoice number (simple increment - improve later)
-    const lastInvoice = await db.query.invoices.findFirst({
-      where: (invoices, { eq }) => eq(invoices.tenantId, tenantId),
-      orderBy: (invoices, { desc }) => [desc(invoices.createdAt)],
-    });
+    const [invoice] = await withTenant(tenantId, async (tx) => {
+      const lastInvoice = await tx.query.invoices.findFirst({
+        where: (invoices, { eq }) => eq(invoices.tenantId, tenantId),
+        orderBy: (invoices, { desc }) => [desc(invoices.createdAt)],
+      });
 
-    const invoiceNumber = lastInvoice
-      ? `INV-${String(parseInt(lastInvoice.invoiceNumber.split("-")[1] || "0") + 1).padStart(4, "0")}`
-      : "INV-0001";
+      const invoiceNumber = lastInvoice
+        ? `INV-${String(parseInt(lastInvoice.invoiceNumber.split("-")[1] || "0") + 1).padStart(4, "0")}`
+        : "INV-0001";
 
-    // Create invoice with items in transaction
-    const [invoice] = await db.transaction(async (tx) => {
       const [newInvoice] = await tx
         .insert(invoices)
         .values({
@@ -68,7 +67,6 @@ export async function createInvoice(input: CreateInvoiceInput) {
         })
         .returning();
 
-      // Insert items
       await tx.insert(invoiceItems).values(
         itemsWithTotals.map((item) => ({
           tenantId,

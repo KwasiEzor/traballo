@@ -17,6 +17,10 @@ export async function withTenant<T>(
   operation: (tx: DB) => Promise<T>
 ): Promise<T> {
   return await db.transaction(async (tx) => {
+    // Drop into the non-bypass role so tenant-scoped queries are actually
+    // constrained by Postgres RLS instead of inheriting postgres-level bypass.
+    await tx.execute(sql.raw("SET LOCAL ROLE authenticated"));
+
     // Set tenant context for RLS - using SET LOCAL within transaction
     await tx.execute(sql`SET LOCAL app.current_tenant_id = ${tenantId}`);
     return await operation(tx as any);

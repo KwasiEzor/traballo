@@ -7,7 +7,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { withTenant } from "@/lib/db/tenant";
 import { appointments } from "@/db/schema";
 import { z } from "zod";
 
@@ -39,14 +39,16 @@ export async function createAppointment(
       return { error: "L'heure de fin doit être après l'heure de début" };
     }
 
-    await db.insert(appointments).values({
-      tenantId,
-      clientId: validated.clientId || null,
-      title: validated.title,
-      startTime: startDateTime,
-      endTime: endDateTime,
-      notes: validated.notes || null,
-      status: "pending",
+    await withTenant(tenantId, async (tx) => {
+      await tx.insert(appointments).values({
+        tenantId,
+        clientId: validated.clientId || null,
+        title: validated.title,
+        startTime: startDateTime,
+        endTime: endDateTime,
+        notes: validated.notes || null,
+        status: "pending",
+      });
     });
 
     revalidatePath("/dashboard/appointments");

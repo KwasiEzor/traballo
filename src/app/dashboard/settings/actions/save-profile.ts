@@ -7,7 +7,7 @@
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { withTenant } from "@/lib/db/tenant";
 import { artisanProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -30,16 +30,28 @@ export async function saveProfile(input: z.infer<typeof profileSchema>) {
 
     const validated = profileSchema.parse(input);
 
-    // Check if profile exists
-    const existing = await db.query.artisanProfiles.findFirst({
-      where: eq(artisanProfiles.tenantId, tenantId),
-    });
+    await withTenant(tenantId, async (tx) => {
+      const existing = await tx.query.artisanProfiles.findFirst({
+        where: eq(artisanProfiles.tenantId, tenantId),
+      });
 
-    if (existing) {
-      // Update
-      await db
-        .update(artisanProfiles)
-        .set({
+      if (existing) {
+        await tx
+          .update(artisanProfiles)
+          .set({
+            ...validated,
+            phone: validated.phone || null,
+            whatsappNumber: validated.whatsappNumber || null,
+            address: validated.address || null,
+            vatNumber: validated.vatNumber || null,
+            iban: validated.iban || null,
+            tradeType: validated.tradeType || null,
+            updatedAt: new Date(),
+          })
+          .where(eq(artisanProfiles.id, existing.id));
+      } else {
+        await tx.insert(artisanProfiles).values({
+          tenantId,
           ...validated,
           phone: validated.phone || null,
           whatsappNumber: validated.whatsappNumber || null,
@@ -47,22 +59,9 @@ export async function saveProfile(input: z.infer<typeof profileSchema>) {
           vatNumber: validated.vatNumber || null,
           iban: validated.iban || null,
           tradeType: validated.tradeType || null,
-          updatedAt: new Date(),
-        })
-        .where(eq(artisanProfiles.id, existing.id));
-    } else {
-      // Insert
-      await db.insert(artisanProfiles).values({
-        tenantId,
-        ...validated,
-        phone: validated.phone || null,
-        whatsappNumber: validated.whatsappNumber || null,
-        address: validated.address || null,
-        vatNumber: validated.vatNumber || null,
-        iban: validated.iban || null,
-        tradeType: validated.tradeType || null,
-      });
-    }
+        });
+      }
+    });
 
     revalidatePath("/dashboard/settings");
     return { success: true };

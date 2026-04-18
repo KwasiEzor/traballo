@@ -3,14 +3,13 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createInvoice } from "@/app/dashboard/invoices/actions/create-invoice";
 import { requireAuth } from "@/lib/auth";
+import { withTenant } from "@/lib/db/tenant";
 
 const mocks = vi.hoisted(() => {
   const invoiceFindFirst = vi.fn();
-  const transaction = vi.fn();
 
   return {
     invoiceFindFirst,
-    transaction,
   };
 });
 
@@ -18,15 +17,8 @@ vi.mock("@/lib/auth", () => ({
   requireAuth: vi.fn(),
 }));
 
-vi.mock("@/lib/db", () => ({
-  db: {
-    query: {
-      invoices: {
-        findFirst: mocks.invoiceFindFirst,
-      },
-    },
-    transaction: mocks.transaction,
-  },
+vi.mock("@/lib/db/tenant", () => ({
+  withTenant: vi.fn(),
 }));
 
 describe("createInvoice", () => {
@@ -47,6 +39,7 @@ describe("createInvoice", () => {
 
   beforeEach(() => {
     insertStep = 0;
+    vi.clearAllMocks();
     vi.mocked(requireAuth).mockResolvedValue({
       tenantId: "tenant_test_001",
       userId: "user_test_001",
@@ -68,11 +61,16 @@ describe("createInvoice", () => {
 
     itemsValues.mockResolvedValue(undefined);
 
-    mocks.transaction.mockImplementation(
-      async (callback: (tx: { insert: typeof txInsert }) => Promise<unknown>) =>
+    vi.mocked(withTenant).mockImplementation(
+      async (_tenantId, callback) =>
         callback({
+          query: {
+            invoices: {
+              findFirst: mocks.invoiceFindFirst,
+            },
+          },
           insert: txInsert,
-        })
+        } as any)
     );
   });
 
@@ -153,7 +151,7 @@ describe("createInvoice", () => {
     expect(result).toEqual({
       error: expect.stringContaining("Client invalide"),
     });
-    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(withTenant).not.toHaveBeenCalled();
     expect(redirect).not.toHaveBeenCalled();
   });
 
@@ -176,6 +174,6 @@ describe("createInvoice", () => {
       error:
         "La date d'échéance doit être postérieure ou égale à la date d'émission",
     });
-    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(withTenant).not.toHaveBeenCalled();
   });
 });

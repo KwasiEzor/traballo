@@ -7,9 +7,8 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { createTenantClient } from "@/lib/db/tenant";
+import { createTenantClient, withTenant } from "@/lib/db/tenant";
 import { InvoicePDFTemplate } from "@/lib/pdf/invoice-template";
-import { db } from "@/lib/db";
 import { invoices } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 
@@ -64,10 +63,14 @@ export async function generateInvoicePDF(invoiceId: string) {
     const dataUrl = `data:application/pdf;base64,${base64}`;
 
     // Update invoice with PDF URL
-    await db
-      .update(invoices)
-      .set({ pdfUrl: dataUrl })
-      .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)));
+    await withTenant(tenantId, async (tx) => {
+      await tx
+        .update(invoices)
+        .set({ pdfUrl: dataUrl })
+        .where(
+          and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId))
+        );
+    });
 
     return { success: true, pdfUrl: dataUrl };
   } catch (error) {

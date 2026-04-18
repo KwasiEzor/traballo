@@ -7,7 +7,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { withTenant } from "@/lib/db/tenant";
 import { clients } from "@/db/schema";
 import { z } from "zod";
 
@@ -25,13 +25,15 @@ export async function createClient(input: z.infer<typeof createClientSchema>) {
 
     const validated = createClientSchema.parse(input);
 
-    await db.insert(clients).values({
-      tenantId,
-      name: validated.name,
-      email: validated.email || null,
-      phone: validated.phone || null,
-      address: validated.address || null,
-      notes: validated.notes || null,
+    await withTenant(tenantId, async (tx) => {
+      await tx.insert(clients).values({
+        tenantId,
+        name: validated.name,
+        email: validated.email || null,
+        phone: validated.phone || null,
+        address: validated.address || null,
+        notes: validated.notes || null,
+      });
     });
 
     revalidatePath("/dashboard/clients");

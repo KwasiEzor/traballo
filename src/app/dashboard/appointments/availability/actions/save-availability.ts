@@ -7,7 +7,7 @@
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { withTenant } from "@/lib/db/tenant";
 import { availability } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
@@ -21,20 +21,20 @@ export async function saveAvailability(slots: AvailabilitySlot[]) {
   try {
     const { tenantId } = await requireAuth();
 
-    // Delete existing availability for this tenant
-    await db.delete(availability).where(eq(availability.tenantId, tenantId));
+    await withTenant(tenantId, async (tx) => {
+      await tx.delete(availability).where(eq(availability.tenantId, tenantId));
 
-    // Insert new slots
-    if (slots.length > 0) {
-      await db.insert(availability).values(
-        slots.map((slot) => ({
-          tenantId,
-          dayOfWeek: slot.dayOfWeek,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-        }))
-      );
-    }
+      if (slots.length > 0) {
+        await tx.insert(availability).values(
+          slots.map((slot) => ({
+            tenantId,
+            dayOfWeek: slot.dayOfWeek,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+          }))
+        );
+      }
+    });
 
     revalidatePath("/dashboard/appointments/availability");
     return { success: true };

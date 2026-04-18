@@ -7,7 +7,7 @@
 import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { withTenant } from "@/lib/db/tenant";
 import { invoices } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -26,12 +26,14 @@ export async function updateInvoiceStatus(
       updates.paidAt = new Date();
     }
 
-    await db
-      .update(invoices)
-      .set(updates)
-      .where(
-        and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId))
-      );
+    await withTenant(tenantId, async (tx) => {
+      await tx
+        .update(invoices)
+        .set(updates)
+        .where(
+          and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId))
+        );
+    });
 
     revalidatePath(`/dashboard/invoices/${invoiceId}`);
     revalidatePath("/dashboard/invoices");
