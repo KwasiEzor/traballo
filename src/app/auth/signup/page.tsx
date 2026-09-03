@@ -1,16 +1,16 @@
 /**
  * Sign up page
- * Create new artisan account (Better Auth email/password + tenant provisioning)
+ * Create a new artisan account (Better Auth email/password).
+ * Tenant + membership provisioning happens in a Better Auth create-user hook
+ * (see src/lib/tenant/provision.ts), so it also covers Google sign-in.
  */
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth/better-auth";
-import { db } from "@/lib/db";
-import { tenants, users, user as authUser } from "@/db/schema";
 import { PasswordInput } from "@/components/auth/password-input";
+import { GoogleButton } from "@/components/auth/google-button";
 
 export default async function SignUpPage({
   searchParams,
@@ -26,46 +26,17 @@ export default async function SignUpPage({
     const password = String(formData.get("password") ?? "");
     const businessName = String(formData.get("businessName") ?? "");
 
-    let userId: string;
     try {
-      const result = await auth.api.signUpEmail({
+      await auth.api.signUpEmail({
         body: { email, password, name: businessName },
         headers: await headers(),
       });
-      userId = result.user.id;
     } catch (error) {
       const message =
         error instanceof APIError
           ? error.message
           : "Impossible de créer le compte";
       redirect("/auth/signup?error=" + encodeURIComponent(message));
-    }
-
-    try {
-      const slug = await buildUniqueTenantSlug(businessName);
-
-      await db.transaction(async (tx) => {
-        const [tenant] = await tx
-          .insert(tenants)
-          .values({ slug, plan: "free" })
-          .returning({ id: tenants.id });
-
-        await tx.insert(users).values({
-          id: userId,
-          tenantId: tenant.id,
-          email,
-          fullName: businessName,
-          role: "owner",
-        });
-      });
-    } catch (error) {
-      console.error("Failed to provision account:", error);
-      // Compensation: remove the orphaned auth identity (cascades session/account).
-      await db.delete(authUser).where(eq(authUser.id, userId));
-      redirect(
-        "/auth/signup?error=" +
-          encodeURIComponent("La configuration du compte a échoué")
-      );
     }
 
     redirect("/auth/verify-email");
@@ -184,6 +155,17 @@ export default async function SignUpPage({
             </button>
           </form>
 
+          {/* Google */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white px-4 text-gray-500">ou</span>
+            </div>
+          </div>
+          <GoogleButton label="S'inscrire avec Google" />
+
           {/* Footer */}
           <p className="mt-6 text-center text-sm text-gray-600">
             Déjà un compte ?{" "}
@@ -202,33 +184,4 @@ export default async function SignUpPage({
       </div>
     </div>
   );
-}
-
-function slugifyBusinessName(value: string) {
-  const slug = value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return slug || "artisan";
-}
-
-async function buildUniqueTenantSlug(businessName: string) {
-  const baseSlug = slugifyBusinessName(businessName);
-
-  for (let suffix = 0; suffix < 100; suffix += 1) {
-    const candidate = suffix === 0 ? baseSlug : `${baseSlug}-${suffix + 1}`;
-    const existing = await db.query.tenants.findFirst({
-      where: eq(tenants.slug, candidate),
-      columns: { id: true },
-    });
-
-    if (!existing) {
-      return candidate;
-    }
-  }
-
-  throw new Error("Could not allocate a unique tenant slug");
 }

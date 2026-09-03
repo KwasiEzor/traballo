@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth/better-auth";
 import { PasswordInput } from "@/components/auth/password-input";
+import { GoogleButton } from "@/components/auth/google-button";
 
 export default async function SignInPage({
   searchParams,
@@ -141,6 +142,11 @@ export default async function SignInPage({
               Se connecter
             </button>
           </form>
+
+          {/* Google */}
+          <div className="mt-4">
+            <GoogleButton label="Se connecter avec Google" />
+          </div>
 
           {/* Divider */}
           <div className="relative my-6">

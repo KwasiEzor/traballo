@@ -16,6 +16,7 @@ import { db } from "@/lib/db";
 import { user, session, account, verification } from "@/db/schema/auth";
 import { sendEmail } from "@/lib/email/send";
 import { AuthLinkEmail } from "@/lib/email/templates/auth-link-email";
+import { ensureTenantForUser } from "@/lib/tenant/provision";
 
 const appUrl =
   process.env.BETTER_AUTH_URL ||
@@ -82,6 +83,22 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 days
     cookieCache: { enabled: true, maxAge: 5 * 60 },
+  },
+
+  databaseHooks: {
+    user: {
+      create: {
+        // Provision a tenant + membership for every new user (email/password
+        // and OAuth alike). Idempotent.
+        after: async (created) => {
+          await ensureTenantForUser({
+            id: created.id,
+            email: created.email,
+            name: created.name,
+          });
+        },
+      },
+    },
   },
 
   trustedOrigins: [
