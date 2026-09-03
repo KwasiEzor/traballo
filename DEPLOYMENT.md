@@ -19,12 +19,17 @@ Install Command: pnpm install
 
 **C. Variables d'environnement (Vercel Dashboard):**
 ```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://mdonhimuipkyllzbydni.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGc... (secret)
-DATABASE_URL=postgresql://... (pooled)
-DIRECT_URL=postgresql://... (direct)
+# Neon Postgres (Vercel → Storage → Neon, ou console Neon)
+DATABASE_URL=postgresql://...-pooler...neon.tech/neondb?sslmode=require   # poolée
+DATABASE_URL_UNPOOLED=postgresql://...neon.tech/neondb?sslmode=require    # directe
+
+# Better Auth
+BETTER_AUTH_SECRET=...   # openssl rand -base64 32  (secret)
+BETTER_AUTH_URL=https://app.traballo.pro
+
+# OAuth Google (optionnel)
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
 
 # App URLs
 NEXT_PUBLIC_APP_URL=https://app.traballo.pro
@@ -35,6 +40,7 @@ ANTHROPIC_API_KEY=sk-ant-... (anthropic.com)
 STRIPE_SECRET_KEY=sk_live_... (dashboard.stripe.com)
 STRIPE_WEBHOOK_SECRET=whsec_... (après config webhook)
 RESEND_API_KEY=re_... (resend.com)
+ADMIN_EMAILS=...   # allowlist admin.traballo.pro
 ```
 
 **D. Déployer:**
@@ -109,28 +115,21 @@ admin.traballo.pro (super admin)
 
 ---
 
-### 4. Configuration Supabase Production
+### 4. Configuration Neon + Better Auth (Production)
 
-**A. Créer un projet production (optionnel):**
-Si vous voulez séparer dev/prod:
-1. Aller sur dashboard.supabase.com
-2. Créer un nouveau projet "traballo-production"
-3. Région: Europe (Frankfurt ou Ireland)
-4. Copier les nouvelles credentials
+**A. Base de données Neon:**
+1. Créer un projet Neon **région `eu-central-1` (Francfort)** — conformité RGPD (données artisans FR/BE).
+2. Récupérer `DATABASE_URL` (endpoint `-pooler`) et `DATABASE_URL_UNPOOLED`.
+3. Appliquer le schéma : `DATABASE_URL_UNPOOLED=... pnpm db:migrate`.
+4. Activer les **branches Neon** pour obtenir une DB isolée par déploiement preview Vercel (intégration Vercel ↔ Neon).
+5. Point-in-time restore activé par défaut (7 j) ; passer à 30 j sur offre payante.
 
-**B. Ou utiliser le projet existant:**
-- Garder `mdonhimuipkyllzbydni` pour prod
-- Créer un backup régulier
-
-**C. Ajouter les domaines autorisés:**
-Dans Supabase Dashboard → Authentication → URL Configuration:
-```
-Site URL: https://app.traballo.pro
-Redirect URLs:
-  https://app.traballo.pro/**
-  https://admin.traballo.pro/**
-  https://*.traballo.pro/**
-```
+**B. Better Auth:**
+1. `BETTER_AUTH_SECRET` = `openssl rand -base64 32` (secret Vercel).
+2. `BETTER_AUTH_URL` = `https://app.traballo.pro`.
+3. `trustedOrigins` (dans `src/lib/auth/better-auth.ts`) couvre déjà `app.`, `admin.` et le domaine racine.
+4. OAuth Google : créer un client OAuth (console Google Cloud), redirect URI
+   `https://app.traballo.pro/api/auth/callback/google`.
 
 ---
 
@@ -218,13 +217,13 @@ Priorité: 10
 pnpm add @sentry/nextjs
 ```
 
-**C. Backups Supabase:**
-- Backups automatiques activés (payant)
-- Ou exports manuels réguliers
+**C. Backups Neon:**
+- Point-in-time restore (rétention 7 j gratuite, 30 j payant)
+- Exports `pg_dump` réguliers via `DATABASE_URL_UNPOOLED`
 
 **D. Logs:**
 - Vercel Dashboard → Logs
-- Supabase Dashboard → Logs
+- Neon Dashboard → Monitoring / Vercel → Logs
 
 ---
 
@@ -234,7 +233,7 @@ pnpm add @sentry/nextjs
 - ✓ Toutes les clés secrètes en `Secret` sur Vercel
 - ✓ Jamais de commit de `.env.local` ou `.env.production`
 
-**B. RLS Supabase:**
+**B. RLS Postgres:**
 - ✓ Row Level Security activé sur toutes les tables
 - ✓ Policies testées
 
@@ -252,12 +251,13 @@ import { Ratelimit } from "@upstash/ratelimit";
 **Infrastructure:**
 - Hostinger (domaine): ~10-15€/an
 - Vercel Pro: 20$/mois (ou Hobby gratuit)
-- Supabase Pro: 25$/mois (ou Free tier)
+- Neon: Free tier (0,5 Go) puis Launch ~19$/mois
+- Better Auth: gratuit (self-hosté dans la DB)
 - Stripe: 1.4% + 0.25€ par transaction
 - Resend: Gratuit jusqu'à 3000 emails/mois
 - Anthropic: Pay-as-you-go
 
-**Total estimé:** 45-70€/mois + usage variable
+**Total estimé:** 35-60€/mois + usage variable
 
 ---
 
@@ -288,7 +288,8 @@ vercel logs
 ## Support
 
 **Vercel:** https://vercel.com/docs
-**Supabase:** https://supabase.com/docs
+**Neon:** https://neon.tech/docs
+**Better Auth:** https://better-auth.com/docs
 **Stripe:** https://stripe.com/docs
 **Resend:** https://resend.com/docs
 

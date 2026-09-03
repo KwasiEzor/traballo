@@ -1,31 +1,34 @@
 /**
  * src/lib/db/index.ts
- * Drizzle client configuration for Supabase Postgres
+ * Drizzle client — Neon Postgres (postgres-js driver).
+ *
+ * Use the POOLED connection string (`...-pooler.<region>.aws.neon.tech`) for
+ * DATABASE_URL. Transactions (used by withTenant) work over Neon's pooler.
+ * DIRECT_URL (non-pooled) is only used by drizzle-kit for migrations.
  */
 
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "@/db/schema";
 
-// During Next.js build, DATABASE_URL may not be available
+// DATABASE_URL may be absent during `next build` (static analysis) — fall back
+// to a placeholder so imports don't throw at module load.
 const connectionString = process.env.DATABASE_URL || "postgresql://placeholder";
+const isRealConnection = Boolean(process.env.DATABASE_URL);
 
-// Create postgres client
 const client = postgres(connectionString, {
-  prepare: false, // Required for pgBouncer
-  onnotice: () => {}, // Suppress notices during build
+  prepare: false, // required for transaction-pooling (pgBouncer / Neon pooler)
+  onnotice: () => {},
   connection: {
-    connect_timeout: process.env.DATABASE_URL ? 10 : 0,
+    connect_timeout: isRealConnection ? 10 : 0,
   },
 });
 
-// Create drizzle instance
-// NOT EXPORTED BY DEFAULT - Use getTenantDb(tenantId) instead
 const internalDb = drizzle(client, { schema });
 
-// Export internal DB for specialized use (e.g., migrations, scripts, tenant resolution)
-// DO NOT use in standard application logic
+// Exported as `db`: the RLS-bypassing owner connection.
+// Use ONLY for auth bootstrap, migrations, scripts and tenant resolution.
+// Tenant-scoped application logic must go through withTenant() / getTenantDb().
 export { internalDb as db };
 
-// Type export for use in queries
 export type DB = typeof internalDb;

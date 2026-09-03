@@ -5,6 +5,7 @@
  * pour donner aux agents une vue complète du modèle de données
  */
 
+export * from "./auth";
 export * from "./tenants";
 export * from "./users";
 export * from "./artisan-profiles";

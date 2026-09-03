@@ -11,10 +11,10 @@ Traballo is a multi-tenant SaaS platform designed for French-speaking artisans (
 
 ### Key Technologies
 - **Framework**: Next.js 15 (App Router)
-- **Database**: Supabase (PostgreSQL) with Row Level Security (RLS)
+- **Database**: Neon (serverless PostgreSQL) with Row Level Security (RLS)
 - **ORM**: Drizzle ORM
 - **Styling**: Tailwind CSS 4.0 + shadcn/ui
-- **Auth**: Supabase Auth
+- **Auth**: Better Auth (email/password + Google OAuth + magic link), tables in the app's own Neon DB
 - **AI**: Anthropic Claude 3.5/3.7 (via AI SDK)
 - **Email/Payments**: Resend / Stripe
 - **Deployment**: Vercel (multi-tenant subdomain routing)
@@ -32,9 +32,9 @@ The application uses hostname-based routing:
 
 ### 2. Tenant Isolation & Security
 - **RLS Mandatory**: Every table MUST have a `tenant_id` column and an associated RLS policy.
-- **Session Context**: Use `getTenantDb(tenantId)` from `src/lib/db/tenant.ts` to ensure all queries are scoped to the current tenant using `SET LOCAL app.current_tenant_id`.
+- **Session Context**: Use `getTenantDb()` / `withTenant(tenantId, …)` from `src/lib/db/tenant.ts` so queries run as the non-bypass `authenticated` role with `SET LOCAL app.current_tenant_id`.
 - **Validation**: Use Zod for all inputs and environment variables.
-- **Secrets**: Never expose `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`, or `STRIPE_SECRET_KEY` to the client.
+- **Secrets**: Never expose `BETTER_AUTH_SECRET`, `DATABASE_URL`, `ANTHROPIC_API_KEY`, or `STRIPE_SECRET_KEY` to the client.
 
 ### 3. Data Flow
 - **Server Actions**: Preferred for mutations. Suffix files with `Action.ts`.
@@ -53,7 +53,7 @@ pnpm test          # Run all tests (Vitest)
 pnpm check         # Typecheck + Lint + Test (Pre-commit)
 pnpm db:generate   # Generate Drizzle migrations
 pnpm db:migrate    # Apply Drizzle migrations
-pnpm supabase:start # Start local Supabase environment
+pnpm db:studio     # Drizzle Studio (browse the Neon DB)
 ```
 
 ### Coding Standards

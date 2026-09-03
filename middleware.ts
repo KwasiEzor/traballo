@@ -1,26 +1,48 @@
 /**
  * middleware.ts
- * Multi-tenant routing middleware
+ * Multi-tenant routing + optimistic auth guard.
  *
- * Routes requests based on hostname:
- * - app.traballo.pro → /dashboard/* (artisan dashboard)
- * - admin.traballo.pro → /admin/* (super admin)
- * - [slug].traballo.pro → /sites/[slug]/* (public artisan site)
- * - custom.domain → /sites/[slug]/* (resolved via DB)
+ * Hostname routing:
+ * - app.traballo.pro    → /dashboard/*  (artisan dashboard, auth required)
+ * - admin.traballo.pro  → /admin/*      (super admin, auth required)
+ * - [slug].traballo.pro → /sites/[slug]/*  (public artisan site)
+ * - custom domain        → /sites/[slug]/* (resolved in the route via DB)
+ *
+ * The session cookie check here is optimistic only. Authorisation is enforced
+ * server-side by requireAuth() / requireAdminAccess().
  */
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getSessionCookie } from "better-auth/cookies";
 
 export function middleware(request: NextRequest) {
   const url = request.nextUrl;
-  const hostname = request.headers.get("host") || "";
+  const hostname = (request.headers.get("host") || "").split(":")[0];
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro";
+
+  const hasSession = Boolean(getSessionCookie(request));
+
+  const requireSession = (rewrittenPath: string) => {
+    if (!hasSession) {
+      const signin = new URL("/auth/signin", url);
+      signin.searchParams.set("redirectTo", rewrittenPath);
+      return NextResponse.redirect(signin);
+    }
+    return null;
+  };
 
   // Admin subdomain → /admin/*
   if (hostname === `admin.${rootDomain}`) {
-    if (!url.pathname.startsWith("/admin")) {
-      url.pathname = `/admin${url.pathname}`;
+    const target = url.pathname.startsWith("/admin")
+      ? url.pathname
+      : `/admin${url.pathname}`;
+    if (!url.pathname.startsWith("/auth")) {
+      const gate = requireSession(target);
+      if (gate) return gate;
+    }
+    if (target !== url.pathname) {
+      url.pathname = target;
       return NextResponse.rewrite(url);
     }
     return NextResponse.next();
@@ -28,39 +50,39 @@ export function middleware(request: NextRequest) {
 
   // App subdomain → /dashboard/*
   if (hostname === `app.${rootDomain}`) {
-    if (!url.pathname.startsWith("/dashboard")) {
-      url.pathname = `/dashboard${url.pathname}`;
+    const isAuthRoute = url.pathname.startsWith("/auth");
+    const target =
+      url.pathname.startsWith("/dashboard") || isAuthRoute
+        ? url.pathname
+        : `/dashboard${url.pathname}`;
+    if (!isAuthRoute) {
+      const gate = requireSession(target);
+      if (gate) return gate;
+    }
+    if (target !== url.pathname) {
+      url.pathname = target;
       return NextResponse.rewrite(url);
     }
     return NextResponse.next();
   }
 
-  // Artisan subdomain or custom domain → /sites/[slug]/*
+  // Artisan subdomain → /sites/[slug]/*
   if (hostname.endsWith(`.${rootDomain}`)) {
     const slug = hostname.replace(`.${rootDomain}`, "");
-
-    if (!url.pathname.startsWith("/sites")) {
+    if (slug && slug !== "www" && !url.pathname.startsWith("/sites")) {
       url.pathname = `/sites/${slug}${url.pathname}`;
       return NextResponse.rewrite(url);
     }
     return NextResponse.next();
   }
 
-  // Custom domain (not *.traballo.pro)
-  // TODO: Query DB to resolve custom domain to slug
-  // For now, serve as-is
+  // Root domain, localhost, Vercel previews, or a not-yet-supported custom
+  // domain: serve as-is. Custom-domain → slug resolution is a separate task.
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico (favicon)
-     * - public folder
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api/auth|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

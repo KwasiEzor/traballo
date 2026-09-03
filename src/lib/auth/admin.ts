@@ -6,7 +6,7 @@
  */
 
 import { forbidden } from "next/navigation";
-import { requireSessionUser } from "./supabase-server";
+import { requireSessionUser } from "./session";
 
 export function parseAdminEmails(value: string | undefined) {
   if (!value) {

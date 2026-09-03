@@ -1,14 +1,15 @@
 /**
  * Sign up page
- * Create new artisan account
+ * Create new artisan account (Better Auth email/password + tenant provisioning)
  */
 
-import { createClient } from "@/lib/auth/supabase-server";
-import { supabaseAdmin } from "@/lib/auth/supabase-admin";
-import { db } from "@/lib/db";
-import { tenants, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
+import { APIError } from "better-auth/api";
+import { auth } from "@/lib/auth/better-auth";
+import { db } from "@/lib/db";
+import { tenants, users, user as authUser } from "@/db/schema";
 import { PasswordInput } from "@/components/auth/password-input";
 
 export default async function SignUpPage({
@@ -17,35 +18,28 @@ export default async function SignUpPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
+
   async function signUp(formData: FormData) {
     "use server";
 
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const businessName = formData.get("businessName") as string;
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+    const businessName = String(formData.get("businessName") ?? "");
 
-    const supabase = await createClient();
-
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          business_name: businessName,
-        },
-      },
-    });
-
-    if (authError) {
-      redirect("/auth/signup?error=" + encodeURIComponent(authError.message));
+    let userId: string;
+    try {
+      const result = await auth.api.signUpEmail({
+        body: { email, password, name: businessName },
+        headers: await headers(),
+      });
+      userId = result.user.id;
+    } catch (error) {
+      const message =
+        error instanceof APIError
+          ? error.message
+          : "Impossible de créer le compte";
+      redirect("/auth/signup?error=" + encodeURIComponent(message));
     }
-
-    if (!authData.user) {
-      redirect("/auth/signup?error=Failed to create user");
-    }
-
-    const authUser = authData.user;
 
     try {
       const slug = await buildUniqueTenantSlug(businessName);
@@ -53,14 +47,11 @@ export default async function SignUpPage({
       await db.transaction(async (tx) => {
         const [tenant] = await tx
           .insert(tenants)
-          .values({
-            slug,
-            plan: "free",
-          })
+          .values({ slug, plan: "free" })
           .returning({ id: tenants.id });
 
         await tx.insert(users).values({
-          id: authUser.id,
+          id: userId,
           tenantId: tenant.id,
           email,
           fullName: businessName,
@@ -69,14 +60,15 @@ export default async function SignUpPage({
       });
     } catch (error) {
       console.error("Failed to provision account:", error);
-      await supabaseAdmin.auth.admin.deleteUser(authUser.id);
+      // Compensation: remove the orphaned auth identity (cascades session/account).
+      await db.delete(authUser).where(eq(authUser.id, userId));
       redirect(
         "/auth/signup?error=" +
-          encodeURIComponent("Failed to finish account setup")
+          encodeURIComponent("La configuration du compte a échoué")
       );
     }
 
-    redirect("/dashboard");
+    redirect("/auth/verify-email");
   }
 
   return (
@@ -175,12 +167,12 @@ export default async function SignUpPage({
                 <PasswordInput
                   id="password"
                   name="password"
-                  minLength={6}
+                  minLength={10}
                   autoComplete="new-password"
                 />
               </div>
               <p className="mt-1.5 text-xs text-gray-500">
-                Minimum 6 caractères
+                Minimum 10 caractères
               </p>
             </div>
 
@@ -204,7 +196,7 @@ export default async function SignUpPage({
           </p>
 
           <p className="mt-4 text-center text-xs text-gray-500">
-            En créant un compte, vous acceptez nos conditions d'utilisation
+            En créant un compte, vous acceptez nos conditions d&apos;utilisation
           </p>
         </div>
       </div>

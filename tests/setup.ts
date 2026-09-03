@@ -75,18 +75,21 @@ vi.mock("@/lib/auth/require-auth", () => ({
 }));
 
 // ─── Mock Supabase client ───────────────────────────────────────────────────
-// Les tests d'intégration DB utilisent une vraie DB locale (supabase start)
+// Les tests d'intégration DB utilisent une vraie DB Neon (voir tests/security)
 // Les tests unitaires utilisent ce mock
 
-vi.mock("@/lib/auth/supabase-server", () => ({
-  createClient: vi.fn(),
+vi.mock("@/lib/auth/session", () => ({
   getCurrentUser: vi.fn().mockResolvedValue({
     id: "user_test_001",
     email: "owner@test.traballo",
+    name: "Test Owner",
+    emailVerified: true,
   }),
   requireSessionUser: vi.fn().mockResolvedValue({
     id: "user_test_001",
     email: "owner@test.traballo",
+    name: "Test Owner",
+    emailVerified: true,
   }),
 }));
 
