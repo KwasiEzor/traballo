@@ -38,8 +38,12 @@ interface Fixtures {
 }
 
 const rollbackMarker = Symbol("tenant-security-rollback");
+const directUrl =
+  process.env.DATABASE_URL_UNPOOLED ||
+  process.env.DIRECT_URL ||
+  process.env.DATABASE_URL;
 const shouldRunSecurityTests =
-  process.env.RUN_DB_SECURITY_TESTS === "1" && Boolean(process.env.DIRECT_URL);
+  process.env.RUN_DB_SECURITY_TESTS === "1" && Boolean(directUrl);
 const describeSecurity = shouldRunSecurityTests ? describe : describe.skip;
 
 let sqlClient: DbSql | null = null;
@@ -49,7 +53,7 @@ beforeAll(() => {
     return;
   }
 
-  sqlClient = postgres(process.env.DIRECT_URL!, {
+  sqlClient = postgres(directUrl!, {
     prepare: false,
     max: 1,
     idle_timeout: 1,

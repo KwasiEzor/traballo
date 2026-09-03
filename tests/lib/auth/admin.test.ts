@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { forbidden } from "next/navigation";
-import { requireSessionUser } from "@/lib/auth/supabase-server";
+import { requireSessionUser } from "@/lib/auth/session";
 import {
   isAdminEmail,
   parseAdminEmails,
   requireAdminAccess,
 } from "@/lib/auth/admin";
 
-vi.mock("@/lib/auth/supabase-server", () => ({
+vi.mock("@/lib/auth/session", () => ({
   requireSessionUser: vi.fn(),
 }));
 

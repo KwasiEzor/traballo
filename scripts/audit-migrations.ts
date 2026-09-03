@@ -125,12 +125,19 @@ function auditRepoConsistency(entries: JournalEntry[], sqlTags: string[]) {
 async function auditLiveDatabase(entries: JournalEntry[]) {
   console.log("\n🔍 Auditing applied migrations in live database...");
 
-  if (!process.env.DIRECT_URL) {
-    console.error("❌ DIRECT_URL is required for --live migration audit.");
+  const directUrl =
+    process.env.DATABASE_URL_UNPOOLED ||
+    process.env.DIRECT_URL ||
+    process.env.DATABASE_URL;
+
+  if (!directUrl) {
+    console.error(
+      "❌ DATABASE_URL_UNPOOLED (or DIRECT_URL) is required for --live migration audit."
+    );
     return 1;
   }
 
-  const sql = postgres(process.env.DIRECT_URL, {
+  const sql = postgres(directUrl, {
     prepare: false,
     max: 1,
     idle_timeout: 1,

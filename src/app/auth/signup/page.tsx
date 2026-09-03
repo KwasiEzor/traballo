@@ -1,15 +1,16 @@
 /**
  * Sign up page
- * Create new artisan account
+ * Create a new artisan account (Better Auth email/password).
+ * Tenant + membership provisioning happens in a Better Auth create-user hook
+ * (see src/lib/tenant/provision.ts), so it also covers Google sign-in.
  */
 
-import { createClient } from "@/lib/auth/supabase-server";
-import { supabaseAdmin } from "@/lib/auth/supabase-admin";
-import { db } from "@/lib/db";
-import { tenants, users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { APIError } from "better-auth/api";
+import { auth } from "@/lib/auth/better-auth";
 import { PasswordInput } from "@/components/auth/password-input";
+import { GoogleButton } from "@/components/auth/google-button";
 
 export default async function SignUpPage({
   searchParams,
@@ -17,66 +18,28 @@ export default async function SignUpPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
+
   async function signUp(formData: FormData) {
     "use server";
 
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const businessName = formData.get("businessName") as string;
-
-    const supabase = await createClient();
-
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          business_name: businessName,
-        },
-      },
-    });
-
-    if (authError) {
-      redirect("/auth/signup?error=" + encodeURIComponent(authError.message));
-    }
-
-    if (!authData.user) {
-      redirect("/auth/signup?error=Failed to create user");
-    }
-
-    const authUser = authData.user;
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
+    const businessName = String(formData.get("businessName") ?? "");
 
     try {
-      const slug = await buildUniqueTenantSlug(businessName);
-
-      await db.transaction(async (tx) => {
-        const [tenant] = await tx
-          .insert(tenants)
-          .values({
-            slug,
-            plan: "free",
-          })
-          .returning({ id: tenants.id });
-
-        await tx.insert(users).values({
-          id: authUser.id,
-          tenantId: tenant.id,
-          email,
-          fullName: businessName,
-          role: "owner",
-        });
+      await auth.api.signUpEmail({
+        body: { email, password, name: businessName },
+        headers: await headers(),
       });
     } catch (error) {
-      console.error("Failed to provision account:", error);
-      await supabaseAdmin.auth.admin.deleteUser(authUser.id);
-      redirect(
-        "/auth/signup?error=" +
-          encodeURIComponent("Failed to finish account setup")
-      );
+      const message =
+        error instanceof APIError
+          ? error.message
+          : "Impossible de créer le compte";
+      redirect("/auth/signup?error=" + encodeURIComponent(message));
     }
 
-    redirect("/dashboard");
+    redirect("/auth/verify-email");
   }
 
   return (
@@ -175,12 +138,12 @@ export default async function SignUpPage({
                 <PasswordInput
                   id="password"
                   name="password"
-                  minLength={6}
+                  minLength={10}
                   autoComplete="new-password"
                 />
               </div>
               <p className="mt-1.5 text-xs text-gray-500">
-                Minimum 6 caractères
+                Minimum 10 caractères
               </p>
             </div>
 
@@ -191,6 +154,17 @@ export default async function SignUpPage({
               Créer mon compte gratuitement
             </button>
           </form>
+
+          {/* Google */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white px-4 text-gray-500">ou</span>
+            </div>
+          </div>
+          <GoogleButton label="S'inscrire avec Google" />
 
           {/* Footer */}
           <p className="mt-6 text-center text-sm text-gray-600">
@@ -204,39 +178,10 @@ export default async function SignUpPage({
           </p>
 
           <p className="mt-4 text-center text-xs text-gray-500">
-            En créant un compte, vous acceptez nos conditions d'utilisation
+            En créant un compte, vous acceptez nos conditions d&apos;utilisation
           </p>
         </div>
       </div>
     </div>
   );
-}
-
-function slugifyBusinessName(value: string) {
-  const slug = value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return slug || "artisan";
-}
-
-async function buildUniqueTenantSlug(businessName: string) {
-  const baseSlug = slugifyBusinessName(businessName);
-
-  for (let suffix = 0; suffix < 100; suffix += 1) {
-    const candidate = suffix === 0 ? baseSlug : `${baseSlug}-${suffix + 1}`;
-    const existing = await db.query.tenants.findFirst({
-      where: eq(tenants.slug, candidate),
-      columns: { id: true },
-    });
-
-    if (!existing) {
-      return candidate;
-    }
-  }
-
-  throw new Error("Could not allocate a unique tenant slug");
 }

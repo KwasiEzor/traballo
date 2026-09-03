@@ -151,7 +151,7 @@ BEGIN
         FOR SELECT TO authenticated
         USING (
             (tenant_id)::text = current_setting('app.current_tenant_id', true)
-            OR (id)::text = coalesce(((nullif(current_setting('request.jwt.claims', true), ''))::jsonb ->> 'sub'), '')
+            OR (id)::text = coalesce(nullif(current_setting('app.current_user_id', true), ''), '')
         );
 
     CREATE POLICY users_insert ON "users"
@@ -162,7 +162,7 @@ BEGIN
         FOR UPDATE TO authenticated
         USING (
             (tenant_id)::text = current_setting('app.current_tenant_id', true)
-            OR (id)::text = coalesce(((nullif(current_setting('request.jwt.claims', true), ''))::jsonb ->> 'sub'), '')
+            OR (id)::text = coalesce(nullif(current_setting('app.current_user_id', true), ''), '')
         )
         WITH CHECK ((tenant_id)::text = current_setting('app.current_tenant_id', true));
 

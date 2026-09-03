@@ -1,11 +1,13 @@
 /**
- * Sign in page
- * Supabase email/password authentication
+ * Sign in page — Better Auth email/password
  */
 
-import { createClient } from "@/lib/auth/supabase-server";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { APIError } from "better-auth/api";
+import { auth } from "@/lib/auth/better-auth";
 import { PasswordInput } from "@/components/auth/password-input";
+import { GoogleButton } from "@/components/auth/google-button";
 
 export default async function SignInPage({
   searchParams,
@@ -13,20 +15,28 @@ export default async function SignInPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const params = await searchParams;
+
   async function signIn(formData: FormData) {
     "use server";
 
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
 
-    const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      redirect("/auth/signin?error=" + encodeURIComponent(error.message));
+    try {
+      await auth.api.signInEmail({
+        body: { email, password },
+        headers: await headers(),
+      });
+    } catch (error) {
+      if (error instanceof APIError) {
+        if (error.status === 403) {
+          redirect("/auth/verify-email");
+        }
+        redirect("/auth/signin?error=" + encodeURIComponent(error.message));
+      }
+      redirect(
+        "/auth/signin?error=" + encodeURIComponent("Connexion impossible")
+      );
     }
 
     redirect("/dashboard");
@@ -132,6 +142,11 @@ export default async function SignInPage({
               Se connecter
             </button>
           </form>
+
+          {/* Google */}
+          <div className="mt-4">
+            <GoogleButton label="Se connecter avec Google" />
+          </div>
 
           {/* Divider */}
           <div className="relative my-6">

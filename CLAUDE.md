@@ -1,7 +1,7 @@
 # Traballo — Project Memory
 
 > SaaS multi-tenant pour artisans francophones (FR/BE/LU).
-> Stack : Next.js 15 · Supabase · Vercel · Stripe · Resend · Anthropic · Tailwind · shadcn/ui · Drizzle ORM
+> Stack : Next.js 15 · Neon Postgres · Better Auth · Vercel · Stripe · Resend · Anthropic · Tailwind · shadcn/ui · Drizzle ORM
 
 ## Commandes essentielles
 
@@ -52,22 +52,27 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 - domaine custom → résolu via table `sites.custom_domain` en DB
 
 ### Isolation des données
-- **TOUJOURS** utiliser `getTenantId()` depuis `src/lib/auth/tenant.ts`
-- **JAMAIS** de requête DB sans `where tenant_id = $tenantId`
-- Les policies RLS Supabase sont le dernier garde-fou, pas le seul
-- Tester l'isolation avec `pnpm test:isolation`
+- **TOUJOURS** passer par `withTenant(tenantId, …)` / `getTenantDb()` depuis `src/lib/db/tenant.ts`
+- **JAMAIS** de requête tenant sans `where tenant_id = $tenantId` en plus de la RLS
+- `db` (export de `src/lib/db`) = connexion propriétaire Neon, **bypass RLS** — réservée au bootstrap auth, migrations, scripts
+- Les policies RLS Postgres (rôle `authenticated`) sont le dernier garde-fou, pas le seul
+- Tester l'isolation avec `RUN_DB_SECURITY_TESTS=1 pnpm test:security`
 
 ### Variables d'environnement requises
 ```
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY      # serveur uniquement — jamais au client
-ANTHROPIC_API_KEY              # serveur uniquement
-STRIPE_SECRET_KEY              # serveur uniquement
+DATABASE_URL                  # Neon, connexion poolée (runtime)
+DATABASE_URL_UNPOOLED         # Neon, connexion directe (drizzle-kit, scripts, tests)
+BETTER_AUTH_SECRET            # serveur uniquement
+BETTER_AUTH_URL               # ex: https://app.traballo.pro
+GOOGLE_CLIENT_ID              # optionnel — OAuth Google
+GOOGLE_CLIENT_SECRET          # optionnel
+ANTHROPIC_API_KEY             # serveur uniquement
+STRIPE_SECRET_KEY             # serveur uniquement
 STRIPE_WEBHOOK_SECRET
 RESEND_API_KEY
-NEXT_PUBLIC_APP_URL            # ex: https://app.traballo.pro
-NEXT_PUBLIC_ROOT_DOMAIN        # traballo.pro
+ADMIN_EMAILS                  # allowlist admin.traballo.pro (séparés par virgule)
+NEXT_PUBLIC_APP_URL           # ex: https://app.traballo.pro
+NEXT_PUBLIC_ROOT_DOMAIN       # traballo.pro
 ```
 
 ## Conventions de code
@@ -130,7 +135,7 @@ Voir `.claude/rules/tdd.md` pour les conventions complètes.
 
 ## Sécurité — règles absolues
 
-- **JAMAIS** de `supabaseAdmin` dans un composant client ou une route publique
+- **JAMAIS** d'import de `db` (bypass RLS) dans un composant client ou une route publique
 - **JAMAIS** de clé API dans le code (uniquement variables d'environnement)
 - **TOUJOURS** valider les inputs avec Zod avant tout traitement
 - **TOUJOURS** vérifier le `tenant_id` avant toute opération CRUD

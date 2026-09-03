@@ -1,13 +1,14 @@
 /**
  * src/lib/auth/require-auth.ts
- * Helper for requiring authentication in Server Actions and routes
+ * Helper for requiring authentication in Server Actions, routes and RSC.
  */
 
-import { getCurrentUser } from "./supabase-server";
+import { cache } from "react";
+import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
+import { getCurrentUser } from "./session";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { redirect } from "next/navigation";
 
 export interface AuthContext {
   userId: string;
@@ -18,28 +19,23 @@ export interface AuthContext {
 }
 
 /**
- * Require authentication and return context (user + tenant info)
- * Used in Server Actions
+ * Require authentication and return context (user + tenant info).
+ * Memoized per request so repeated calls in a render tree hit the DB once.
  */
-export async function requireAuth(): Promise<AuthContext> {
+export const requireAuth = cache(async function requireAuth(): Promise<AuthContext> {
   const user = await getCurrentUser();
 
   if (!user || !user.id || !user.email) {
     redirect("/auth/signin");
   }
 
-  // Get tenant ID and plan from our database
-  // In a real app, we might cache this in the JWT or use a session
   const userData = await db.query.users.findFirst({
     where: eq(users.id, user.id),
-    with: {
-      tenant: true,
-    },
+    with: { tenant: true },
   });
 
   if (!userData || !userData.tenant) {
-    // This could happen if the user exists in Supabase but not our 'users' table
-    // or if the tenant was deleted.
+    // Auth identity exists but no tenant membership yet — finish onboarding.
     redirect("/auth/signup");
   }
 
@@ -47,7 +43,7 @@ export async function requireAuth(): Promise<AuthContext> {
     userId: userData.id,
     tenantId: userData.tenantId,
     email: userData.email,
-    plan: (userData.tenant.plan as any) || "free",
-    role: (userData.role as any) || "owner",
+    plan: userData.tenant.plan,
+    role: userData.role,
   };
-}
+});
