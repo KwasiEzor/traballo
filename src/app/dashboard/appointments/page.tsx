@@ -1,140 +1,144 @@
-/**
- * Appointments page
- */
-
-import { requireAuth } from "@/lib/auth";
-import { createTenantClient } from "@/lib/db/tenant";
 import Link from "next/link";
+import { Plus, CalendarDays, CalendarClock, Settings2 } from "lucide-react";
+import { eq } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth";
+import { withTenant } from "@/lib/db/tenant";
+import { appointments as apptTable } from "@/db/schema";
+import { formatDate } from "@/lib/utils";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { AppointmentStatusBadge } from "@/components/dashboard/status-badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+export const dynamic = "force-dynamic";
 
 export default async function AppointmentsPage() {
   const { tenantId } = await requireAuth();
-
-  const tenantDb = createTenantClient(tenantId);
-  const appointments = await tenantDb.query.appointments.findMany({
-    with: {
-      client: true,
-    },
-    orderBy: (appointments, { desc }) => [desc(appointments.startTime)],
-  });
-
-  // Group by date
-  const grouped = appointments.reduce(
-    (acc, apt) => {
-      const date = new Date(apt.startTime).toLocaleDateString("fr-FR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-      if (!acc[date]) acc[date] = [];
-      acc[date].push(apt);
-      return acc;
-    },
-    {} as Record<string, typeof appointments>
+  const rows = await withTenant(tenantId, (tx) =>
+    tx.query.appointments.findMany({
+      where: eq(apptTable.tenantId, tenantId),
+      orderBy: (a, { asc }) => [asc(a.startTime)],
+      with: { client: { columns: { name: true } } },
+    })
   );
 
-  return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Rendez-vous</h1>
-        <div className="flex gap-2">
-          <Link
-            href="/dashboard/appointments/availability"
-            className="rounded-lg border bg-white px-4 py-2 hover:bg-gray-50"
-          >
-            ⚙️ Disponibilités
-          </Link>
-          <Link
-            href="/dashboard/appointments/new"
-            className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-          >
-            + Nouveau rendez-vous
-          </Link>
-        </div>
-      </div>
+  const now = Date.now();
+  const upcoming = rows.filter((a) => a.startTime.getTime() >= now);
+  const past = rows
+    .filter((a) => a.startTime.getTime() < now)
+    .reverse();
 
-      <div className="space-y-6">
-        {Object.keys(grouped).length === 0 ? (
-          <div className="rounded-lg border bg-white p-6 text-center text-gray-600">
-            Aucun rendez-vous. Créez votre premier rendez-vous.
-          </div>
-        ) : (
-          Object.entries(grouped).map(([date, apts]) => (
-            <div key={date} className="rounded-lg border bg-white">
-              <div className="border-b bg-gray-50 px-6 py-3">
-                <h2 className="font-semibold">{date}</h2>
-              </div>
-              <div className="divide-y">
-                {apts.map((apt) => (
-                  <Link
-                    key={apt.id}
-                    href={`/dashboard/appointments/${apt.id}`}
-                    className="block p-6 hover:bg-gray-50"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="mb-1 flex items-center gap-3">
-                          <span className="font-medium">{apt.title}</span>
-                          <StatusBadge status={apt.status} />
-                        </div>
-                        {apt.client && (
-                          <div className="text-sm text-gray-600">
-                            Client: {apt.client.name}
-                          </div>
-                        )}
-                        {apt.notes && (
-                          <div className="mt-1 text-sm text-gray-600">
-                            {apt.notes}
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-right text-sm text-gray-600">
-                        <div>
-                          {new Date(apt.startTime).toLocaleTimeString("fr-FR", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                        <div>
-                          {new Date(apt.endTime).toLocaleTimeString("fr-FR", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+  return (
+    <>
+      <PageHeader
+        title="Rendez-vous"
+        description={`${upcoming.length} à venir`}
+        actions={
+          <>
+            <Button asChild variant="outline">
+              <Link href="/dashboard/appointments/availability">
+                <Settings2 className="size-4" /> Disponibilités
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/dashboard/appointments/new">
+                <Plus className="size-4" /> Nouveau
+              </Link>
+            </Button>
+          </>
+        }
+      />
+
+      {rows.length === 0 ? (
+        <EmptyState
+          icon={CalendarDays}
+          title="Aucun rendez-vous"
+          description="Définissez vos disponibilités puis planifiez votre premier rendez-vous."
+          action={
+            <Button asChild>
+              <Link href="/dashboard/appointments/new">Planifier</Link>
+            </Button>
+          }
+        />
+      ) : (
+        <div className="space-y-8">
+          <Section
+            icon={CalendarClock}
+            title="À venir"
+            items={upcoming}
+            emptyLabel="Aucun rendez-vous à venir."
+          />
+          {past.length > 0 && (
+            <Section icon={CalendarDays} title="Passés" items={past} muted />
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const styles = {
-    pending: "bg-yellow-100 text-yellow-800",
-    confirmed: "bg-green-100 text-green-800",
-    cancelled: "bg-red-100 text-red-800",
-    completed: "bg-gray-100 text-gray-800",
-  };
-
-  const labels = {
-    pending: "En attente",
-    confirmed: "Confirmé",
-    cancelled: "Annulé",
-    completed: "Terminé",
-  };
-
+function Section({
+  icon: Icon,
+  title,
+  items,
+  emptyLabel,
+  muted,
+}: {
+  icon: typeof CalendarDays;
+  title: string;
+  items: Array<{
+    id: string;
+    title: string;
+    startTime: Date;
+    endTime: Date;
+    status: string;
+    client: { name: string } | null;
+  }>;
+  emptyLabel?: string;
+  muted?: boolean;
+}) {
   return (
-    <span
-      className={`rounded-full px-2 py-1 text-xs font-medium ${
-        styles[status as keyof typeof styles] || styles.pending
-      }`}
-    >
-      {labels[status as keyof typeof labels] || status}
-    </span>
+    <div>
+      <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+        <Icon className="size-4 text-muted-foreground" />
+        {title}
+      </h3>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{emptyLabel}</p>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <ul className="divide-y divide-border">
+              {items.map((a) => (
+                <li key={a.id}>
+                  <Link
+                    href={`/dashboard/appointments/${a.id}`}
+                    className={`flex items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-muted ${
+                      muted ? "opacity-70" : ""
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="font-medium text-foreground">{a.title}</div>
+                      <div className="truncate text-sm text-muted-foreground">
+                        {a.client?.name ? `${a.client.name} · ` : ""}
+                        {formatDate(a.startTime, {
+                          weekday: "long",
+                          day: "numeric",
+                          month: "long",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
+                    </div>
+                    <AppointmentStatusBadge status={a.status} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }

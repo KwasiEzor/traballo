@@ -14,7 +14,7 @@ export interface AuthContext {
   userId: string;
   tenantId: string;
   email: string;
-  plan: "free" | "starter" | "pro" | "enterprise";
+  plan: "free" | "pro" | "business";
   role: "owner" | "employee";
 }
 

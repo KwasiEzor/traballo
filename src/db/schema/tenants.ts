@@ -5,7 +5,7 @@ import { users } from "./users";
 export const tenants = pgTable("tenants", {
   id: uuid("id").defaultRandom().primaryKey(),
   slug: text("slug").notNull().unique(),
-  plan: text("plan", { enum: ["free", "starter", "pro", "enterprise"] })
+  plan: text("plan", { enum: ["free", "pro", "business"] })
     .notNull()
     .default("free"),
   stripeCustomerId: text("stripe_customer_id"),

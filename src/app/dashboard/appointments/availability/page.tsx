@@ -1,39 +1,39 @@
-/**
- * Availability configuration page
- */
-
+import type { Metadata } from "next";
+import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
-import { createTenantClient } from "@/lib/db/tenant";
-import { AvailabilityForm } from "./components/availability-form";
-import Link from "next/link";
+import { withTenant } from "@/lib/db/tenant";
+import { availability as availabilityTable } from "@/db/schema";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { Card, CardContent } from "@/components/ui/card";
+import { AvailabilityForm } from "./availability-form";
+
+export const metadata: Metadata = { title: "Disponibilités" };
+export const dynamic = "force-dynamic";
 
 export default async function AvailabilityPage() {
   const { tenantId } = await requireAuth();
-
-  const tenantDb = createTenantClient(tenantId);
-  const slots = await tenantDb.query.availability.findMany({
-    where: (availability, { eq }) => eq(availability.tenantId, tenantId),
-    orderBy: (availability, { asc }) => [asc(availability.dayOfWeek)],
-  });
+  const slots = await withTenant(tenantId, (tx) =>
+    tx.query.availability.findMany({
+      where: eq(availabilityTable.tenantId, tenantId),
+      orderBy: (a, { asc }) => [asc(a.dayOfWeek)],
+    })
+  );
 
   return (
-    <div>
-      <div className="mb-6">
-        <Link
-          href="/dashboard/appointments"
-          className="mb-2 text-sm text-blue-600 hover:underline"
-        >
-          ← Retour aux rendez-vous
-        </Link>
-        <h1 className="text-3xl font-bold">Disponibilités</h1>
-        <p className="mt-2 text-gray-600">
-          Configurez vos horaires de travail hebdomadaires.
-        </p>
-      </div>
-
-      <div className="max-w-2xl rounded-lg border bg-white p-6">
-        <AvailabilityForm existingSlots={slots} />
-      </div>
-    </div>
+    <>
+      <PageHeader
+        title="Disponibilités"
+        description="Vos créneaux hebdomadaires. Vos clients ne peuvent réserver que dans ces plages."
+        breadcrumb={[
+          { label: "Rendez-vous", href: "/dashboard/appointments" },
+          { label: "Disponibilités" },
+        ]}
+      />
+      <Card className="max-w-2xl">
+        <CardContent className="pt-6">
+          <AvailabilityForm existingSlots={slots} />
+        </CardContent>
+      </Card>
+    </>
   );
 }

@@ -1,16 +1,25 @@
-/**
- * New client page
- */
+import type { Metadata } from "next";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { Card, CardContent } from "@/components/ui/card";
+import { ClientForm } from "../client-form";
 
-import { ClientForm } from "../components/client-form";
+export const metadata: Metadata = { title: "Nouveau client" };
 
 export default function NewClientPage() {
   return (
-    <div>
-      <h1 className="mb-6 text-3xl font-bold">Nouveau client</h1>
-      <div className="max-w-2xl rounded-lg border bg-white p-6">
-        <ClientForm />
-      </div>
-    </div>
+    <>
+      <PageHeader
+        title="Nouveau client"
+        breadcrumb={[
+          { label: "Clients", href: "/dashboard/clients" },
+          { label: "Nouveau" },
+        ]}
+      />
+      <Card className="max-w-2xl">
+        <CardContent className="pt-6">
+          <ClientForm />
+        </CardContent>
+      </Card>
+    </>
   );
 }

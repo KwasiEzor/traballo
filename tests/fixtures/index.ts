@@ -165,5 +165,5 @@ export const mockFreemiumAuthContext = {
 
 export const mockBusinessAuthContext = {
   ...mockAuthContext,
-  plan: "enterprise" as const,
+  plan: "business" as const,
 };

@@ -1,106 +1,121 @@
-/**
- * Invoices page
- */
-
-import { requireAuth } from "@/lib/auth";
-import { createTenantClient } from "@/lib/db/tenant";
 import Link from "next/link";
+import { Plus, ReceiptText } from "lucide-react";
+import { eq } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth";
+import { withTenant } from "@/lib/db/tenant";
+import { invoices as invoicesTable } from "@/db/schema";
+import { formatEUR, formatDate } from "@/lib/utils";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { EmptyState } from "@/components/dashboard/empty-state";
+import { InvoiceStatusBadge } from "@/components/dashboard/status-badge";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
+
+export const dynamic = "force-dynamic";
 
 export default async function InvoicesPage() {
   const { tenantId } = await requireAuth();
-
-  const tenantDb = createTenantClient(tenantId);
-  const invoices = await tenantDb.query.invoices.findMany({
-    with: {
-      client: true,
-    },
-    orderBy: (invoices, { desc }) => [desc(invoices.createdAt)],
-  });
-
-  return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Factures</h1>
-        <Link
-          href="/dashboard/invoices/new"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
-          + Nouvelle facture
-        </Link>
-      </div>
-
-      <div className="rounded-lg border bg-white">
-        {invoices.length === 0 ? (
-          <div className="p-6 text-center text-gray-600">
-            Aucune facture. Créez votre première facture.
-          </div>
-        ) : (
-          <table className="w-full">
-            <thead className="border-b bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
-                  N° Facture
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
-                  Client
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
-                  Montant
-                </th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-700">
-                  Statut
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {invoices.map((invoice) => (
-                <tr key={invoice.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/dashboard/invoices/${invoice.id}`}
-                      className="font-medium text-blue-600 hover:underline"
-                    >
-                      {invoice.invoiceNumber}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4">{invoice.client?.name}</td>
-                  <td className="px-6 py-4">
-                    {new Date(invoice.issueDate).toLocaleDateString("fr-FR")}
-                  </td>
-                  <td className="px-6 py-4">{invoice.total}€</td>
-                  <td className="px-6 py-4">
-                    <StatusBadge status={invoice.status} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
+  const invoices = await withTenant(tenantId, (tx) =>
+    tx.query.invoices.findMany({
+      where: eq(invoicesTable.tenantId, tenantId),
+      orderBy: (i, { desc }) => [desc(i.createdAt)],
+      with: { client: { columns: { name: true } } },
+    })
   );
-}
 
-function StatusBadge({ status }: { status: string }) {
-  const styles = {
-    draft: "bg-gray-100 text-gray-800",
-    sent: "bg-blue-100 text-blue-800",
-    viewed: "bg-purple-100 text-purple-800",
-    paid: "bg-green-100 text-green-800",
-    overdue: "bg-red-100 text-red-800",
-    cancelled: "bg-gray-100 text-gray-600",
-  };
+  const paid = invoices
+    .filter((i) => i.status === "paid")
+    .reduce((s, i) => s + Number(i.total), 0);
+  const outstanding = invoices
+    .filter((i) => ["sent", "viewed", "overdue"].includes(i.status))
+    .reduce((s, i) => s + Number(i.total), 0);
 
   return (
-    <span
-      className={`rounded-full px-2 py-1 text-xs font-medium ${
-        styles[status as keyof typeof styles] || styles.draft
-      }`}
-    >
-      {status}
-    </span>
+    <>
+      <PageHeader
+        title="Factures"
+        description={`${invoices.length} facture${invoices.length > 1 ? "s" : ""}`}
+        actions={
+          <Button asChild>
+            <Link href="/dashboard/invoices/new">
+              <Plus className="size-4" /> Nouvelle facture
+            </Link>
+          </Button>
+        }
+      />
+
+      {invoices.length === 0 ? (
+        <EmptyState
+          icon={ReceiptText}
+          title="Aucune facture"
+          description="Créez votre première facture. Elle sera générée au format conforme."
+          action={
+            <Button asChild>
+              <Link href="/dashboard/invoices/new">Nouvelle facture</Link>
+            </Button>
+          }
+        />
+      ) : (
+        <>
+          <div className="mb-6 grid gap-4 sm:grid-cols-2">
+            <StatCard label="Encaissé (total)" value={formatEUR(paid)} />
+            <StatCard label="En attente de paiement" value={formatEUR(outstanding)} />
+          </div>
+
+          <Card className="overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>N°</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead className="hidden sm:table-cell">Émise le</TableHead>
+                  <TableHead className="hidden md:table-cell">Échéance</TableHead>
+                  <TableHead className="text-right">Montant TTC</TableHead>
+                  <TableHead>Statut</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invoices.map((inv) => (
+                  <TableRow key={inv.id}>
+                    <TableCell>
+                      <Link
+                        href={`/dashboard/invoices/${inv.id}`}
+                        className="font-medium text-foreground hover:text-primary"
+                      >
+                        {inv.invoiceNumber}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {inv.client?.name ?? "—"}
+                    </TableCell>
+                    <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
+                      {formatDate(inv.issueDate, { day: "numeric", month: "short", year: "numeric" })}
+                    </TableCell>
+                    <TableCell className="hidden text-sm text-muted-foreground md:table-cell">
+                      {formatDate(inv.dueDate, { day: "numeric", month: "short" })}
+                    </TableCell>
+                    <TableCell className="text-right text-sm font-medium tabular-nums text-foreground">
+                      {formatEUR(inv.total)}
+                    </TableCell>
+                    <TableCell>
+                      <InvoiceStatusBadge status={inv.status} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </>
+      )}
+    </>
   );
 }

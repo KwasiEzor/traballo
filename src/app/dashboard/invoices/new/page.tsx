@@ -1,26 +1,39 @@
-/**
- * New invoice page
- */
-
+import type { Metadata } from "next";
+import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
-import { createTenantClient } from "@/lib/db/tenant";
-import { InvoiceForm } from "../components/invoice-form";
+import { withTenant } from "@/lib/db/tenant";
+import { clients as clientsTable } from "@/db/schema";
+import { PageHeader } from "@/components/dashboard/page-header";
+import { InvoiceForm } from "../invoice-form";
 
-export default async function NewInvoicePage() {
+export const metadata: Metadata = { title: "Nouvelle facture" };
+export const dynamic = "force-dynamic";
+
+export default async function NewInvoicePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ client?: string }>;
+}) {
+  const { client } = await searchParams;
   const { tenantId } = await requireAuth();
-
-  // Fetch clients for dropdown
-  const tenantDb = createTenantClient(tenantId);
-  const clients = await tenantDb.query.clients.findMany({
-    orderBy: (clients, { asc }) => [asc(clients.name)],
-  });
+  const clients = await withTenant(tenantId, (tx) =>
+    tx.query.clients.findMany({
+      where: eq(clientsTable.tenantId, tenantId),
+      orderBy: (c, { asc }) => [asc(c.name)],
+      columns: { id: true, name: true },
+    })
+  );
 
   return (
-    <div>
-      <h1 className="mb-6 text-3xl font-bold">Nouvelle facture</h1>
-      <div className="rounded-lg border bg-white p-6">
-        <InvoiceForm clients={clients} />
-      </div>
-    </div>
+    <>
+      <PageHeader
+        title="Nouvelle facture"
+        breadcrumb={[
+          { label: "Factures", href: "/dashboard/invoices" },
+          { label: "Nouvelle" },
+        ]}
+      />
+      <InvoiceForm clients={clients} defaultClientId={client} />
+    </>
   );
 }
