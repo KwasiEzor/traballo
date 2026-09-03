@@ -1,12 +1,15 @@
-/**
- * Set a new password from a reset link (?token=...).
- */
-
+import type { Metadata } from "next";
+import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth/better-auth";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { PasswordInput } from "@/components/auth/password-input";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertContent, AlertDescription } from "@/components/ui/alert";
+
+export const metadata: Metadata = { title: "Nouveau mot de passe" };
 
 export default async function ResetPasswordPage({
   searchParams,
@@ -15,15 +18,6 @@ export default async function ResetPasswordPage({
 }) {
   const params = await searchParams;
   const token = params.token;
-
-  if (!token) {
-    return (
-      <Shell>
-        <p className="text-sm text-red-800">Lien invalide ou expiré.</p>
-        <BackLink />
-      </Shell>
-    );
-  }
 
   async function resetPassword(formData: FormData) {
     "use server";
@@ -36,7 +30,9 @@ export default async function ResetPasswordPage({
       });
     } catch (error) {
       const message =
-        error instanceof APIError ? error.message : "Réinitialisation impossible";
+        error instanceof APIError
+          ? error.message
+          : "Réinitialisation impossible";
       redirect(
         `/auth/reset-password?token=${encodeURIComponent(t)}&error=` +
           encodeURIComponent(message)
@@ -46,48 +42,57 @@ export default async function ResetPasswordPage({
   }
 
   return (
-    <Shell>
-      <h1 className="text-2xl font-bold text-gray-900">Nouveau mot de passe</h1>
-      {params.error && (
-        <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-800">
-          {decodeURIComponent(params.error)}
-        </p>
+    <AuthShell title="Choisissez un nouveau mot de passe">
+      {!token ? (
+        <Alert variant="destructive">
+          <AlertContent>
+            <AlertDescription>
+              Ce lien est invalide ou a expiré. Demandez-en un nouveau depuis la
+              page « mot de passe oublié ».
+            </AlertDescription>
+          </AlertContent>
+        </Alert>
+      ) : (
+        <form action={resetPassword} className="space-y-4">
+          {params.error && (
+            <Alert variant="destructive">
+              <AlertContent>
+                <AlertDescription>
+                  {decodeURIComponent(params.error)}
+                </AlertDescription>
+              </AlertContent>
+            </Alert>
+          )}
+          <input type="hidden" name="token" value={token} />
+          <div className="space-y-1.5">
+            <label
+              htmlFor="password"
+              className="text-sm font-medium leading-none"
+            >
+              Nouveau mot de passe
+            </label>
+            <PasswordInput
+              id="password"
+              name="password"
+              minLength={10}
+              autoComplete="new-password"
+            />
+            <p className="text-xs text-muted-foreground">Minimum 10 caractères.</p>
+          </div>
+          <Button type="submit" size="lg" className="w-full">
+            Enregistrer
+          </Button>
+        </form>
       )}
-      <form action={resetPassword} className="mt-6 space-y-4">
-        <input type="hidden" name="token" value={token} />
-        <PasswordInput
-          id="password"
-          name="password"
-          minLength={10}
-          autoComplete="new-password"
-        />
-        <p className="text-xs text-gray-500">Minimum 10 caractères</p>
-        <button
-          type="submit"
-          className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-700"
+
+      <p className="mt-8 text-center text-sm text-muted-foreground">
+        <Link
+          href="/auth/signin"
+          className="font-medium text-primary hover:underline"
         >
-          Enregistrer
-        </button>
-      </form>
-      <BackLink />
-    </Shell>
-  );
-}
-
-function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">{children}</div>
-    </div>
-  );
-}
-
-function BackLink() {
-  return (
-    <p className="mt-6 text-center text-sm text-gray-600">
-      <a href="/auth/signin" className="font-medium text-blue-600 hover:underline">
-        Retour à la connexion
-      </a>
-    </p>
+          Retour à la connexion
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

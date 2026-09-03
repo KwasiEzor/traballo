@@ -1,28 +1,38 @@
-/**
- * Post-signup / unverified sign-in landing page.
- */
+import type { Metadata } from "next";
+import Link from "next/link";
+import { MailCheck } from "lucide-react";
+import { AuthShell } from "@/components/auth/auth-shell";
+import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = { title: "Vérifiez votre email" };
 
 export default function VerifyEmailPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-xl">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-600">
-          <svg className="h-9 w-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
+    <AuthShell title="Vérifiez votre email">
+      <div className="rounded-xl border border-border bg-muted/40 p-6 text-center">
+        <div className="mx-auto grid size-12 place-items-center rounded-full bg-primary-subtle text-primary">
+          <MailCheck className="size-6" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Vérifiez votre email</h1>
-        <p className="mt-3 text-sm text-gray-600">
-          Nous vous avons envoyé un lien de confirmation. Cliquez dessus pour
+        <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+          Nous venons de vous envoyer un lien de confirmation. Cliquez dessus pour
           activer votre compte, puis connectez-vous.
         </p>
-        <a
-          href="/auth/signin"
-          className="mt-6 inline-block rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700"
-        >
-          Aller à la connexion
-        </a>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Pensez à vérifier vos courriers indésirables si vous ne le voyez pas
+          dans quelques minutes.
+        </p>
       </div>
-    </div>
+
+      <Button asChild size="lg" className="mt-6 w-full">
+        <Link href="/auth/signin">Aller à la connexion</Link>
+      </Button>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        Besoin d&apos;aide ?{" "}
+        <Link href="/contact" className="font-medium text-primary hover:underline">
+          Contactez-nous
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

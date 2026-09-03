@@ -1,27 +1,38 @@
 /**
- * Sign up page
- * Create a new artisan account (Better Auth email/password).
+ * Sign up page — Better Auth email/password.
  * Tenant + membership provisioning happens in a Better Auth create-user hook
- * (see src/lib/tenant/provision.ts), so it also covers Google sign-in.
+ * (src/lib/tenant/provision.ts), so it also covers Google sign-in.
  */
 
+import type { Metadata } from "next";
+import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth/better-auth";
+import { AuthShell } from "@/components/auth/auth-shell";
 import { PasswordInput } from "@/components/auth/password-input";
 import { GoogleButton } from "@/components/auth/google-button";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertContent, AlertDescription } from "@/components/ui/alert";
+
+export const metadata: Metadata = {
+  title: "Créer un compte",
+  description:
+    "Créez votre compte Traballo gratuitement. Site web, factures conformes et agent IA, prêts en 30 minutes.",
+};
 
 export default async function SignUpPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; plan?: string }>;
 }) {
   const params = await searchParams;
 
   async function signUp(formData: FormData) {
     "use server";
-
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
     const businessName = String(formData.get("businessName") ?? "");
@@ -33,155 +44,103 @@ export default async function SignUpPage({
       });
     } catch (error) {
       const message =
-        error instanceof APIError
-          ? error.message
-          : "Impossible de créer le compte";
+        error instanceof APIError ? error.message : "Impossible de créer le compte";
       redirect("/auth/signup?error=" + encodeURIComponent(message));
     }
-
     redirect("/auth/verify-email");
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <div className="w-full max-w-md">
-        <div className="rounded-2xl bg-white p-8 shadow-xl">
-          {/* Header */}
-          <div className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-600">
-              <svg
-                className="h-10 w-10 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900">Traballo</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Créez votre compte artisan en quelques secondes
-            </p>
-          </div>
+    <AuthShell
+      title="Créez votre compte"
+      subtitle="Gratuit, sans carte bancaire. Prêt en quelques minutes."
+    >
+      {params.error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertContent>
+            <AlertDescription>
+              {decodeURIComponent(params.error)}
+            </AlertDescription>
+          </AlertContent>
+        </Alert>
+      )}
 
-          {/* Error Message */}
-          {params.error && (
-            <div className="mt-6 rounded-lg bg-red-50 border border-red-200 p-4">
-              <div className="flex">
-                <svg
-                  className="h-5 w-5 text-red-400"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <p className="ml-3 text-sm text-red-800">
-                  {decodeURIComponent(params.error)}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Form */}
-          <form action={signUp} className="mt-8 space-y-5">
-            <div>
-              <label
-                htmlFor="businessName"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Nom de votre entreprise <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="businessName"
-                name="businessName"
-                type="text"
-                required
-                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                placeholder="Plomberie Dupont"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email professionnel <span className="text-red-500">*</span>
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 shadow-sm transition-colors focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                placeholder="vous@exemple.fr"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Mot de passe <span className="text-red-500">*</span>
-              </label>
-              <div className="mt-1">
-                <PasswordInput
-                  id="password"
-                  name="password"
-                  minLength={10}
-                  autoComplete="new-password"
-                />
-              </div>
-              <p className="mt-1.5 text-xs text-gray-500">
-                Minimum 10 caractères
-              </p>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-600/40 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-[0.98]"
-            >
-              Créer mon compte gratuitement
-            </button>
-          </form>
-
-          {/* Google */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-4 text-gray-500">ou</span>
-            </div>
-          </div>
-          <GoogleButton label="S'inscrire avec Google" />
-
-          {/* Footer */}
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Déjà un compte ?{" "}
-            <a
-              href="/auth/signin"
-              className="font-medium text-blue-600 hover:text-blue-500 hover:underline"
-            >
-              Se connecter
-            </a>
-          </p>
-
-          <p className="mt-4 text-center text-xs text-gray-500">
-            En créant un compte, vous acceptez nos conditions d&apos;utilisation
-          </p>
+      <form action={signUp} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="businessName">
+            Nom de votre entreprise <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="businessName"
+            name="businessName"
+            type="text"
+            required
+            autoComplete="organization"
+            placeholder="Plomberie Dupont"
+          />
         </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="email">
+            Email professionnel <span className="text-destructive">*</span>
+          </Label>
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="vous@exemple.fr"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="password">
+            Mot de passe <span className="text-destructive">*</span>
+          </Label>
+          <PasswordInput
+            id="password"
+            name="password"
+            minLength={10}
+            autoComplete="new-password"
+          />
+          <p className="text-xs text-muted-foreground">Minimum 10 caractères.</p>
+        </div>
+
+        <Button type="submit" size="lg" className="w-full">
+          Créer mon compte gratuitement
+        </Button>
+      </form>
+
+      <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
+        <span className="h-px flex-1 bg-border" />
+        ou
+        <span className="h-px flex-1 bg-border" />
       </div>
-    </div>
+
+      <GoogleButton label="S'inscrire avec Google" />
+
+      <p className="mt-6 text-xs text-muted-foreground">
+        En créant un compte, vous acceptez les{" "}
+        <Link href="/cgu" className="text-primary hover:underline">
+          conditions d&apos;utilisation
+        </Link>{" "}
+        et la{" "}
+        <Link href="/confidentialite" className="text-primary hover:underline">
+          politique de confidentialité
+        </Link>
+        .
+      </p>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        Déjà un compte ?{" "}
+        <Link
+          href="/auth/signin"
+          className="font-medium text-primary hover:underline"
+        >
+          Se connecter
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

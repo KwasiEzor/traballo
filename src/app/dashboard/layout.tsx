@@ -3,7 +3,9 @@
  * Shared layout for all dashboard pages
  */
 
+import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
+import { hasCompletedOnboarding } from "@/lib/artisan/profile";
 import Link from "next/link";
 
 export default async function DashboardLayout({
@@ -11,8 +13,11 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Require authentication
+  // Require authentication + completed onboarding
   await requireAuth();
+  if (!(await hasCompletedOnboarding())) {
+    redirect("/onboarding");
+  }
 
   return (
     <div className="flex min-h-screen">
