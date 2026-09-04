@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { Reveal } from "@/components/motion/reveal";
 
 export function Section({
   className,
@@ -41,7 +42,7 @@ export function SectionIntro({
   className?: string;
 }) {
   return (
-    <div
+    <Reveal
       className={cn(
         "flex flex-col gap-4",
         align === "center" ? "mx-auto max-w-2xl text-center items-center" : "max-w-2xl",
@@ -57,6 +58,6 @@ export function SectionIntro({
           {lede}
         </p>
       )}
-    </div>
+    </Reveal>
   );
 }

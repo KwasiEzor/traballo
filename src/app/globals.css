@@ -32,6 +32,12 @@
   --accent: oklch(0.955 0.021 253);
   --accent-foreground: oklch(0.4 0.14 253);
 
+  /* Copper — the one warm "material" accent (marketing only: marks, quotes,
+     the trades marquee). Never used for interactive/status colour. */
+  --copper: oklch(0.62 0.13 45);
+  --copper-foreground: oklch(0.99 0.01 60);
+  --copper-subtle: oklch(0.95 0.03 55);
+
   /* Status */
   --success: oklch(0.56 0.115 156);
   --success-foreground: oklch(0.99 0.01 156);
@@ -93,6 +99,10 @@
   --accent: oklch(0.3 0.045 255);
   --accent-foreground: oklch(0.9 0.03 253);
 
+  --copper: oklch(0.68 0.12 50);
+  --copper-foreground: oklch(0.16 0.03 258);
+  --copper-subtle: oklch(0.32 0.05 50);
+
   --success: oklch(0.66 0.12 157);
   --success-foreground: oklch(0.16 0.03 258);
   --success-subtle: oklch(0.29 0.05 157);
@@ -140,6 +150,9 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-copper: var(--copper);
+  --color-copper-foreground: var(--copper-foreground);
+  --color-copper-subtle: var(--copper-subtle);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-success-subtle: var(--success-subtle);
@@ -225,5 +238,68 @@
       transparent 1px
     );
     background-size: 28px 28px;
+  }
+
+  /* Technical-drawing grid — fine lines + a coarser 5x rule, like graph
+     paper on a drafting table. The signature "blueprint" backdrop. */
+  .bg-blueprint {
+    background-image:
+      linear-gradient(color-mix(in oklch, var(--foreground) 6%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklch, var(--foreground) 6%, transparent) 1px, transparent 1px),
+      linear-gradient(color-mix(in oklch, var(--foreground) 10%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklch, var(--foreground) 10%, transparent) 1px, transparent 1px);
+    background-size: 16px 16px, 16px 16px, 80px 80px, 80px 80px;
+    background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+  }
+
+  /* Film-grain overlay — apply on an absolutely-positioned sibling/pseudo,
+     control intensity with opacity on the element itself. */
+  .bg-grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 160px 160px;
+  }
+
+  /* Layered, brand-tinted glow — for hero cards and hovered surfaces. */
+  .shadow-glow {
+    box-shadow:
+      0 1px 2px color-mix(in oklch, var(--foreground) 6%, transparent),
+      0 12px 32px -8px color-mix(in oklch, var(--primary) 28%, transparent),
+      0 4px 12px -4px color-mix(in oklch, var(--foreground) 10%, transparent);
+  }
+
+  .animate-marquee {
+    animation: marquee 32s linear infinite;
+  }
+  .animate-marquee-slow {
+    animation: marquee 55s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-marquee,
+    .animate-marquee-slow {
+      animation: none;
+    }
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(3%, -4%) scale(1.06);
+  }
+  66% {
+    transform: translate(-3%, 3%) scale(0.98);
   }
 }

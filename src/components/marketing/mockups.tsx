@@ -227,7 +227,27 @@ export function SiteMock() {
   );
 }
 
-export function ChatMock() {
+export function ChatMock({ compact = false }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="space-y-2 p-3 text-[10px]">
+        <div className="flex items-center gap-1.5">
+          <div className="grid size-5 place-items-center rounded-full bg-primary text-primary-foreground">
+            <Sparkles className="size-3" />
+          </div>
+          <div className="font-medium text-foreground">Assistant IA</div>
+          <span className="ml-auto size-1.5 rounded-full bg-success" />
+        </div>
+        <div className="ml-auto max-w-[85%] rounded-lg rounded-br-sm bg-primary px-2.5 py-1.5 text-primary-foreground">
+          Vous intervenez à Villeurbanne ce soir ?
+        </div>
+        <div className="max-w-[85%] rounded-lg rounded-bl-sm bg-muted px-2.5 py-1.5 text-foreground">
+          Oui — un créneau à 18 h vous convient&nbsp;?
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2.5 p-4 text-[11px]">
       <div className="flex items-center gap-2 border-b border-border pb-2.5">

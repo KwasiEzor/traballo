@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Section, SectionIntro } from "@/components/marketing/section";
 import { Hero } from "@/components/marketing/hero";
+import { TradesMarquee } from "@/components/marketing/trades-marquee";
+import { DimensionMark } from "@/components/marketing/dimension-mark";
 import { FeatureShowcase } from "@/components/marketing/feature-showcase";
 import { Testimonials } from "@/components/marketing/testimonials";
 import { Faq } from "@/components/marketing/faq";
@@ -20,14 +22,17 @@ import { CtaBand } from "@/components/marketing/cta-band";
 import { InvoiceMock, SiteMock, ChatMock } from "@/components/marketing/mockups";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal";
+import { CountUp } from "@/components/motion/count-up";
+import { TiltCard } from "@/components/motion/tilt-card";
 import { PILLARS, FAQ_GENERAL } from "@/lib/marketing/content";
 
 const PILLAR_ICONS = { Globe, FileCheck2, Sparkles, CalendarDays } as const;
 
 const PROBLEMS = [
-  { icon: Clock, stat: "3 à 5 h", label: "perdues chaque semaine sur l'administratif" },
-  { icon: Search, stat: "89 %", label: "des artisans n'ont pas d'outils numériques adaptés" },
-  { icon: TrendingDown, stat: "20–30 %", label: "de rendez-vous manqués sans rappel automatique" },
+  { icon: Clock, value: 5, prefix: "3 à ", suffix: " h", label: "perdues chaque semaine sur l'administratif" },
+  { icon: Search, value: 89, suffix: " %", label: "des artisans n'ont pas d'outils numériques adaptés" },
+  { icon: TrendingDown, value: 30, prefix: "20–", suffix: " %", label: "de rendez-vous manqués sans rappel automatique" },
 ];
 
 const STEPS = [
@@ -100,6 +105,7 @@ export default function LandingPage() {
   return (
     <>
       <Hero />
+      <TradesMarquee />
 
       {/* Problème */}
       <Section className="border-b border-border bg-muted/40">
@@ -108,22 +114,24 @@ export default function LandingPage() {
           title="Vous êtes un excellent artisan. Le numérique vous fait perdre du temps et des clients."
           lede="Papier, Excel, WhatsApp personnel, un vieux site qui ne fonctionne plus. Pendant ce temps, un concurrent moins qualifié mais mieux présenté récupère le chantier."
         />
-        <div className="mt-14 grid gap-6 sm:grid-cols-3">
+        <RevealGroup className="mt-14 grid gap-6 sm:grid-cols-3">
           {PROBLEMS.map((p) => (
-            <div
+            <RevealItem
               key={p.label}
               className="rounded-xl border border-border bg-card p-6 text-center shadow-sm"
             >
               <p.icon className="mx-auto size-6 text-primary" />
               <div className="mt-3 font-display text-3xl font-semibold text-foreground">
-                {p.stat}
+                {p.prefix}
+                <CountUp value={p.value} />
+                {p.suffix}
               </div>
               <p className="mt-1.5 text-sm text-muted-foreground text-balance">
                 {p.label}
               </p>
-            </div>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
       </Section>
 
       {/* Piliers */}
@@ -133,37 +141,41 @@ export default function LandingPage() {
           title="Le business pack tout-en-un"
           lede="Quatre outils qui marchent ensemble, à la place de cinq abonnements qui ne se parlent pas."
         />
-        <div className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <RevealGroup className="mt-14 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {PILLARS.map((pillar) => {
             const Icon = PILLAR_ICONS[pillar.icon];
             return (
-              <Card key={pillar.id} className="p-6">
-                <div className="grid size-11 place-items-center rounded-lg bg-primary-subtle text-primary">
-                  <Icon className="size-5" />
-                </div>
-                <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
-                  {pillar.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                  {pillar.description}
-                </p>
-              </Card>
+              <RevealItem key={pillar.id}>
+                <TiltCard className="h-full">
+                  <Card className="h-full p-6 transition-shadow hover:shadow-md">
+                    <div className="grid size-11 place-items-center rounded-lg bg-primary-subtle text-primary">
+                      <Icon className="size-5" />
+                    </div>
+                    <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
+                      {pillar.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                      {pillar.description}
+                    </p>
+                  </Card>
+                </TiltCard>
+              </RevealItem>
             );
           })}
-        </div>
+        </RevealGroup>
       </Section>
 
       {/* Deep dives */}
       <Section className="border-y border-border bg-muted/40">
         <FeatureShowcase items={showcase} />
-        <div className="mt-16 text-center">
+        <Reveal className="mt-16 text-center" delay={0.1}>
           <Button asChild variant="outline" size="lg">
             <Link href="/fonctionnalites">
               Voir toutes les fonctionnalités
               <ArrowRight className="size-4" />
             </Link>
           </Button>
-        </div>
+        </Reveal>
       </Section>
 
       {/* Étapes */}
@@ -173,31 +185,37 @@ export default function LandingPage() {
           title="En ligne le jour même"
           lede="Pas de formation, pas de migration, pas de consultant."
         />
-        <ol className="mt-14 grid gap-8 md:grid-cols-3">
+        <RevealGroup as="ol" className="relative mt-16 grid gap-10 md:grid-cols-3 md:gap-8">
+          <div
+            aria-hidden="true"
+            className="absolute top-5 left-0 right-0 hidden h-px bg-gradient-to-r from-transparent via-border to-transparent md:block"
+          />
           {STEPS.map((s) => (
-            <li key={s.n} className="relative">
-              <div className="font-display text-4xl font-semibold text-primary/30">
+            <RevealItem key={s.n} as="li" className="relative">
+              <div className="relative z-10 grid size-10 place-items-center rounded-full border-2 border-primary bg-background font-display text-sm font-semibold text-primary">
                 {s.n}
               </div>
-              <h3 className="mt-2 font-display text-lg font-semibold text-foreground">
+              <h3 className="mt-4 font-display text-lg font-semibold text-foreground">
                 {s.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {s.text}
               </p>
-            </li>
+            </RevealItem>
           ))}
-        </ol>
+        </RevealGroup>
       </Section>
 
       {/* Conformité — ancre institutionnelle */}
-      <Section className="border-y border-border bg-primary-subtle">
-        <div className="grid items-center gap-10 lg:grid-cols-[1.2fr_1fr]">
-          <div>
+      <Section className="relative overflow-hidden border-y border-border bg-primary-subtle">
+        <div className="pointer-events-none absolute inset-0 bg-blueprint opacity-60 [mask-image:radial-gradient(ellipse_70%_60%_at_50%_40%,black,transparent)]" />
+        <div className="relative grid items-center gap-10 lg:grid-cols-[1.2fr_1fr]">
+          <Reveal>
+            <DimensionMark label="Conformité" className="mb-3" />
             <div className="flex items-center gap-2 text-primary">
               <ShieldCheck className="size-5" />
               <span className="text-xs font-semibold uppercase tracking-[0.14em]">
-                Conformité
+                2026 / 2027
               </span>
             </div>
             <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
@@ -208,8 +226,8 @@ export default function LandingPage() {
               suit : réception en 2026, émission en 2027 pour les TPE et PME.
               Traballo est conçu pour être conforme dès votre inscription.
             </p>
-          </div>
-          <ul className="space-y-3">
+          </Reveal>
+          <RevealGroup as="ul" className="space-y-3">
             {[
               "Format Factur-X (facture hybride PDF + données)",
               "Transmission via le réseau PEPPOL",
@@ -217,15 +235,16 @@ export default function LandingPage() {
               "Archivage et export à valeur probante",
               "Données hébergées exclusivement en Europe",
             ].map((item) => (
-              <li
+              <RevealItem
+                as="li"
                 key={item}
                 className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground shadow-xs"
               >
                 <FileCheck2 className="size-4 shrink-0 text-success" />
                 {item}
-              </li>
+              </RevealItem>
             ))}
-          </ul>
+          </RevealGroup>
         </div>
       </Section>
 
