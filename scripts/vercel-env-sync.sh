@@ -48,14 +48,21 @@ getv() {
 }
 
 set_var() {  # set_var NAME VALUE
-  local name="$1" value="$2" env
+  local name="$1" value="$2" env rc
   if [[ -z "$value" ]]; then
     echo "  skip  $name (no value)"
     return
   fi
   for env in "${ENVIRONMENTS[@]}"; do
     vercel env rm "$name" "$env" -y >/dev/null 2>&1 || true
-    printf '%s' "$value" | vercel env add "$name" "$env" >/dev/null 2>&1
+    # CLI >=52 non-interactive form: --value + --yes (preview => all branches)
+    if vercel env add "$name" "$env" --value "$value" --yes >/dev/null 2>&1; then
+      :
+    else
+      rc=$?
+      echo "  FAIL  $name ($env) — vercel env add exited $rc" >&2
+      return 1
+    fi
   done
   echo "  set   $name -> ${ENVIRONMENTS[*]}"
 }
