@@ -62,13 +62,13 @@ export function UserMenu({
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" asChild>
-          <form action={signOutAction}>
-            <button type="submit" className="flex w-full items-center gap-2">
+        <form action={signOutAction}>
+          <DropdownMenuItem variant="destructive" asChild>
+            <button type="submit" className="w-full">
               <LogOut /> Se déconnecter
             </button>
-          </form>
-        </DropdownMenuItem>
+          </DropdownMenuItem>
+        </form>
       </DropdownMenuContent>
     </DropdownMenu>
   );
