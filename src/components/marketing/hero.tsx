@@ -58,8 +58,8 @@ export function Hero() {
           </ul>
         </div>
 
-        <div className="relative mx-auto mt-16 max-w-5xl">
-          <ProductFrame>
+        <div className="relative mx-auto mt-12 max-w-5xl sm:mt-16">
+          <ProductFrame designWidth={680}>
             <DashboardMock />
           </ProductFrame>
           <div className="absolute -bottom-6 -left-4 hidden w-56 rounded-lg border border-border bg-card p-3 shadow-lg sm:block">

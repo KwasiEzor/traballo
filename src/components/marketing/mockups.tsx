@@ -17,7 +17,7 @@ import {
 export function DashboardMock() {
   return (
     <div className="grid grid-cols-[168px_1fr] text-[11px] leading-tight">
-      <aside className="hidden border-r border-border bg-sidebar p-3 sm:block">
+      <aside className="border-r border-border bg-sidebar p-3">
         <div className="flex items-center gap-2 px-1.5 py-1 font-display text-sm font-semibold">
           Traballo
         </div>
@@ -62,11 +62,11 @@ export function DashboardMock() {
             { k: "RDV cette semaine", v: "6", d: "2 à confirmer" },
           ].map((s) => (
             <div key={s.k} className="rounded-lg border border-border bg-card p-2.5">
-              <div className="text-[10px] text-muted-foreground">{s.k}</div>
-              <div className="mt-1 font-display text-sm font-semibold text-foreground">
+              <div className="truncate text-[10px] text-muted-foreground">{s.k}</div>
+              <div className="mt-1 whitespace-nowrap font-display text-sm font-semibold tabular-nums text-foreground">
                 {s.v}
               </div>
-              <div className="mt-0.5 text-[10px] text-success">{s.d}</div>
+              <div className="mt-0.5 truncate text-[10px] text-success">{s.d}</div>
             </div>
           ))}
         </div>
@@ -85,12 +85,12 @@ export function DashboardMock() {
               key={r.n}
               className="flex items-center justify-between border-t border-border/70 py-1.5 first:border-t-0"
             >
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-foreground">{r.n}</span>
-                <span className="text-muted-foreground">{r.c}</span>
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="shrink-0 font-medium text-foreground">{r.n}</span>
+                <span className="truncate text-muted-foreground">{r.c}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="tabular-nums text-foreground">{r.a}</span>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="whitespace-nowrap tabular-nums text-foreground">{r.a}</span>
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[9px] font-medium ${
                     r.ok
@@ -186,7 +186,7 @@ export function SiteMock() {
         <div className="font-display text-sm font-semibold text-foreground">
           Élec&nbsp;Martin
         </div>
-        <div className="hidden gap-3 text-muted-foreground sm:flex">
+        <div className="flex gap-3 text-muted-foreground">
           <span>Services</span>
           <span>Réalisations</span>
           <span>Contact</span>

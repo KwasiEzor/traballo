@@ -23,7 +23,7 @@ export function FeatureShowcase({ items }: { items: ShowcaseItem[] }) {
           id={item.id}
           className="grid scroll-mt-24 items-center gap-10 lg:grid-cols-2 lg:gap-16"
         >
-          <div className={cn(i % 2 === 1 && "lg:order-2")}>
+          <div className={cn("min-w-0", i % 2 === 1 && "lg:order-2")}>
             <Eyebrow>{item.eyebrow}</Eyebrow>
             <h3 className="mt-3 font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
               {item.title}
@@ -41,7 +41,7 @@ export function FeatureShowcase({ items }: { items: ShowcaseItem[] }) {
             </ul>
           </div>
 
-          <div className={cn(i % 2 === 1 && "lg:order-1")}>
+          <div className={cn("min-w-0", i % 2 === 1 && "lg:order-1")}>
             <ProductFrame url={item.frameUrl}>{item.visual}</ProductFrame>
           </div>
         </div>
