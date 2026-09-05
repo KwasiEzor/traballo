@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { upload } from "@vercel/blob/client";
 import { toast } from "sonner";
 import { Upload, X, Loader2, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -56,12 +55,13 @@ export function ImageUpload({
     setBusy(true);
     try {
       const webp = await toWebp(file, maxDim);
-      const blob = await upload(`sites/${kind}-${Date.now()}.webp`, webp, {
-        access: "public",
-        handleUploadUrl: "/api/blob-upload",
-        contentType: "image/webp",
-      });
-      onChange(blob.url);
+      const fd = new FormData();
+      fd.append("file", new File([webp], `${kind}.webp`, { type: "image/webp" }));
+      fd.append("kind", kind);
+      const res = await fetch("/api/blob-upload", { method: "POST", body: fd });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok || !data.url) throw new Error(data.error || "Échec de l'envoi.");
+      onChange(data.url);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Échec de l'envoi.");
     } finally {
