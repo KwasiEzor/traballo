@@ -13,13 +13,13 @@ describe("verifyTurnstile", () => {
   it("skips verification when no secret is configured", async () => {
     vi.stubEnv("TURNSTILE_SITE_SECRET", "");
     const res = await verifyTurnstile("any-token");
-    expect(res).toEqual({ success: true, skipped: true });
+    expect(res).toEqual({ success: true, reason: "disabled" });
   });
 
-  it("fails fast on an empty token when the secret is set", async () => {
+  it("reports a missing token without calling Cloudflare", async () => {
     vi.stubEnv("TURNSTILE_SITE_SECRET", "1x0000000000000000000000000000000AA");
     const res = await verifyTurnstile("");
-    expect(res.success).toBe(false);
+    expect(res).toEqual({ success: false, reason: "missing" });
   });
 
   it("returns success when Cloudflare validates the token", async () => {
@@ -33,10 +33,10 @@ describe("verifyTurnstile", () => {
       })
     );
     const res = await verifyTurnstile("good-token", "203.0.113.5");
-    expect(res.success).toBe(true);
+    expect(res).toEqual({ success: true, reason: "ok" });
   });
 
-  it("returns failure when Cloudflare rejects the token", async () => {
+  it("reports 'rejected' when Cloudflare rejects the token", async () => {
     vi.stubEnv("TURNSTILE_SITE_SECRET", "secret");
     server.use(
       http.post(SITEVERIFY, () =>
@@ -44,14 +44,14 @@ describe("verifyTurnstile", () => {
       )
     );
     const res = await verifyTurnstile("bad-token");
-    expect(res.success).toBe(false);
+    expect(res).toEqual({ success: false, reason: "rejected" });
   });
 
-  it("does not throw when the Cloudflare request errors — returns failure", async () => {
+  it("reports 'unreachable' (not 'rejected') when the Cloudflare request errors", async () => {
     vi.stubEnv("TURNSTILE_SITE_SECRET", "secret");
     server.use(http.post(SITEVERIFY, () => HttpResponse.error()));
     const res = await verifyTurnstile("token");
-    expect(res.success).toBe(false);
+    expect(res).toEqual({ success: false, reason: "unreachable" });
   });
 });
 
