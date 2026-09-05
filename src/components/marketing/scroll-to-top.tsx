@@ -36,7 +36,8 @@ export function ScrollToTop({ showAfter = 600 }: { showAfter?: number }) {
           exit={reduced ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.9 }}
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           className={cn(
-            "fixed bottom-5 right-5 z-40 grid size-11 place-items-center rounded-full",
+            // Sits above the chat launcher (bottom-right).
+            "fixed bottom-[4.75rem] right-5 z-40 grid size-9 place-items-center rounded-full",
             "border border-border bg-card/90 text-foreground shadow-lg backdrop-blur",
             "transition-colors hover:border-primary/40 hover:bg-card hover:text-primary",
             "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"

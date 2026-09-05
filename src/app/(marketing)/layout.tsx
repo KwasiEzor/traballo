@@ -1,6 +1,7 @@
 import { SiteHeader } from "@/components/marketing/site-header";
 import { SiteFooter } from "@/components/marketing/site-footer";
 import { ScrollToTop } from "@/components/marketing/scroll-to-top";
+import { MarketingChat } from "@/components/marketing/marketing-chat";
 
 export default function MarketingLayout({
   children,
@@ -13,6 +14,7 @@ export default function MarketingLayout({
       <main className="flex-1">{children}</main>
       <SiteFooter />
       <ScrollToTop />
+      <MarketingChat />
     </div>
   );
 }
