@@ -12,16 +12,16 @@ const DEVICES = {
 
 type Device = keyof typeof DEVICES;
 
+/** Fire this to make every mounted preview reload. */
+export const SITE_SAVED_EVENT = "traballo:site-saved";
+
 export function SitePreviewFrame({
   previewUrl,
-  refreshKey = 0,
 }: {
   previewUrl: string;
-  /** Bump to force the iframe to reload (e.g. after saving). */
-  refreshKey?: number;
 }) {
   const [device, setDevice] = React.useState<Device>("mobile");
-  const [reloadTick, setReloadTick] = React.useState(0);
+  const [tick, setTick] = React.useState(0);
   const [scale, setScale] = React.useState(1);
   const holderRef = React.useRef<HTMLDivElement>(null);
 
@@ -30,18 +30,18 @@ export function SitePreviewFrame({
   React.useEffect(() => {
     const el = holderRef.current;
     if (!el) return;
-    const update = () => {
-      const available = el.clientWidth;
-      setScale(Math.min(1, available / w));
-    };
+    const update = () => setScale(Math.min(1, el.clientWidth / w));
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
   }, [w]);
 
-  // Reload when the parent saves, or on manual refresh.
-  const iframeKey = `${refreshKey}-${reloadTick}`;
+  React.useEffect(() => {
+    const reload = () => setTick((t) => t + 1);
+    window.addEventListener(SITE_SAVED_EVENT, reload);
+    return () => window.removeEventListener(SITE_SAVED_EVENT, reload);
+  }, []);
 
   return (
     <div className="rounded-xl border border-border bg-card">
@@ -73,7 +73,7 @@ export function SitePreviewFrame({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={() => setReloadTick((t) => t + 1)}
+            onClick={() => setTick((t) => t + 1)}
           >
             <RotateCw className="size-4" />
             <span className="hidden sm:inline">Actualiser</span>
@@ -94,15 +94,11 @@ export function SitePreviewFrame({
             style={{ width: w * scale, height: h * scale }}
           >
             <iframe
-              key={iframeKey}
+              key={tick}
               src={previewUrl}
               title="Aperçu du site"
               className="origin-top-left border-0"
-              style={{
-                width: w,
-                height: h,
-                transform: `scale(${scale})`,
-              }}
+              style={{ width: w, height: h, transform: `scale(${scale})` }}
             />
           </div>
         </div>

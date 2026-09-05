@@ -12,16 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Alert, AlertContent, AlertDescription } from "@/components/ui/alert";
-import { SitePreviewFrame } from "@/components/dashboard/site-preview-frame";
+import { SITE_SAVED_EVENT } from "@/components/dashboard/site-preview-frame";
 import { BRAND_COLORS } from "@/lib/artisan/trades";
 import { saveSite, type SiteState } from "./actions";
 import type { Site } from "@/db/schema";
-
-const TEMPLATES = [
-  { id: "default", label: "Standard" },
-  { id: "bold", label: "Contrasté" },
-  { id: "minimal", label: "Épuré" },
-];
 
 const initial: SiteState = {};
 
@@ -38,14 +32,12 @@ export function SiteEditor({
 }) {
   const [state, action, pending] = useActionState(saveSite, initial);
   const [color, setColor] = React.useState(site?.primaryColor ?? BRAND_COLORS[0].value);
-  const [template, setTemplate] = React.useState(site?.templateId ?? "default");
   const [published, setPublished] = React.useState(site?.isPublished ?? false);
-  const [savedTick, setSavedTick] = React.useState(0);
 
   React.useEffect(() => {
     if (state.ok) {
       toast.success("Site enregistré.");
-      setSavedTick((t) => t + 1);
+      window.dispatchEvent(new Event(SITE_SAVED_EVENT));
     }
     if (state.error) toast.error(state.error);
   }, [state]);
@@ -53,179 +45,145 @@ export function SiteEditor({
   const publicUrl = `https://${slug}.${rootDomain}`;
 
   return (
-    <form action={action} className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-      <div className="space-y-6">
-        {state.error && (
-          <Alert variant="destructive">
-            <AlertContent>
-              <AlertDescription>{state.error}</AlertDescription>
-            </AlertContent>
-          </Alert>
-        )}
+    <form action={action} className="space-y-6">
+      {state.error && (
+        <Alert variant="destructive">
+          <AlertContent>
+            <AlertDescription>{state.error}</AlertDescription>
+          </AlertContent>
+        </Alert>
+      )}
 
-        <input type="hidden" name="primaryColor" value={color} />
-        <input type="hidden" name="templateId" value={template} />
-        <input type="hidden" name="isPublished" value={published ? "on" : "off"} />
+      <input type="hidden" name="primaryColor" value={color} />
+      <input type="hidden" name="isPublished" value={published ? "on" : "off"} />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Apparence</CardTitle>
-            <CardDescription>
-              Couleur et style appliqués à votre site, vos factures et vos e-mails.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <Label>Couleur principale</Label>
-              <div className="flex flex-wrap gap-2.5">
-                {BRAND_COLORS.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setColor(c.value)}
-                    className={cn(
-                      "grid size-9 place-items-center rounded-lg border-2 transition-transform hover:scale-105",
-                      color === c.value ? "border-foreground" : "border-transparent"
-                    )}
-                    style={{ backgroundColor: c.value }}
-                    aria-label={c.name}
-                  >
-                    {color === c.value && <Check className="size-4 text-white" />}
-                  </button>
-                ))}
-                <input
-                  type="color"
-                  value={color}
-                  onChange={(e) => setColor(e.target.value)}
-                  className="size-9 cursor-pointer rounded-lg border border-input bg-card"
-                  aria-label="Couleur personnalisée"
-                />
+      <Card>
+        <CardHeader>
+          <CardTitle>Publication</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-foreground">
+                {published ? "En ligne" : "Hors ligne"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {published
+                  ? "Votre site est visible publiquement."
+                  : "Seul vous pouvez voir votre site."}
               </div>
             </div>
+            <Switch checked={published} onCheckedChange={setPublished} />
+          </div>
+          {published && (
+            <Button asChild variant="outline" size="sm" className="w-full">
+              <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+                Voir le site en ligne <ExternalLink className="size-4" />
+              </a>
+            </Button>
+          )}
+        </CardContent>
+      </Card>
 
-            <div className="space-y-2">
-              <Label>Modèle</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {TEMPLATES.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setTemplate(t.id)}
-                    className={cn(
-                      "rounded-lg border-2 p-3 text-left text-sm transition-colors",
-                      template === t.id
-                        ? "border-primary bg-primary-subtle"
-                        : "border-border hover:bg-muted"
-                    )}
-                  >
-                    <span className="font-medium text-foreground">{t.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Couleur</CardTitle>
+          <CardDescription>
+            Appliquée à votre site, vos factures et vos e-mails.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2.5">
+            {BRAND_COLORS.map((c) => (
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => setColor(c.value)}
+                className={cn(
+                  "grid size-9 place-items-center rounded-lg border-2 transition-transform hover:scale-105",
+                  color === c.value ? "border-foreground" : "border-transparent"
+                )}
+                style={{ backgroundColor: c.value }}
+                aria-label={c.name}
+              >
+                {color === c.value && <Check className="size-4 text-white" />}
+              </button>
+            ))}
+            <input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="size-9 cursor-pointer rounded-lg border border-input bg-card"
+              aria-label="Couleur personnalisée"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Référencement</CardTitle>
-            <CardDescription>Ce qui apparaît dans Google et les partages.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="metaTitle">Titre de la page</Label>
-              <Input
-                id="metaTitle"
-                name="metaTitle"
-                defaultValue={site?.metaTitle ?? ""}
-                placeholder="Plomberie Dupont — dépannage 24/7 à Bruxelles"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="metaDescription">Description</Label>
-              <Textarea
-                id="metaDescription"
-                name="metaDescription"
-                rows={2}
-                defaultValue={site?.metaDescription ?? ""}
-                placeholder="Intervention rapide, devis gratuit…"
-              />
-            </div>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Référencement</CardTitle>
+          <CardDescription>Ce qui apparaît dans Google et les partages.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="metaTitle">Titre de la page</Label>
+            <Input
+              id="metaTitle"
+              name="metaTitle"
+              defaultValue={site?.metaTitle ?? ""}
+              placeholder="Plomberie Dupont — dépannage 24/7 à Bruxelles"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="metaDescription">Description</Label>
+            <Textarea
+              id="metaDescription"
+              name="metaDescription"
+              rows={2}
+              defaultValue={site?.metaDescription ?? ""}
+              placeholder="Intervention rapide, devis gratuit…"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Nom de domaine</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
-              <span className="text-muted-foreground">Adresse incluse : </span>
-              <span className="font-medium text-foreground">
-                {slug}.{rootDomain}
-              </span>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="customDomain" className="flex items-center gap-2">
-                Domaine personnalisé
-                {!canCustomDomain && <Lock className="size-3.5 text-muted-foreground" />}
-              </Label>
-              <Input
-                id="customDomain"
-                name="customDomain"
-                defaultValue={site?.customDomain ?? ""}
-                disabled={!canCustomDomain}
-                placeholder="plomberie-dupont.fr"
-              />
-              {!canCustomDomain && (
-                <p className="text-xs text-muted-foreground">
-                  Disponible à partir du plan Pro.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Button type="submit" disabled={pending}>
-          {pending && <Loader2 className="size-4 animate-spin" />}
-          Enregistrer les modifications
-        </Button>
-      </div>
-
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Publication</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium text-foreground">
-                  {published ? "En ligne" : "Hors ligne"}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {published
-                    ? "Votre site est visible publiquement."
-                    : "Seul vous pouvez voir votre site."}
-                </div>
-              </div>
-              <Switch checked={published} onCheckedChange={setPublished} />
-            </div>
-            {published && (
-              <Button asChild variant="outline" size="sm" className="w-full">
-                <a href={publicUrl} target="_blank" rel="noopener noreferrer">
-                  Voir le site en ligne <ExternalLink className="size-4" />
-                </a>
-              </Button>
+      <Card>
+        <CardHeader>
+          <CardTitle>Nom de domaine</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
+            <span className="text-muted-foreground">Adresse incluse : </span>
+            <span className="font-medium text-foreground">
+              {slug}.{rootDomain}
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="customDomain" className="flex items-center gap-2">
+              Domaine personnalisé
+              {!canCustomDomain && <Lock className="size-3.5 text-muted-foreground" />}
+            </Label>
+            <Input
+              id="customDomain"
+              name="customDomain"
+              defaultValue={site?.customDomain ?? ""}
+              disabled={!canCustomDomain}
+              placeholder="plomberie-dupont.fr"
+            />
+            {!canCustomDomain && (
+              <p className="text-xs text-muted-foreground">
+                Disponible à partir du plan Pro.
+              </p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div>
-          <div className="mb-2 text-sm font-medium text-foreground">Aperçu</div>
-          <SitePreviewFrame previewUrl="/site-preview" refreshKey={savedTick} />
-        </div>
-      </div>
+      <Button type="submit" disabled={pending}>
+        {pending && <Loader2 className="size-4 animate-spin" />}
+        Enregistrer les réglages
+      </Button>
     </form>
   );
 }

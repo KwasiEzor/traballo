@@ -20,6 +20,10 @@ export interface PublicSite {
   metaTitle: string | null;
   metaDescription: string | null;
   isPublished: boolean;
+  /** Owner's plan — gates premium templates / sections. */
+  plan: "free" | "pro" | "business";
+  /** Raw sites.sections jsonb (template + section overrides). */
+  config: unknown;
 }
 
 /** Default services shown per trade when the artisan hasn't customised them. */
@@ -83,7 +87,7 @@ export const resolvePublicSite = cache(async function resolvePublicSite(
 ): Promise<PublicSite | null> {
   const tenant = await db.query.tenants.findFirst({
     where: eq(tenants.slug, slug),
-    columns: { id: true, slug: true },
+    columns: { id: true, slug: true, plan: true },
   });
   if (!tenant) return null;
 
@@ -107,9 +111,11 @@ export const resolvePublicSite = cache(async function resolvePublicSite(
     address: profile.address,
     logoUrl: profile.logoUrl,
     primaryColor: site.primaryColor || "#1f5fc4",
-    templateId: site.templateId || "default",
+    templateId: site.templateId || "standard",
     metaTitle: site.metaTitle,
     metaDescription: site.metaDescription,
     isPublished: site.isPublished,
+    plan: tenant.plan,
+    config: site.sections ?? null,
   };
 });
