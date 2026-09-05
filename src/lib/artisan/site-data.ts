@@ -56,6 +56,28 @@ export function servicesFor(trade: string | null) {
   return (trade && TRADE_SERVICES[trade]) || DEFAULT_SERVICES;
 }
 
+/** Trades with a dedicated hero photo in /public/templates/trades. */
+const TRADES_WITH_PHOTO = new Set([
+  "plombier",
+  "electricien",
+  "menuisier",
+  "macon",
+  "peintre",
+  "carreleur",
+  "couvreur",
+  "serrurier",
+  "jardinier",
+  "nettoyage",
+  "demenagement",
+  "reparation",
+]);
+
+/** Default hero image for a trade — professional stock photo (Pexels). */
+export function heroImageFor(trade: string | null) {
+  const key = trade && TRADES_WITH_PHOTO.has(trade) ? trade : "autre";
+  return `/templates/trades/${key}.webp`;
+}
+
 export const resolvePublicSite = cache(async function resolvePublicSite(
   slug: string
 ): Promise<PublicSite | null> {
