@@ -24,8 +24,7 @@ export const PLANS: Plan[] = [
       "Sous-domaine votre-nom.traballo.pro",
       "10 factures / mois (PDF)",
       "Carnet de clients illimité",
-      "Bouton WhatsApp flottant",
-      "50 messages agent IA / mois",
+      "Boutons d'appel et WhatsApp flottants",
     ],
   },
   {
@@ -42,7 +41,6 @@ export const PLANS: Plan[] = [
       "Factures illimitées + Factur-X / PEPPOL",
       "Relances de paiement automatiques",
       "Rendez-vous en ligne + rappels e-mail",
-      "Agent IA configurable (500 messages / mois)",
       "Galerie photos, synchro Google Agenda",
       "Sans marque Traballo",
     ],
@@ -56,9 +54,9 @@ export const PLANS: Plan[] = [
     cta: "Passer à Business",
     highlights: [
       "Tout le plan Pro, plus :",
+      "Agent IA sur votre site (illimité)",
       "WhatsApp Business + IA sur WhatsApp",
       "Rappels de RDV par SMS (100 / mois)",
-      "Agent IA illimité",
       "Analytics des visiteurs du site",
       "2 domaines personnalisés",
       "Inbox unifiée site + WhatsApp",
@@ -111,8 +109,9 @@ export const FEATURE_MATRIX: FeatureGroup[] = [
   {
     title: "Agent IA & messagerie",
     rows: [
-      { label: "Messages agent IA", free: "50 / mois", pro: "500 / mois", business: "Illimité" },
-      { label: "Bouton WhatsApp", free: "Simple", pro: "Simple", business: "WhatsApp Business + IA" },
+      { label: "Agent IA sur le site (chatbot)", free: false, pro: false, business: "Illimité" },
+      { label: "Boutons d'appel / WhatsApp flottants", free: true, pro: true, business: true },
+      { label: "WhatsApp Business + IA", free: false, pro: false, business: true },
       { label: "Inbox unifiée", free: false, pro: false, business: true },
     ],
   },
