@@ -10,14 +10,25 @@ import { useInView, useReducedMotion, animate } from "motion/react";
 export function CountUp({
   value,
   duration = 1.4,
-  format = (n) => String(n),
+  format,
+  locale,
+  prefix = "",
+  suffix = "",
   className,
 }: {
   value: number;
   duration?: number;
   format?: (n: number) => string;
+  /** Serializable alternative to `format` — number formatted via toLocaleString. */
+  locale?: string;
+  prefix?: string;
+  suffix?: string;
   className?: string;
 }) {
+  const fmt =
+    format ??
+    ((n: number) =>
+      `${prefix}${locale ? n.toLocaleString(locale) : String(n)}${suffix}`);
   const ref = React.useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "-10% 0px -10% 0px" });
   const reduced = useReducedMotion();
@@ -35,7 +46,7 @@ export function CountUp({
 
   return (
     <span ref={ref} className={className}>
-      {format(display)}
+      {fmt(display)}
     </span>
   );
 }

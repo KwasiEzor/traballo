@@ -1,6 +1,18 @@
 import type { Metadata } from "next";
-import { Mail, MessageSquare, Clock, LifeBuoy } from "lucide-react";
+import Link from "next/link";
+import {
+  Mail,
+  MessageSquare,
+  Clock,
+  LifeBuoy,
+  MapPin,
+  ArrowUpRight,
+} from "lucide-react";
 import { Section } from "@/components/marketing/section";
+import { GrainGradient } from "@/components/marketing/grain-gradient";
+import { DimensionMark } from "@/components/marketing/dimension-mark";
+import { Reveal } from "@/components/motion/reveal";
+import { turnstileSiteKey } from "@/lib/security/turnstile";
 import { ContactForm } from "./contact-form";
 
 export const metadata: Metadata = {
@@ -14,7 +26,7 @@ const CHANNELS = [
     icon: Mail,
     title: "E-mail",
     value: "contact@traballo.pro",
-    text: "Pour toute question commerciale ou générale.",
+    text: "Questions commerciales ou générales.",
   },
   {
     icon: LifeBuoy,
@@ -31,54 +43,92 @@ const CHANNELS = [
 ];
 
 export default function ContactPage() {
-  return (
-    <Section className="pt-12">
-      <div className="grid gap-14 lg:grid-cols-[1fr_1.2fr] lg:gap-20">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-            Contact
-          </p>
-          <h1 className="mt-3 font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Parlons de votre activité
-          </h1>
-          <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
-            Que vous hésitiez encore, que vous migriez depuis un autre outil ou
-            que vous ayez une question précise sur la conformité, on vous répond
-            en français, sans script commercial.
-          </p>
+  const siteKey = turnstileSiteKey();
 
-          <div className="mt-10 space-y-5">
+  return (
+    <>
+      <section className="relative overflow-hidden border-b border-border">
+        <GrainGradient className="opacity-70" />
+        <div className="container-page relative pt-16 pb-12 sm:pt-20 sm:pb-16">
+          <Reveal className="max-w-2xl">
+            <DimensionMark label="Contact" />
+            <h1 className="mt-5 font-display text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl">
+              Parlons de votre activité
+            </h1>
+            <p className="mt-5 text-lg leading-relaxed text-pretty text-muted-foreground">
+              Que vous hésitiez encore, que vous migriez depuis un autre outil ou
+              que vous ayez une question précise sur la conformité, on vous répond
+              en français — sans script commercial.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      <Section className="pt-12 sm:pt-16">
+        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+          {/* Left rail */}
+          <Reveal className="space-y-4">
             {CHANNELS.map((c) => (
-              <div key={c.title} className="flex gap-4">
+              <a
+                key={c.title}
+                href={`mailto:${c.value}`}
+                className="group flex gap-4 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+              >
                 <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-primary-subtle text-primary">
                   <c.icon className="size-5" />
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-foreground">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1 text-sm font-medium text-foreground">
                     {c.title}
+                    <ArrowUpRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   </div>
-                  <a
-                    href={`mailto:${c.value}`}
-                    className="text-sm text-primary hover:underline"
-                  >
+                  <div className="mt-0.5 truncate font-mono text-[13px] text-primary">
                     {c.value}
-                  </a>
-                  <p className="mt-0.5 text-sm text-muted-foreground">{c.text}</p>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground text-pretty">
+                    {c.text}
+                  </p>
                 </div>
-              </div>
+              </a>
             ))}
-          </div>
 
-          <div className="mt-10 flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-            <Clock className="size-4 text-primary" />
-            Réponse sous un jour ouvré, du lundi au vendredi.
-          </div>
-        </div>
+            <div className="space-y-2 rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Clock className="size-4 text-primary" />
+                Réponse sous un jour ouvré, du lundi au vendredi.
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="size-4 text-primary" />
+                Données et support basés dans l&apos;Union européenne.
+              </div>
+            </div>
 
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
-          <ContactForm />
+            <p className="px-1 text-sm text-muted-foreground">
+              Vous cherchez une réponse rapide ? La{" "}
+              <Link
+                href="/fonctionnalites#faq"
+                className="font-medium text-primary hover:underline"
+              >
+                foire aux questions
+              </Link>{" "}
+              couvre la conformité, l&apos;hébergement et la migration.
+            </p>
+          </Reveal>
+
+          {/* Form */}
+          <Reveal delay={0.1}>
+            <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-blueprint opacity-[0.3] [mask-image:radial-gradient(ellipse_70%_50%_at_100%_0%,black,transparent)]"
+              />
+              <div className="relative">
+                <ContactForm turnstileSiteKey={siteKey} />
+              </div>
+            </div>
+          </Reveal>
         </div>
-      </div>
-    </Section>
+      </Section>
+    </>
   );
 }

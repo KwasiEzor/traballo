@@ -1,0 +1,81 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { http, HttpResponse } from "msw";
+import { server } from "@/tests/mocks/server";
+import { verifyTurnstile, turnstileSiteKey } from "@/lib/security/turnstile";
+
+const SITEVERIFY = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe("verifyTurnstile", () => {
+  it("skips verification when no secret is configured", async () => {
+    vi.stubEnv("TURNSTILE_SITE_SECRET", "");
+    const res = await verifyTurnstile("any-token");
+    expect(res).toEqual({ success: true, skipped: true });
+  });
+
+  it("fails fast on an empty token when the secret is set", async () => {
+    vi.stubEnv("TURNSTILE_SITE_SECRET", "1x0000000000000000000000000000000AA");
+    const res = await verifyTurnstile("");
+    expect(res.success).toBe(false);
+  });
+
+  it("returns success when Cloudflare validates the token", async () => {
+    vi.stubEnv("TURNSTILE_SITE_SECRET", "1x0000000000000000000000000000000AA");
+    server.use(
+      http.post(SITEVERIFY, async ({ request }) => {
+        const body = await request.formData();
+        expect(body.get("secret")).toBe("1x0000000000000000000000000000000AA");
+        expect(body.get("response")).toBe("good-token");
+        return HttpResponse.json({ success: true, "challenge_ts": "2026-01-01T00:00:00Z" });
+      })
+    );
+    const res = await verifyTurnstile("good-token", "203.0.113.5");
+    expect(res.success).toBe(true);
+  });
+
+  it("returns failure when Cloudflare rejects the token", async () => {
+    vi.stubEnv("TURNSTILE_SITE_SECRET", "secret");
+    server.use(
+      http.post(SITEVERIFY, () =>
+        HttpResponse.json({ success: false, "error-codes": ["invalid-input-response"] })
+      )
+    );
+    const res = await verifyTurnstile("bad-token");
+    expect(res.success).toBe(false);
+  });
+
+  it("does not throw when the Cloudflare request errors — returns failure", async () => {
+    vi.stubEnv("TURNSTILE_SITE_SECRET", "secret");
+    server.use(http.post(SITEVERIFY, () => HttpResponse.error()));
+    const res = await verifyTurnstile("token");
+    expect(res.success).toBe(false);
+  });
+});
+
+describe("turnstileSiteKey", () => {
+  it("returns the configured public site key", () => {
+    vi.stubEnv("TURNSTILE_SITE_KEY", "0x4AAAAAAA_test");
+    expect(turnstileSiteKey()).toBe("0x4AAAAAAA_test");
+  });
+
+  it("returns an empty string when unset", () => {
+    vi.stubEnv("TURNSTILE_SITE_KEY", "");
+    expect(turnstileSiteKey()).toBe("");
+  });
+
+  it("falls back to Cloudflare's dummy key in development", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("TURNSTILE_SITE_KEY", "0xREALKEY");
+    expect(turnstileSiteKey()).toBe("1x00000000000000000000AA");
+  });
+
+  it("uses the real key in development when TURNSTILE_FORCE_REAL=1", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("TURNSTILE_FORCE_REAL", "1");
+    vi.stubEnv("TURNSTILE_SITE_KEY", "0xREALKEY");
+    expect(turnstileSiteKey()).toBe("0xREALKEY");
+  });
+});

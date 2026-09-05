@@ -1,8 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
 import { z } from "zod";
 import { sendEmail } from "@/lib/email/send";
 import { ContactEmail } from "@/lib/email/templates/contact-email";
+import { verifyTurnstile } from "@/lib/security/turnstile";
 
 const schema = z.object({
   name: z.string().trim().min(2, "Indiquez votre nom.").max(120),
@@ -12,6 +14,7 @@ const schema = z.object({
   message: z.string().trim().min(10, "Détaillez un peu votre demande.").max(4000),
   // Honeypot — must stay empty.
   website: z.string().max(0).optional().default(""),
+  "cf-turnstile-response": z.string().optional().default(""),
 });
 
 export type ContactState = {
@@ -45,6 +48,17 @@ export async function submitContact(
 
   const data = parsed.data;
   if (data.website) return { ok: true }; // silently drop bots
+
+  const ip =
+    (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
+  const captcha = await verifyTurnstile(data["cf-turnstile-response"], ip);
+  if (!captcha.success) {
+    return {
+      ok: false,
+      error:
+        "La vérification anti-spam a échoué. Rechargez la page et réessayez.",
+    };
+  }
 
   const to = process.env.CONTACT_INBOX || "contact@traballo.pro";
 

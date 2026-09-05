@@ -14,60 +14,73 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
   return (
     <div>
       {withToggle && (
-        <div className="mb-10 flex items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => setYearly(false)}
-            className={cn(
-              "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-              !yearly ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Mensuel
-          </button>
-          <button
-            type="button"
-            onClick={() => setYearly(true)}
-            className={cn(
-              "flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-              yearly ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            Annuel
-            <span
+        <div className="mb-10 flex justify-center">
+          <div className="inline-flex items-center rounded-full border border-border bg-muted/60 p-1">
+            <button
+              type="button"
+              onClick={() => setYearly(false)}
               className={cn(
-                "rounded-full px-1.5 py-0.5 text-[11px]",
-                yearly ? "bg-primary-foreground/15 text-primary-foreground" : "bg-success-subtle text-success"
+                "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                !yearly
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
-              −2 mois
-            </span>
-          </button>
+              Mensuel
+            </button>
+            <button
+              type="button"
+              onClick={() => setYearly(true)}
+              className={cn(
+                "flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                yearly
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Annuel
+              <span className="rounded-full bg-success-subtle px-1.5 py-0.5 text-[11px] font-semibold text-success">
+                −2 mois
+              </span>
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid items-start gap-6 lg:grid-cols-3">
         {PLANS.map((plan) => {
           const price = yearly ? plan.priceYearly : plan.priceMonthly;
+          const yearlySaving =
+            plan.priceMonthly > 0
+              ? plan.priceMonthly * 12 - plan.priceYearly * 12
+              : 0;
           return (
             <div
               key={plan.id}
               className={cn(
-                "flex flex-col rounded-2xl border bg-card p-6 shadow-sm",
+                "relative flex flex-col rounded-2xl border bg-card p-6 shadow-sm",
                 plan.featured
-                  ? "border-primary ring-1 ring-primary shadow-lg"
+                  ? "border-primary shadow-glow lg:-mt-3 lg:pt-8"
                   : "border-border"
               )}
             >
-              <div className="flex items-center justify-between">
+              {plan.featured && (
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-2xl bg-blueprint opacity-[0.35] [mask-image:radial-gradient(ellipse_70%_45%_at_50%_0%,black,transparent)]"
+                />
+              )}
+              <div className="relative flex items-center justify-between">
                 <h3 className="font-display text-lg font-semibold text-foreground">
                   {plan.name}
                 </h3>
                 {plan.featured && <Badge>Le plus choisi</Badge>}
               </div>
-              <p className="mt-1.5 text-sm text-muted-foreground">{plan.tagline}</p>
+              <p className="relative mt-1.5 text-sm text-muted-foreground">
+                {plan.tagline}
+              </p>
 
-              <div className="mt-5 flex items-baseline gap-1">
+              <div className="relative mt-5 flex items-baseline gap-1">
                 <span className="font-display text-4xl font-semibold tracking-tight text-foreground">
                   {price === 0 ? "0 €" : `${price} €`}
                 </span>
@@ -75,20 +88,24 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
                   <span className="text-sm text-muted-foreground">/ mois</span>
                 )}
               </div>
-              <p className="mt-1 h-4 text-xs text-muted-foreground">
-                {price !== 0 && yearly ? `soit ${price * 12} € / an, facturé annuellement` : price !== 0 ? "sans engagement" : "pour toujours"}
+              <p className="relative mt-1 h-4 text-xs text-muted-foreground">
+                {price === 0
+                  ? "gratuit pour toujours"
+                  : yearly
+                    ? `soit ${price * 12} € / an — vous économisez ${yearlySaving} €`
+                    : "sans engagement, résiliable à tout moment"}
               </p>
 
               <Button
                 asChild
-                className="mt-5"
+                className="relative mt-5"
                 variant={plan.featured ? "primary" : "outline"}
                 size="lg"
               >
                 <a href={`${APP_URL}/auth/signup?plan=${plan.id}`}>{plan.cta}</a>
               </Button>
 
-              <ul className="mt-6 space-y-3 text-sm">
+              <ul className="relative mt-6 space-y-3 text-sm">
                 {plan.highlights.map((h) => {
                   const isHeader = h.endsWith(":");
                   return (

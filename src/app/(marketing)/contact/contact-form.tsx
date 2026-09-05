@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useActionState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,30 +15,47 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Alert, AlertContent, AlertDescription } from "@/components/ui/alert";
+import { Turnstile } from "@/components/marketing/turnstile";
 import { submitContact, type ContactState } from "./actions";
 
 const initial: ContactState = { ok: false };
 
-export function ContactForm() {
+export function ContactForm({
+  turnstileSiteKey,
+}: {
+  turnstileSiteKey?: string;
+}) {
   const [state, action, pending] = useActionState(submitContact, initial);
   const [topic, setTopic] = React.useState("decouverte");
 
   if (state.ok) {
     return (
-      <Alert variant="success">
-        <CheckCircle2 />
-        <AlertContent>
-          <AlertDescription>
-            Message envoyé. Nous vous répondons sous un jour ouvré à
-            l&apos;adresse indiquée.
-          </AlertDescription>
-        </AlertContent>
-      </Alert>
+      <div className="flex flex-col items-center py-8 text-center">
+        <div className="grid size-14 place-items-center rounded-full bg-success-subtle text-success">
+          <CheckCircle2 className="size-7" />
+        </div>
+        <h3 className="mt-5 font-display text-xl font-semibold text-foreground">
+          Message envoyé
+        </h3>
+        <p className="mt-2 max-w-sm text-[15px] leading-relaxed text-muted-foreground text-pretty">
+          Merci. Nous vous répondons sous un jour ouvré à l&apos;adresse
+          indiquée.
+        </p>
+      </div>
     );
   }
 
   return (
     <form action={action} className="space-y-5">
+      <div>
+        <h2 className="font-display text-xl font-semibold text-foreground">
+          Écrivez-nous
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Les champs marqués d&apos;un astérisque sont obligatoires.
+        </p>
+      </div>
+
       {state.error && (
         <Alert variant="destructive">
           <AlertContent>
@@ -47,6 +64,7 @@ export function ContactForm() {
         </Alert>
       )}
 
+      {/* Honeypot */}
       <input
         type="text"
         name="website"
@@ -66,7 +84,13 @@ export function ContactForm() {
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="email">E-mail *</Label>
-          <Input id="email" name="email" type="email" required autoComplete="email" />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+          />
           {state.fieldErrors?.email && (
             <p className="text-xs text-destructive">{state.fieldErrors.email}</p>
           )}
@@ -87,8 +111,12 @@ export function ContactForm() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="decouverte">Découverte du produit</SelectItem>
-              <SelectItem value="migration">Migration depuis un autre outil</SelectItem>
-              <SelectItem value="facturation">Facturation électronique</SelectItem>
+              <SelectItem value="migration">
+                Migration depuis un autre outil
+              </SelectItem>
+              <SelectItem value="facturation">
+                Facturation électronique
+              </SelectItem>
               <SelectItem value="partenariat">Partenariat</SelectItem>
               <SelectItem value="autre">Autre</SelectItem>
             </SelectContent>
@@ -104,10 +132,27 @@ export function ContactForm() {
         )}
       </div>
 
-      <Button type="submit" size="lg" disabled={pending} className="w-full sm:w-auto">
-        {pending ? "Envoi…" : "Envoyer le message"}
+      {turnstileSiteKey && (
+        <Turnstile siteKey={turnstileSiteKey} />
+      )}
+
+      <Button
+        type="submit"
+        size="lg"
+        disabled={pending}
+        className="w-full sm:w-auto"
+      >
+        {pending ? (
+          "Envoi…"
+        ) : (
+          <>
+            <Send className="size-4" />
+            Envoyer le message
+          </>
+        )}
       </Button>
-      <p className="text-xs text-muted-foreground">
+
+      <p className="text-xs leading-relaxed text-muted-foreground">
         En envoyant ce formulaire, vous acceptez que vos coordonnées soient
         utilisées pour répondre à votre demande. Voir la{" "}
         <a href="/confidentialite" className="text-primary hover:underline">
