@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
+import { isAdminEmail } from "@/lib/auth/admin";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { hasCompletedOnboarding } from "@/lib/artisan/profile";
@@ -11,8 +12,11 @@ import { OnboardingWizard } from "./onboarding-wizard";
 export const metadata: Metadata = { title: "Bienvenue" };
 
 export default async function OnboardingPage() {
-  const { userId } = await requireAuth();
+  const { userId, email, impersonating } = await requireAuth();
 
+  if (isAdminEmail(email) && !impersonating) {
+    redirect("/admin");
+  }
   if (await hasCompletedOnboarding()) {
     redirect("/dashboard");
   }

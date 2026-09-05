@@ -8,6 +8,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { APIError } from "better-auth/api";
 import { auth } from "@/lib/auth/better-auth";
+import { isAdminEmail } from "@/lib/auth/admin";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { PasswordInput } from "@/components/auth/password-input";
 import { GoogleButton } from "@/components/auth/google-button";
@@ -44,7 +45,8 @@ export default async function SignInPage({
         "/auth/signin?error=" + encodeURIComponent("Connexion impossible")
       );
     }
-    redirect("/dashboard");
+    // Super-admins go straight to the console, not the artisan onboarding.
+    redirect(isAdminEmail(email) ? "/admin" : "/dashboard");
   }
 
   return (
