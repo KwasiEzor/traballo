@@ -9,8 +9,10 @@ import {
   ReceiptText,
   CalendarDays,
 } from "lucide-react";
+import { requireAuth } from "@/lib/auth";
 import { getArtisanProfile } from "@/lib/artisan/profile";
 import { getDashboardSummary } from "@/lib/dashboard/queries";
+import { UpgradeCard } from "@/components/dashboard/upgrade-cta";
 import { formatEUR, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -29,7 +31,8 @@ export default async function DashboardHome({
   searchParams: Promise<{ welcome?: string }>;
 }) {
   const { welcome } = await searchParams;
-  const [profile, summary] = await Promise.all([
+  const [{ plan }, profile, summary] = await Promise.all([
+    requireAuth(),
     getArtisanProfile(),
     getDashboardSummary(),
   ]);
@@ -63,6 +66,8 @@ export default async function DashboardHome({
           </AlertContent>
         </Alert>
       )}
+
+      <UpgradeCard plan={plan} className="mb-6" />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard

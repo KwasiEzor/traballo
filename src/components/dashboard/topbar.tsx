@@ -4,8 +4,8 @@ import * as React from "react";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { UpgradeButton } from "@/components/dashboard/upgrade-cta";
 import { Logo } from "@/components/brand/logo";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
@@ -38,10 +38,12 @@ export function Topbar({
       </h1>
 
       <div className="ml-auto flex items-center gap-1.5">
-        {user.plan === "free" && (
-          <Badge variant="neutral" className="hidden sm:inline-flex">
-            Plan Free
-          </Badge>
+        {user.plan !== "business" && (
+          <UpgradeButton
+            plan={user.plan}
+            variant="outline"
+            className="hidden sm:inline-flex"
+          />
         )}
         <ThemeToggle />
         <UserMenu name={user.name} email={user.email} plan={user.plan} />

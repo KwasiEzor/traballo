@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { eq } from "drizzle-orm";
-import { Check, ExternalLink } from "lucide-react";
+import { Check } from "lucide-react";
 import { requireAuth } from "@/lib/auth";
 import { getCurrentUser } from "@/lib/auth/session";
 import { withTenant } from "@/lib/db/tenant";
@@ -9,10 +8,10 @@ import { artisanProfiles } from "@/db/schema";
 import { PLANS } from "@/lib/marketing/plans";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProfileForm } from "./profile-form";
+import { PlanPicker } from "./plan-picker";
 
 export const metadata: Metadata = { title: "Paramètres" };
 export const dynamic = "force-dynamic";
@@ -34,6 +33,8 @@ export default async function SettingsPage({
   ]);
 
   const currentPlan = PLANS.find((p) => p.id === plan) ?? PLANS[0];
+  const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro";
+  const marketingUrl = `https://www.${rootDomain}`;
 
   return (
     <>
@@ -73,7 +74,7 @@ export default async function SettingsPage({
               </CardTitle>
               <CardDescription>{currentPlan.tagline}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-6">
               <ul className="grid gap-2 sm:grid-cols-2">
                 {currentPlan.highlights
                   .filter((h) => !h.endsWith(":"))
@@ -84,26 +85,18 @@ export default async function SettingsPage({
                     </li>
                   ))}
               </ul>
+
               {plan !== "business" && (
-                <div className="rounded-lg border border-primary/20 bg-primary-subtle p-4">
-                  <p className="text-sm font-medium text-foreground">
-                    Besoin de plus ?
+                <div className="border-t border-border pt-6">
+                  <p className="mb-4 text-sm font-medium text-foreground">
+                    Changer de plan
                   </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {plan === "free"
-                      ? "Passez à Pro pour la facturation conforme, les rendez-vous et l'agent IA configurable."
-                      : "Business ajoute WhatsApp Business, les SMS et l'agent IA illimité."}
-                  </p>
-                  <Button asChild className="mt-3" size="sm">
-                    <Link href="/tarifs">
-                      Voir les plans <ExternalLink className="size-4" />
-                    </Link>
-                  </Button>
+                  <PlanPicker currentPlan={plan} marketingUrl={marketingUrl} />
                 </div>
               )}
+
               <p className="text-xs text-muted-foreground">
-                La gestion du paiement (Stripe) sera disponible ici prochainement.
-                Pour toute question :{" "}
+                Une question sur votre abonnement ?{" "}
                 <a href="mailto:aide@traballo.pro" className="text-primary hover:underline">
                   aide@traballo.pro
                 </a>

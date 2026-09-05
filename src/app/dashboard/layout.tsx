@@ -6,6 +6,7 @@ import { getArtisanProfile, hasCompletedOnboarding } from "@/lib/artisan/profile
 import { Logo } from "@/components/brand/logo";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { Topbar } from "@/components/dashboard/topbar";
+import { UpgradeButton } from "@/components/dashboard/upgrade-cta";
 
 export default async function DashboardLayout({
   children,
@@ -34,8 +35,23 @@ export default async function DashboardLayout({
         <div className="flex-1 overflow-y-auto p-3">
           <SidebarNav />
         </div>
-        <div className="border-t border-sidebar-border p-4 text-xs text-sidebar-foreground/60">
-          {profile?.businessName ?? "Traballo"}
+        <div className="space-y-3 border-t border-sidebar-border p-4">
+          {plan !== "business" && (
+            <div className="rounded-lg bg-sidebar-accent/50 p-3">
+              <p className="text-xs font-medium text-sidebar-foreground">
+                Plan {plan === "free" ? "Free" : "Pro"}
+              </p>
+              <p className="mt-0.5 text-[11px] text-sidebar-foreground/60">
+                {plan === "free"
+                  ? "Débloquez factures illimitées et rendez-vous."
+                  : "Débloquez l'agent IA et WhatsApp Business."}
+              </p>
+              <UpgradeButton plan={plan} className="mt-2 w-full" />
+            </div>
+          )}
+          <p className="text-xs text-sidebar-foreground/60">
+            {profile?.businessName ?? "Traballo"}
+          </p>
         </div>
       </aside>
 

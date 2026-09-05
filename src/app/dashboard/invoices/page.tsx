@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/dashboard/page-header";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { InvoiceStatusBadge } from "@/components/dashboard/status-badge";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { UpgradeCard } from "@/components/dashboard/upgrade-cta";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -23,7 +24,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function InvoicesPage() {
-  const { tenantId } = await requireAuth();
+  const { tenantId, plan } = await requireAuth();
   const invoices = await withTenant(tenantId, (tx) =>
     tx.query.invoices.findMany({
       where: eq(invoicesTable.tenantId, tenantId),
@@ -39,6 +40,12 @@ export default async function InvoicesPage() {
     .filter((i) => ["sent", "viewed", "overdue"].includes(i.status))
     .reduce((s, i) => s + Number(i.total), 0);
 
+  const thisMonth = invoices.filter((i) => {
+    const d = new Date(i.createdAt);
+    const now = new Date();
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }).length;
+
   return (
     <>
       <PageHeader
@@ -52,6 +59,14 @@ export default async function InvoicesPage() {
           </Button>
         }
       />
+
+      {plan === "free" && thisMonth >= 7 && (
+        <UpgradeCard
+          plan={plan}
+          reason={`${thisMonth} factures créées ce mois-ci sur 10. Passez à Pro pour des factures illimitées et conformes Factur-X / PEPPOL.`}
+          className="mb-6"
+        />
+      )}
 
       {invoices.length === 0 ? (
         <EmptyState

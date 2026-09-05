@@ -51,7 +51,7 @@ export default async function AgentPage() {
             </div>
           </div>
           <Button asChild size="sm" className="shrink-0">
-            <Link href="/dashboard/settings#plan">Passer à Business</Link>
+            <Link href="/dashboard/settings?tab=abonnement">Passer à Business</Link>
           </Button>
         </div>
       )}
