@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  Globe,
-  FileCheck2,
-  Sparkles,
-  CalendarDays,
   Users,
   Bell,
   Palette,
@@ -17,12 +13,21 @@ import {
   Download,
   MapPin,
   Clock,
+  Globe,
+  FileCheck2,
+  Sparkles,
+  CalendarDays,
+  Check,
+  X,
+  ArrowRight,
 } from "lucide-react";
 import { Section, SectionIntro } from "@/components/marketing/section";
 import { FeatureShowcase } from "@/components/marketing/feature-showcase";
 import { CtaBand } from "@/components/marketing/cta-band";
+import { GrainGradient } from "@/components/marketing/grain-gradient";
+import { DimensionMark } from "@/components/marketing/dimension-mark";
+import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   InvoiceMock,
   SiteMock,
@@ -35,6 +40,13 @@ export const metadata: Metadata = {
   description:
     "Site web, facturation Factur-X / PEPPOL, agent IA, rendez-vous, carnet clients : le détail de tout ce que Traballo fait pour votre activité d'artisan.",
 };
+
+const PILLAR_LINKS = [
+  { id: "site", icon: Globe, label: "Site web" },
+  { id: "facturation", icon: FileCheck2, label: "Facturation" },
+  { id: "agent-ia", icon: Sparkles, label: "Agent IA" },
+  { id: "rendez-vous", icon: CalendarDays, label: "Rendez-vous" },
+];
 
 const showcase = [
   {
@@ -120,79 +132,150 @@ const GRID = [
   { icon: Clock, title: "Prêt en 30 minutes", text: "De l'inscription au site publié, sans formation." },
 ];
 
+const WITHOUT = [
+  "Un constructeur de site (16–45 €)",
+  "Un logiciel de facturation (15–80 €)",
+  "Un outil de prise de RDV (10–30 €)",
+  "Un chatbot ou un secrétariat externalisé",
+  "Des données éparpillées, ressaisies à la main",
+];
+
+const WITH = [
+  "0 à 49 € par mois, tout compris",
+  "Le client du site devient le contact du carnet",
+  "Le devis accepté devient la facture",
+  "Le lead de l'agent IA devient le rendez-vous",
+  "Une seule connexion, un seul interlocuteur",
+];
+
 export default function FonctionnalitesPage() {
   return (
     <>
-      <Section className="pb-0">
-        <SectionIntro
-          eyebrow="Fonctionnalités"
-          title="Tout ce qu'il faut pour gérer votre activité"
-          lede="Quatre outils principaux qui se parlent, et une multitude de détails pensés pour l'artisan indépendant."
-        />
-      </Section>
+      {/* Hero */}
+      <section className="relative overflow-hidden border-b border-border">
+        <GrainGradient />
+        <div className="container-page relative py-20 text-center sm:py-24">
+          <Reveal className="mx-auto flex max-w-2xl flex-col items-center">
+            <DimensionMark label="Fonctionnalités" />
+            <h1 className="mt-5 font-display text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl">
+              Tout ce qu&apos;il faut pour gérer votre activité
+            </h1>
+            <p className="mt-5 text-lg leading-relaxed text-pretty text-muted-foreground">
+              Quatre outils principaux qui se parlent, et une multitude de
+              détails pensés pour l&apos;artisan indépendant.
+            </p>
+          </Reveal>
 
-      <Section>
+          <RevealGroup className="mx-auto mt-8 flex max-w-xl flex-wrap items-center justify-center gap-2">
+            {PILLAR_LINKS.map((p) => (
+              <RevealItem key={p.id}>
+                <a
+                  href={`#${p.id}`}
+                  className="hover-lift inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-1.5 text-sm font-medium text-foreground shadow-sm"
+                >
+                  <p.icon className="size-4 text-primary" />
+                  {p.label}
+                </a>
+              </RevealItem>
+            ))}
+          </RevealGroup>
+        </div>
+      </section>
+
+      {/* Les 4 piliers */}
+      <Section className="pt-16 sm:pt-20">
         <FeatureShowcase items={showcase} />
       </Section>
 
+      {/* Et aussi */}
       <Section className="border-y border-border bg-muted/40">
         <SectionIntro eyebrow="Et aussi" title="Les détails qui comptent" />
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <RevealGroup className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {GRID.map((f) => (
-            <Card key={f.title} className="hover-lift p-5">
-              <f.icon className="size-5 text-primary" />
-              <h3 className="mt-3 font-display text-base font-semibold text-foreground">
-                {f.title}
-              </h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                {f.text}
-              </p>
-            </Card>
+            <RevealItem key={f.title}>
+              <Card className="hover-lift h-full rounded-2xl p-6">
+                <div className="grid size-11 place-items-center rounded-lg bg-primary-subtle text-primary">
+                  <f.icon className="size-5" />
+                </div>
+                <h3 className="mt-4 font-display text-base font-semibold text-foreground">
+                  {f.title}
+                </h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground text-pretty">
+                  {f.text}
+                </p>
+              </Card>
+            </RevealItem>
           ))}
-        </div>
+        </RevealGroup>
       </Section>
 
+      {/* La différence */}
       <Section>
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm sm:p-10">
-          <Badge variant="success">
-            <ShieldCheck className="size-3" /> Différence
-          </Badge>
-          <h2 className="mt-4 max-w-2xl font-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Cinq abonnements qui s&apos;ignorent, ou un seul outil cohérent
-          </h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            <div className="rounded-xl border border-border bg-muted/40 p-5">
+        <SectionIntro
+          eyebrow="La différence"
+          title="Cinq abonnements qui s'ignorent, ou un seul outil cohérent"
+        />
+        <div className="mt-14 grid gap-6 md:grid-cols-2">
+          <Reveal>
+            <div className="h-full rounded-2xl border border-border bg-muted/40 p-6 sm:p-7">
               <p className="text-sm font-semibold text-muted-foreground">
                 Sans Traballo
               </p>
-              <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-                <li>Un constructeur de site (16–45 €)</li>
-                <li>Un logiciel de facturation (15–80 €)</li>
-                <li>Un outil de prise de RDV (10–30 €)</li>
-                <li>Un chatbot ou un secrétariat externalisé</li>
-                <li>Des données éparpillées, ressaisies à la main</li>
+              <ul className="mt-4 space-y-3">
+                {WITHOUT.map((item) => (
+                  <li
+                    key={item}
+                    className="flex gap-3 text-[15px] text-muted-foreground"
+                  >
+                    <X className="mt-0.5 size-4 shrink-0 text-muted-foreground/60" />
+                    <span>{item}</span>
+                  </li>
+                ))}
               </ul>
             </div>
-            <div className="rounded-xl border border-primary/20 bg-primary-subtle p-5">
-              <p className="text-sm font-semibold text-primary">Avec Traballo</p>
-              <ul className="mt-3 space-y-2 text-sm text-foreground">
-                <li>0 à 49 € par mois, tout compris</li>
-                <li>Le client du site devient le contact du carnet</li>
-                <li>Le devis accepté devient la facture</li>
-                <li>Le lead de l&apos;agent IA devient le rendez-vous</li>
-                <li>Une seule connexion, un seul interlocuteur</li>
-              </ul>
+          </Reveal>
+
+          <Reveal delay={0.1}>
+            <div className="relative h-full overflow-hidden rounded-2xl border border-primary/25 bg-primary-subtle p-6 sm:p-7">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-blueprint opacity-[0.4] [mask-image:radial-gradient(ellipse_70%_60%_at_100%_0%,black,transparent)]"
+              />
+              <div className="relative">
+                <p className="text-sm font-semibold text-primary">
+                  Avec Traballo
+                </p>
+                <ul className="mt-4 space-y-3">
+                  {WITH.map((item) => (
+                    <li
+                      key={item}
+                      className="flex gap-3 text-[15px] text-foreground"
+                    >
+                      <Check className="mt-0.5 size-4 shrink-0 text-primary" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-          </div>
-          <p className="mt-6 text-sm text-muted-foreground">
-            <Link href="/tarifs" className="font-medium text-primary hover:underline">
-              Comparer les plans en détail
-            </Link>
-          </p>
+          </Reveal>
         </div>
+
+        <Reveal className="mt-8">
+          <Link
+            href="/tarifs"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          >
+            Comparer les plans en détail
+            <ArrowRight className="size-4" />
+          </Link>
+        </Reveal>
       </Section>
 
-      <CtaBand />
+      <CtaBand
+        title="Un seul outil, à la place de cinq"
+        subtitle="Créez votre compte gratuitement et testez chaque fonctionnalité."
+      />
     </>
   );
 }
