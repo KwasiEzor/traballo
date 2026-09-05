@@ -10,6 +10,7 @@ export type SectionKey =
   | "hero"
   | "services"
   | "about"
+  | "gallery"
   | "zones"
   | "reviews"
   | "hours"
@@ -21,6 +22,7 @@ export type SectionKey =
 export const MOVABLE_SECTIONS: SectionKey[] = [
   "services",
   "about",
+  "gallery",
   "zones",
   "reviews",
   "hours",
@@ -29,7 +31,7 @@ export const MOVABLE_SECTIONS: SectionKey[] = [
 ];
 
 /** Sections that need a paid plan to appear on the public site. */
-export const PREMIUM_SECTIONS: SectionKey[] = ["reviews", "hours"];
+export const PREMIUM_SECTIONS: SectionKey[] = ["reviews", "hours", "gallery"];
 
 export const SECTION_META: Record<
   SectionKey,
@@ -38,6 +40,7 @@ export const SECTION_META: Record<
   hero: { label: "En-tête", hint: "Titre, accroche, boutons.", locked: true },
   services: { label: "Prestations", hint: "Ce que vous proposez." },
   about: { label: "À propos", hint: "Votre approche, votre histoire." },
+  gallery: { label: "Galerie", hint: "Photos de vos chantiers.", premium: true },
   zones: { label: "Zones d'intervention", hint: "Villes et secteurs couverts." },
   reviews: {
     label: "Avis clients",
@@ -109,7 +112,16 @@ export const TEMPLATES: TemplateDef[] = [
     description:
       "Sections sombres, imagerie forte, avis clients et horaires mis en avant.",
     tier: "premium",
-    defaultOrder: ["services", "about", "reviews", "hours", "zones", "trust", "cta"],
+    defaultOrder: [
+      "services",
+      "gallery",
+      "about",
+      "reviews",
+      "hours",
+      "zones",
+      "trust",
+      "cta",
+    ],
     style: {
       hero: "photo",
       display: "bold",

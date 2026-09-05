@@ -23,6 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Alert, AlertContent, AlertDescription } from "@/components/ui/alert";
 import { SITE_SAVED_EVENT } from "@/components/dashboard/site-preview-frame";
+import { ImageUpload } from "@/components/dashboard/image-upload";
 import {
   TEMPLATES,
   MOVABLE_SECTIONS,
@@ -32,7 +33,7 @@ import {
   type SectionKey,
   type TemplateId,
 } from "@/lib/artisan/templates";
-import type { StoredSiteConfig } from "@/lib/artisan/site-config";
+import type { StoredSiteConfig, ChromeConfig } from "@/lib/artisan/site-config";
 import { saveSiteConfig, type ConfigState } from "@/app/dashboard/site/actions";
 
 const initial: ConfigState = {};
@@ -62,6 +63,10 @@ export function DesignEditor({
 
   const setContent = (key: SectionKey, value: Record<string, unknown>) =>
     setCfg((c) => ({ ...c, content: { ...c.content, [key]: value } }));
+
+  const chrome: ChromeConfig = cfg.chrome ?? {};
+  const setChrome = (p: Partial<ChromeConfig>) =>
+    setCfg((c) => ({ ...c, chrome: { ...c.chrome, ...p } }));
 
   function pickTemplate(id: TemplateId) {
     const tpl = getTemplate(id);
@@ -161,6 +166,95 @@ export function DesignEditor({
         </CardContent>
       </Card>
 
+      {/* ------------------------ marque & chrome ---------------------- */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Marque &amp; pied de page</CardTitle>
+          <CardDescription>
+            Logo, en-tête et bas de page de votre site.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Logo</Label>
+            <div className="flex items-start gap-4">
+              <ImageUpload
+                value={chrome.logoUrl}
+                onChange={(url) => setChrome({ logoUrl: url })}
+                kind="logo"
+                maxDim={480}
+                aspClass="aspect-[5/2]"
+                compact
+              />
+              <p className="text-xs text-muted-foreground">
+                Affiché dans l&apos;en-tête à la place du nom. PNG transparent
+                recommandé, fond clair.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-foreground">
+                Téléphone dans l&apos;en-tête
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Affiche votre numéro en haut à droite (bureau).
+              </div>
+            </div>
+            <Switch
+              checked={chrome.showPhone !== false}
+              onCheckedChange={(v) => setChrome({ showPhone: v })}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Libellé du bouton d&apos;en-tête</Label>
+            <Input
+              value={chrome.ctaLabel ?? ""}
+              placeholder="Devis gratuit"
+              onChange={(e) => setChrome({ ctaLabel: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Phrase de pied de page</Label>
+            <Input
+              value={chrome.footerTagline ?? ""}
+              placeholder="Artisan {métier} depuis 2008 — devis gratuit sous 24 h."
+              onChange={(e) => setChrome({ footerTagline: e.target.value })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                Retirer « Créé avec Traballo »
+                {!isPaid && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-copper-subtle px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-copper">
+                    <Lock className="size-2.5" />
+                    Pro
+                  </span>
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Site sans marque Traballo.
+              </div>
+            </div>
+            <Switch
+              checked={!!chrome.hideBadge}
+              onCheckedChange={(v) => {
+                if (!isPaid) {
+                  setUpsell(true);
+                  return;
+                }
+                setChrome({ hideBadge: v });
+              }}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* --------------------------- sections -------------------------- */}
       <Card>
         <CardHeader>
@@ -235,6 +329,7 @@ function normalise(c: StoredSiteConfig): StoredSiteConfig {
     order,
     disabled,
     content: c.content ?? {},
+    chrome: c.chrome ?? {},
   };
 }
 
@@ -419,6 +514,63 @@ function ListEditor<T extends Record<string, string>>({
   );
 }
 
+function GalleryImages({
+  images,
+  onChange,
+}: {
+  images: string[];
+  onChange: (v: string[]) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {images.map((url, i) => (
+          <div key={`${url}-${i}`} className="space-y-1.5">
+            <ImageUpload
+              value={url}
+              onChange={(u) =>
+                onChange(
+                  u
+                    ? images.map((x, j) => (j === i ? u : x))
+                    : images.filter((_, j) => j !== i)
+                )
+              }
+              kind="gallery"
+              maxDim={1400}
+              aspClass="aspect-[4/3]"
+            />
+          </div>
+        ))}
+      </div>
+      {images.length < 18 && (
+        <AddGalleryImage onAdd={(url) => onChange([...images, url])} />
+      )}
+    </div>
+  );
+}
+
+function AddGalleryImage({ onAdd }: { onAdd: (url: string) => void }) {
+  const [key, setKey] = React.useState(0);
+  return (
+    <div key={key}>
+      <Label className="text-xs">Ajouter une photo</Label>
+      <ImageUpload
+        value={undefined}
+        onChange={(url) => {
+          if (url) {
+            onAdd(url);
+            setKey((k) => k + 1);
+          }
+        }}
+        kind="gallery"
+        maxDim={1400}
+        aspClass="aspect-[4/3]"
+        compact
+      />
+    </div>
+  );
+}
+
 function SectionFields({
   sectionKey,
   content,
@@ -439,6 +591,30 @@ function SectionFields({
           <T label="Sur-titre" value={str("eyebrow")} onChange={(v) => set("eyebrow", v)} />
           <T label="Titre" value={str("headline")} onChange={(v) => set("headline", v)} />
           <T label="Accroche" area value={str("subhead")} onChange={(v) => set("subhead", v)} />
+          <div className="space-y-1.5">
+            <Label className="text-xs">Photo d&apos;en-tête</Label>
+            <ImageUpload
+              value={c.image as string | undefined}
+              onChange={(url) => set("image", url)}
+              kind="hero"
+              maxDim={1800}
+              aspClass="aspect-[16/9]"
+            />
+            <p className="text-xs text-muted-foreground">
+              Remplace la photo par défaut de votre métier. Format paysage,
+              1600 px de large minimum.
+            </p>
+          </div>
+        </div>
+      );
+    case "gallery":
+      return (
+        <div className="space-y-3">
+          <T label="Titre" value={str("title")} onChange={(v) => set("title", v)} />
+          <GalleryImages
+            images={(c.images as string[]) ?? []}
+            onChange={(v) => set("images", v)}
+          />
         </div>
       );
     case "services":

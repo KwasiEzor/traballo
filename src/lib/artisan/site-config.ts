@@ -27,9 +27,10 @@ export interface HourRow {
 }
 
 export interface SectionContent {
-  hero?: { eyebrow?: string; headline?: string; subhead?: string };
+  hero?: { eyebrow?: string; headline?: string; subhead?: string; image?: string };
   services?: { title?: string; items?: ServiceItem[] };
   about?: { title?: string; body?: string };
+  gallery?: { title?: string; images?: string[] };
   zones?: { title?: string; items?: string[] };
   reviews?: { title?: string; items?: ReviewItem[] };
   hours?: { title?: string; note?: string; days?: HourRow[] };
@@ -38,12 +39,21 @@ export interface SectionContent {
   contact?: { title?: string; body?: string };
 }
 
+export interface ChromeConfig {
+  logoUrl?: string;
+  showPhone?: boolean;
+  ctaLabel?: string;
+  footerTagline?: string;
+  hideBadge?: boolean;
+}
+
 /** Stored verbatim in sites.sections (jsonb). All fields optional. */
 export interface StoredSiteConfig {
   template?: TemplateId;
   order?: SectionKey[];
   disabled?: SectionKey[];
   content?: SectionContent;
+  chrome?: ChromeConfig;
 }
 
 export interface ResolvedSection {
@@ -51,11 +61,20 @@ export interface ResolvedSection {
   content: NonNullable<SectionContent[keyof SectionContent]>;
 }
 
+export interface ResolvedChrome {
+  logoUrl?: string;
+  showPhone: boolean;
+  ctaLabel: string;
+  footerTagline?: string;
+  showBadge: boolean;
+}
+
 export interface ResolvedSiteConfig {
   templateId: TemplateId;
   /** true when the artisan picked a premium template but is on the free plan. */
   downgraded: boolean;
   premiumLocked: boolean;
+  chrome: ResolvedChrome;
   sections: ResolvedSection[];
 }
 
@@ -75,10 +94,29 @@ const hourRow = z.object({
   value: z.string().trim().max(40),
 });
 
+/** Only Vercel Blob URLs are storable — feeds next/image, so lock the host. */
+const blobUrl = z
+  .string()
+  .trim()
+  .max(400)
+  .regex(
+    /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/.+/i,
+    "Image invalide."
+  );
+
 export const siteConfigSchema = z.object({
   template: z.enum(["standard", "epure", "signature"]).optional(),
   order: z.array(z.string()).optional(),
   disabled: z.array(z.string()).optional(),
+  chrome: z
+    .object({
+      logoUrl: blobUrl.optional(),
+      showPhone: z.boolean().optional(),
+      ctaLabel: z.string().trim().max(28).optional(),
+      footerTagline: z.string().trim().max(160).optional(),
+      hideBadge: z.boolean().optional(),
+    })
+    .optional(),
   content: z
     .object({
       hero: z
@@ -86,6 +124,13 @@ export const siteConfigSchema = z.object({
           eyebrow: z.string().trim().max(80).optional(),
           headline: z.string().trim().max(120).optional(),
           subhead: z.string().trim().max(320).optional(),
+          image: blobUrl.optional(),
+        })
+        .optional(),
+      gallery: z
+        .object({
+          title: z.string().trim().max(80).optional(),
+          images: z.array(blobUrl).max(18).optional(),
         })
         .optional(),
       services: z
@@ -199,6 +244,8 @@ function defaultContent(
         title: "À propos",
         body: `${site.businessName} met son savoir-faire de ${t} à votre service à ${area}. Chaque intervention est réalisée avec soin, dans les règles de l'art et dans les délais convenus. ${firstName(site.ownerName)} vous accompagne du devis à la fin du chantier.`,
       };
+    case "gallery":
+      return { title: "Nos réalisations", images: [] };
     case "zones":
       return { title: "Zones d'intervention", items: zonesFrom(site, area) };
     case "reviews":
@@ -229,6 +276,7 @@ function defaultContent(
 /** True when a section has enough content to be worth rendering publicly. */
 function hasContent(key: SectionKey, c: Record<string, unknown>): boolean {
   if (key === "reviews") return ((c.items as unknown[]) ?? []).length > 0;
+  if (key === "gallery") return ((c.images as unknown[]) ?? []).length > 0;
   return true;
 }
 
@@ -287,10 +335,21 @@ export function resolveSiteConfig(
     .map(build)
     .filter((s) => hasContent(s.key, s.content as Record<string, unknown>));
 
+  const ch = stored.chrome ?? {};
+  const chrome: ResolvedChrome = {
+    logoUrl: ch.logoUrl || undefined,
+    showPhone: ch.showPhone !== false,
+    ctaLabel: ch.ctaLabel?.trim() || "Devis gratuit",
+    footerTagline: ch.footerTagline?.trim() || undefined,
+    // "Créé avec Traballo" — removable only on a paid plan (white-label).
+    showBadge: !(ch.hideBadge && paid),
+  };
+
   return {
     templateId: template.id,
     downgraded,
     premiumLocked: !paid,
+    chrome,
     sections: [build("hero"), ...middle, build("contact")],
   };
 }

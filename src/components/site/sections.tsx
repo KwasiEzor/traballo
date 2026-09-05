@@ -37,7 +37,7 @@ export function HeroSection({
   style,
 }: {
   site: PublicSite;
-  content: { eyebrow?: string; headline?: string; subhead?: string };
+  content: { eyebrow?: string; headline?: string; subhead?: string; image?: string };
   style: Style;
 }) {
   const buttons = (
@@ -116,7 +116,7 @@ export function HeroSection({
   return (
     <section className="relative isolate overflow-hidden border-b border-slate-200 bg-slate-900">
       <Image
-        src={heroImageFor(site.tradeType)}
+        src={content.image || heroImageFor(site.tradeType)}
         alt=""
         fill
         priority
@@ -219,6 +219,42 @@ export function AboutSection({
         <p className="text-lg leading-relaxed text-slate-600 whitespace-pre-line">
           {content.body}
         </p>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------- gallery -------------------------------- */
+
+export function GallerySection({
+  content,
+  style,
+}: {
+  content: { title?: string; images?: string[] };
+  style: Style;
+}) {
+  const images = content.images ?? [];
+  if (images.length === 0) return null;
+  return (
+    <section className="border-y border-slate-100 bg-slate-50">
+      <div className={`${wrap} ${pad(style)}`}>
+        <h2 className={h2(style)}>{content.title}</h2>
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:gap-4">
+          {images.map((src, i) => (
+            <div
+              key={`${src}-${i}`}
+              className="relative aspect-[4/3] overflow-hidden rounded-xl border border-slate-200"
+            >
+              <Image
+                src={src}
+                alt=""
+                fill
+                sizes="(min-width: 1024px) 380px, (min-width: 640px) 33vw, 50vw"
+                className="object-cover"
+              />
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );

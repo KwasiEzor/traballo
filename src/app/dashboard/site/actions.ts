@@ -7,7 +7,6 @@ import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
 import { sites } from "@/db/schema";
 import { siteConfigSchema } from "@/lib/artisan/site-config";
-import { getTemplate, isPremiumPlan } from "@/lib/artisan/templates";
 
 const schema = z.object({
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur invalide."),
@@ -67,7 +66,7 @@ export async function saveSiteConfig(
   _prev: ConfigState,
   formData: FormData
 ): Promise<ConfigState> {
-  const { tenantId, plan } = await requireAuth();
+  const { tenantId } = await requireAuth();
 
   let json: unknown;
   try {
@@ -81,10 +80,8 @@ export async function saveSiteConfig(
     return { error: parsed.error.issues[0]?.message ?? "Configuration invalide." };
   }
   const cfg = parsed.data;
-
-  if (cfg.template && getTemplate(cfg.template).tier === "premium" && !isPremiumPlan(plan)) {
-    return { error: "Ce template nécessite un plan Pro ou Business." };
-  }
+  // Premium template/sections are enforced at render time (resolveSiteConfig
+  // downgrades) — storing the preference is fine so it re-activates on upgrade.
 
   try {
     await withTenant(tenantId, async (tx) => {

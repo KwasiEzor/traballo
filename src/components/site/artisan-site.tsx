@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { type PublicSite } from "@/lib/artisan/site-data";
 import { getTemplate } from "@/lib/artisan/templates";
 import { resolveSiteConfig } from "@/lib/artisan/site-config";
@@ -6,6 +7,7 @@ import {
   HeroSection,
   ServicesSection,
   AboutSection,
+  GallerySection,
   ZonesSection,
   ReviewsSection,
   HoursSection,
@@ -17,7 +19,7 @@ import {
 /**
  * The public artisan vitrine. Rendered both at `{slug}.traballo.pro` (live)
  * and inside the dashboard preview (`/site-preview`, `preview` flag on).
- * Layout is driven by the resolved site config (template + sections).
+ * Layout is driven by the resolved site config (template + sections + chrome).
  */
 export function ArtisanSite({
   site,
@@ -33,19 +35,32 @@ export function ArtisanSite({
 
   const config = resolveSiteConfig(site, area, site.plan, site.config);
   const tpl = getTemplate(config.templateId);
+  const chrome = config.chrome;
 
   return (
     <div style={style} className="min-h-dvh bg-white">
       <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-          <span className="text-lg font-bold tracking-tight text-slate-900">
-            {site.businessName}
-          </span>
+          {chrome.logoUrl ? (
+            <span className="relative block h-9 w-40">
+              <Image
+                src={chrome.logoUrl}
+                alt={site.businessName}
+                fill
+                sizes="160px"
+                className="object-contain object-left"
+              />
+            </span>
+          ) : (
+            <span className="text-lg font-bold tracking-tight text-slate-900">
+              {site.businessName}
+            </span>
+          )}
           <div className="flex items-center gap-3">
-            {site.phone && (
+            {chrome.showPhone && site.phone && (
               <a
                 href={`tel:${tel}`}
-                className="hidden items-center gap-2 text-sm font-medium text-slate-700 sm:flex"
+                className="hidden text-sm font-medium text-slate-700 sm:block"
               >
                 {site.phone}
               </a>
@@ -55,7 +70,7 @@ export function ArtisanSite({
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white"
               style={{ backgroundColor: site.primaryColor }}
             >
-              Devis gratuit
+              {chrome.ctaLabel}
             </a>
           </div>
         </div>
@@ -70,6 +85,8 @@ export function ArtisanSite({
           return <ServicesSection key={key} site={site} content={c} style={tpl.style} />;
         if (key === "about")
           return <AboutSection key={key} content={c} style={tpl.style} />;
+        if (key === "gallery")
+          return <GallerySection key={key} content={c} style={tpl.style} />;
         if (key === "zones")
           return <ZonesSection key={key} site={site} content={c} style={tpl.style} />;
         if (key === "reviews")
@@ -94,17 +111,24 @@ export function ArtisanSite({
       })}
 
       <footer className="border-t border-slate-100 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 text-xs text-slate-500 sm:flex-row">
-          <span>
-            © {new Date().getFullYear()} {site.businessName}
-            {site.tradeType && ` · ${site.tradeLabel}`}
-          </span>
-          <a
-            href={`https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro"}`}
-            className="hover:text-slate-700"
-          >
-            Créé avec Traballo
-          </a>
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-5 text-center text-xs text-slate-500">
+          {chrome.footerTagline && (
+            <p className="text-slate-600">{chrome.footerTagline}</p>
+          )}
+          <div className="flex flex-col items-center justify-between gap-2 sm:w-full sm:flex-row">
+            <span>
+              © {new Date().getFullYear()} {site.businessName}
+              {site.tradeType && ` · ${site.tradeLabel}`}
+            </span>
+            {chrome.showBadge && (
+              <a
+                href={`https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro"}`}
+                className="hover:text-slate-700"
+              >
+                Créé avec Traballo
+              </a>
+            )}
+          </div>
         </div>
       </footer>
 
