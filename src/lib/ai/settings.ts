@@ -3,6 +3,9 @@
  * The platform Anthropic API key — stored encrypted in `app_settings` and
  * managed from the admin console. Falls back to ANTHROPIC_API_KEY (env) when
  * nothing is stored. Short in-process cache to avoid a DB hit per request.
+ *
+ * Uses core `db.select()` (not the relational query builder) — plain SQL goes
+ * through Neon's transaction pooler reliably.
  */
 
 import { eq } from "drizzle-orm";
@@ -15,19 +18,27 @@ const TTL_MS = 60_000;
 
 let cache: { value: string | null; at: number } | null = null;
 
+async function readStored(): Promise<string | null> {
+  const rows = await Promise.race([
+    db
+      .select({ value: appSettings.value })
+      .from(appSettings)
+      .where(eq(appSettings.key, KEY))
+      .limit(1),
+    new Promise<never[]>((resolve) => setTimeout(() => resolve([]), 2500)),
+  ]);
+  return rows[0]?.value ?? null;
+}
+
 export async function getAnthropicApiKey(): Promise<string | null> {
   if (cache && Date.now() - cache.at < TTL_MS) return cache.value;
 
   let value: string | null = null;
   try {
-    const row = await Promise.race([
-      db.query.appSettings.findFirst({ where: eq(appSettings.key, KEY) }),
-      new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), 2500)),
-    ]);
-    if (row?.value) value = decryptSecret(row.value);
+    const stored = await readStored();
+    if (stored) value = decryptSecret(stored);
   } catch (err) {
     console.error("[ai/settings] app_settings read failed:", err);
-    value = null;
   }
   if (!value) value = process.env.ANTHROPIC_API_KEY || null;
 
@@ -58,13 +69,9 @@ export async function anthropicKeyStatus(): Promise<{
   hint: string | null;
 }> {
   try {
-    const row = await db.query.appSettings.findFirst({
-      where: eq(appSettings.key, KEY),
-      columns: { value: true, updatedAt: true },
-    });
-    if (row?.value) {
-      const plain = decryptSecret(row.value);
-      return { source: "stored", hint: plain.slice(-4) };
+    const stored = await readStored();
+    if (stored) {
+      return { source: "stored", hint: decryptSecret(stored).slice(-4) };
     }
   } catch {
     /* fall through */
