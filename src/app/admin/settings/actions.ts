@@ -7,6 +7,7 @@ import {
   setAnthropicApiKey,
   clearAnthropicApiKey,
 } from "@/lib/ai/settings";
+import { logAdminAction } from "@/lib/admin/audit";
 
 export type SettingsState = { ok?: boolean; error?: string };
 
@@ -21,7 +22,7 @@ export async function saveAnthropicKey(
   _prev: SettingsState,
   formData: FormData
 ): Promise<SettingsState> {
-  await requireAdminAccess();
+  const admin = await requireAdminAccess();
 
   const intent = String(formData.get("intent") ?? "save");
   if (intent === "clear") {
@@ -30,6 +31,11 @@ export async function saveAnthropicKey(
     } catch {
       return { error: "La suppression a échoué." };
     }
+    await logAdminAction({
+      actorEmail: admin.email,
+      action: "settings.anthropic_key_set",
+      meta: { cleared: true },
+    });
     revalidatePath("/admin/settings");
     return { ok: true };
   }
@@ -45,6 +51,11 @@ export async function saveAnthropicKey(
     return { error: "L'enregistrement a échoué." };
   }
 
+  await logAdminAction({
+    actorEmail: admin.email,
+    action: "settings.anthropic_key_set",
+    meta: { suffix: parsed.data.slice(-4) },
+  });
   revalidatePath("/admin/settings");
   return { ok: true };
 }

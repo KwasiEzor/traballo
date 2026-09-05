@@ -71,6 +71,7 @@ vi.mock("@/lib/auth/require-auth", () => ({
     email: "owner@test.traballo",
     plan: "pro",
     role: "owner",
+    status: "active",
   }),
 }));
 

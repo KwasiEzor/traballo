@@ -93,9 +93,9 @@ export const resolvePublicSite = cache(async function resolvePublicSite(
 ): Promise<PublicSite | null> {
   const tenant = await db.query.tenants.findFirst({
     where: eq(tenants.slug, slug),
-    columns: { id: true, slug: true, plan: true },
+    columns: { id: true, slug: true, plan: true, status: true },
   });
-  if (!tenant) return null;
+  if (!tenant || tenant.status === "suspended") return null;
 
   const [site, profile, agent] = await Promise.all([
     db.query.sites.findFirst({ where: eq(sites.tenantId, tenant.id) }),

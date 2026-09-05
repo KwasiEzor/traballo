@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Building2, Settings } from "lucide-react";
+import { LayoutDashboard, Building2, Settings, ScrollText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { label: "Vue d'ensemble", href: "/admin", icon: LayoutDashboard, exact: true },
   { label: "Artisans", href: "/admin/tenants", icon: Building2 },
+  { label: "Historique", href: "/admin/audit", icon: ScrollText },
   { label: "Paramètres", href: "/admin/settings", icon: Settings },
 ];
 

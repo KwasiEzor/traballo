@@ -7,6 +7,7 @@
 
 export * from "./auth";
 export * from "./app-settings";
+export * from "./admin-audit-log";
 export * from "./tenants";
 export * from "./users";
 export * from "./artisan-profiles";

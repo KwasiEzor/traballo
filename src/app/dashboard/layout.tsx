@@ -7,13 +7,38 @@ import { Logo } from "@/components/brand/logo";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { Topbar } from "@/components/dashboard/topbar";
 import { UpgradeButton } from "@/components/dashboard/upgrade-cta";
+import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { email, plan } = await requireAuth();
+  const auth = await requireAuth();
+  const { email, plan } = auth;
+
+  if (auth.status === "suspended" && !auth.impersonating) {
+    return (
+      <div className="grid min-h-dvh place-items-center bg-muted/30 p-6">
+        <div className="max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+          <h1 className="font-display text-xl font-semibold text-foreground">
+            Compte suspendu
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            L&apos;accès à votre tableau de bord est temporairement suspendu.
+            Contactez-nous pour rétablir votre compte.
+          </p>
+          <a
+            href="mailto:aide@traballo.pro"
+            className="mt-5 inline-block rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            Contacter le support
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   if (!(await hasCompletedOnboarding())) redirect("/onboarding");
 
   const [user, profile] = await Promise.all([
@@ -56,6 +81,9 @@ export default async function DashboardLayout({
       </aside>
 
       <div className="flex min-w-0 flex-col">
+        {auth.impersonating && auth.impersonatedBy && (
+          <ImpersonationBanner by={auth.impersonatedBy} />
+        )}
         <Topbar
           user={{
             name: displayName,

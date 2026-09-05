@@ -46,6 +46,7 @@ describe("createInvoice", () => {
       email: "owner@test.traballo",
       plan: "pro",
       role: "owner",
+      status: "active",
     });
 
     mocks.invoiceFindFirst.mockResolvedValue({

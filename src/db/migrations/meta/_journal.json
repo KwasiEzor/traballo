@@ -64,6 +64,13 @@
       "when": 1788642880379,
       "tag": "0008_add_app_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788646590552,
+      "tag": "0009_admin_console",
+      "breakpoints": true
     }
   ]
 }
