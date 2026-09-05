@@ -45,6 +45,10 @@ export interface ChromeConfig {
   ctaLabel?: string;
   footerTagline?: string;
   hideBadge?: boolean;
+  /** Floating "call" button (bottom-right). Default on. */
+  showCallButton?: boolean;
+  /** Floating WhatsApp button (bottom-right). Default on. */
+  showWhatsappButton?: boolean;
 }
 
 /** Stored verbatim in sites.sections (jsonb). All fields optional. */
@@ -67,6 +71,8 @@ export interface ResolvedChrome {
   ctaLabel: string;
   footerTagline?: string;
   showBadge: boolean;
+  showCallButton: boolean;
+  showWhatsappButton: boolean;
 }
 
 export interface ResolvedSiteConfig {
@@ -115,6 +121,8 @@ export const siteConfigSchema = z.object({
       ctaLabel: z.string().trim().max(28).optional(),
       footerTagline: z.string().trim().max(160).optional(),
       hideBadge: z.boolean().optional(),
+      showCallButton: z.boolean().optional(),
+      showWhatsappButton: z.boolean().optional(),
     })
     .optional(),
   content: z
@@ -343,6 +351,8 @@ export function resolveSiteConfig(
     footerTagline: ch.footerTagline?.trim() || undefined,
     // "Créé avec Traballo" — removable only on a paid plan (white-label).
     showBadge: !(ch.hideBadge && paid),
+    showCallButton: ch.showCallButton !== false,
+    showWhatsappButton: ch.showWhatsappButton !== false,
   };
 
   return {

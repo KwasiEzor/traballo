@@ -129,7 +129,8 @@ export const resolvePublicSite = cache(async function resolvePublicSite(
     config: site.sections ?? null,
     agent: agent
       ? {
-          enabled: agent.isEnabled,
+          // The website assistant is a Business-tier feature.
+          enabled: agent.isEnabled && tenant.plan === "business",
           agentName: agent.agentName?.trim() || "Assistant",
           openingMessage:
             agent.openingMessage?.trim() ||

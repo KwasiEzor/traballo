@@ -37,6 +37,7 @@ export function ArtisanSite({
   const config = resolveSiteConfig(site, area, site.plan, site.config);
   const tpl = getTemplate(config.templateId);
   const chrome = config.chrome;
+  // `site.agent.enabled` already includes the Business-plan gate.
   const agentOn = !preview && Boolean(site.agent?.enabled);
 
   return (
@@ -135,8 +136,8 @@ export function ArtisanSite({
       </footer>
 
       <FloatingContact
-        phone={site.phone}
-        whatsapp={site.whatsappNumber}
+        phone={chrome.showCallButton ? site.phone : null}
+        whatsapp={chrome.showWhatsappButton ? site.whatsappNumber : null}
         raised={agentOn}
       />
 

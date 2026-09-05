@@ -208,6 +208,36 @@ export function DesignEditor({
             />
           </div>
 
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-foreground">
+                Bouton d&apos;appel flottant
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Pastille « Appeler » en bas à droite (mobile surtout).
+              </div>
+            </div>
+            <Switch
+              checked={chrome.showCallButton !== false}
+              onCheckedChange={(v) => setChrome({ showCallButton: v })}
+            />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium text-foreground">
+                Bouton WhatsApp flottant
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Nécessite un numéro WhatsApp dans votre profil.
+              </div>
+            </div>
+            <Switch
+              checked={chrome.showWhatsappButton !== false}
+              onCheckedChange={(v) => setChrome({ showWhatsappButton: v })}
+            />
+          </div>
+
           <div className="space-y-1.5">
             <Label className="text-xs">Libellé du bouton d&apos;en-tête</Label>
             <Input

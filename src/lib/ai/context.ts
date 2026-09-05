@@ -45,6 +45,8 @@ export async function loadAgentContext(
     }),
   ]);
   if (!profile || !site || !config) return null;
+  // Website assistant is Business-tier only.
+  if (tenant.plan !== "business") return null;
 
   const publicSite: PublicSite = {
     slug: tenant.slug,

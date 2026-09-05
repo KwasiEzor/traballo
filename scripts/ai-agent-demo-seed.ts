@@ -24,6 +24,10 @@ async function main() {
     return;
   }
 
+  // The demo showcases every feature, incl. the Business-only AI assistant.
+  await sql/*sql*/ `update tenants set plan = 'business' where id = ${tenant.id}`;
+  console.log("Set menuiserie-demo plan = business.");
+
   const context =
     "Atelier de menuiserie artisanale. Fabrication sur mesure (meubles, placards, escaliers), pose de parquet et de terrasses bois, restauration de menuiseries anciennes. Déplacement pour devis gratuit dans un rayon de 30 km. Délais courants : 3 à 6 semaines selon la pièce.";
 

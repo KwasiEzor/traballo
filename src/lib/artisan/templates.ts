@@ -139,3 +139,8 @@ export function getTemplate(id: string | null | undefined): TemplateDef {
 export function isPremiumPlan(plan: string | null | undefined) {
   return plan === "pro" || plan === "business";
 }
+
+/** Highest tier only — gates the website AI assistant. */
+export function isBusinessPlan(plan: string | null | undefined) {
+  return plan === "business";
+}

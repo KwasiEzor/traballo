@@ -26,9 +26,12 @@ const initial: AgentState = {};
 export function AgentForm({
   config,
   businessName,
+  locked = false,
 }: {
   config?: AiAgentConfig;
   businessName: string;
+  /** Plan below Business — the agent can be prepared but won't show on the site. */
+  locked?: boolean;
 }) {
   const [state, action, pending] = useActionState(saveAgentConfig, initial);
   const [enabled, setEnabled] = React.useState(config?.isEnabled ?? true);
@@ -63,9 +66,11 @@ export function AgentForm({
                 Agent {enabled ? "actif" : "désactivé"}
               </div>
               <div className="text-xs text-muted-foreground">
-                {enabled
-                  ? "Il répond aux visiteurs de votre site."
-                  : "Le widget de discussion n'apparaît pas."}
+                {locked
+                  ? "Réglage enregistré. L'agent apparaîtra sur votre site au passage à Business."
+                  : enabled
+                    ? "Il répond aux visiteurs de votre site."
+                    : "Le widget de discussion n'apparaît pas."}
               </div>
             </div>
           </div>
