@@ -77,7 +77,14 @@ export function OnboardingWizard({ businessName }: { businessName: string }) {
         {STEPS[step]}
       </h1>
 
-      <form action={action} className="mt-8">
+      <form
+        action={action}
+        onSubmit={(e) => {
+          // Only the final "Récapitulatif" step may submit.
+          if (step !== STEPS.length - 1) e.preventDefault();
+        }}
+        className="mt-8"
+      >
         {/* Hidden mirrors so the single server action gets everything */}
         {Object.entries(form).map(([k, v]) => (
           <input key={k} type="hidden" name={k} value={v} />
@@ -240,8 +247,12 @@ export function OnboardingWizard({ businessName }: { businessName: string }) {
             <span />
           )}
 
-          {step < 3 ? (
+          {step < STEPS.length - 1 ? (
+            // Distinct `key` from the submit button below: React must mount a
+            // fresh node rather than flip this one's `type` to "submit"
+            // mid-click, which would submit the form on "Continuer".
             <Button
+              key="next"
               type="button"
               disabled={!canNext}
               onClick={() => setStep((s) => s + 1)}
@@ -250,7 +261,7 @@ export function OnboardingWizard({ businessName }: { businessName: string }) {
               <ArrowRight className="size-4" />
             </Button>
           ) : (
-            <Button type="submit" disabled={pending}>
+            <Button key="submit" type="submit" disabled={pending}>
               {pending && <Loader2 className="size-4 animate-spin" />}
               Terminer et accéder au tableau de bord
             </Button>
