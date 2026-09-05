@@ -59,7 +59,9 @@ export function middleware(request: NextRequest) {
       isAuthRoute ||
       url.pathname === "/onboarding" ||
       url.pathname.startsWith("/dashboard") ||
-      url.pathname.startsWith("/onboarding/");
+      url.pathname.startsWith("/onboarding/") ||
+      url.pathname === "/site-preview" ||
+      url.pathname.startsWith("/site-preview/");
     const target = isTopLevel ? url.pathname : `/dashboard${url.pathname}`;
     if (!isAuthRoute) {
       const gate = requireSession(target);

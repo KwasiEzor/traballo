@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Alert, AlertContent, AlertDescription } from "@/components/ui/alert";
+import { SitePreviewFrame } from "@/components/dashboard/site-preview-frame";
 import { BRAND_COLORS } from "@/lib/artisan/trades";
 import { saveSite, type SiteState } from "./actions";
 import type { Site } from "@/db/schema";
@@ -39,16 +40,20 @@ export function SiteEditor({
   const [color, setColor] = React.useState(site?.primaryColor ?? BRAND_COLORS[0].value);
   const [template, setTemplate] = React.useState(site?.templateId ?? "default");
   const [published, setPublished] = React.useState(site?.isPublished ?? false);
+  const [savedTick, setSavedTick] = React.useState(0);
 
   React.useEffect(() => {
-    if (state.ok) toast.success("Site enregistré.");
+    if (state.ok) {
+      toast.success("Site enregistré.");
+      setSavedTick((t) => t + 1);
+    }
     if (state.error) toast.error(state.error);
   }, [state]);
 
   const publicUrl = `https://${slug}.${rootDomain}`;
 
   return (
-    <form action={action} className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+    <form action={action} className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
       <div className="space-y-6">
         {state.error && (
           <Alert variant="destructive">
@@ -206,30 +211,19 @@ export function SiteEditor({
               </div>
               <Switch checked={published} onCheckedChange={setPublished} />
             </div>
-            <Button asChild variant="outline" size="sm" className="w-full">
-              <a href={publicUrl} target="_blank" rel="noopener noreferrer">
-                Prévisualiser <ExternalLink className="size-4" />
-              </a>
-            </Button>
+            {published && (
+              <Button asChild variant="outline" size="sm" className="w-full">
+                <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+                  Voir le site en ligne <ExternalLink className="size-4" />
+                </a>
+              </Button>
+            )}
           </CardContent>
         </Card>
 
-        <div
-          className="overflow-hidden rounded-xl border border-border"
-          aria-hidden="true"
-        >
-          <div className="h-2" style={{ backgroundColor: color }} />
-          <div className="space-y-2 p-4">
-            <div className="h-3 w-2/3 rounded bg-muted" />
-            <div className="h-2 w-full rounded bg-muted" />
-            <div className="h-2 w-4/5 rounded bg-muted" />
-            <div
-              className="mt-3 inline-block rounded-md px-3 py-1 text-xs font-medium text-white"
-              style={{ backgroundColor: color }}
-            >
-              Demander un devis
-            </div>
-          </div>
+        <div>
+          <div className="mb-2 text-sm font-medium text-foreground">Aperçu</div>
+          <SitePreviewFrame previewUrl="/site-preview" refreshKey={savedTick} />
         </div>
       </div>
     </form>
