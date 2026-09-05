@@ -27,6 +27,17 @@ export function ContactForm({
 }) {
   const [state, action, pending] = useActionState(submitContact, initial);
   const [topic, setTopic] = React.useState("decouverte");
+  const [resetKey, setResetKey] = React.useState(0);
+  const firstRender = React.useRef(true);
+
+  // Turnstile tokens are single-use — refresh the challenge after each attempt.
+  React.useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    setResetKey((k) => k + 1);
+  }, [state]);
 
   if (state.ok) {
     return (
@@ -133,7 +144,11 @@ export function ContactForm({
       </div>
 
       {turnstileSiteKey && (
-        <Turnstile siteKey={turnstileSiteKey} />
+        <Turnstile
+          siteKey={turnstileSiteKey}
+          action="contact"
+          resetKey={resetKey}
+        />
       )}
 
       <Button

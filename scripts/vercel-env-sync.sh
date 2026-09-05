@@ -103,7 +103,8 @@ for k in \
   EMAIL_FROM \
   BLOB_READ_WRITE_TOKEN \
   TURNSTILE_SITE_KEY \
-  TURNSTILE_SITE_SECRET
+  TURNSTILE_SITE_SECRET \
+  TURNSTILE_HOSTNAMES
 do
   set_var "$k" "$(getv "$k" || true)"
 done

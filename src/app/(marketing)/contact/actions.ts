@@ -51,7 +51,10 @@ export async function submitContact(
 
   const ip =
     (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
-  const captcha = await verifyTurnstile(data["cf-turnstile-response"], ip);
+  const captcha = await verifyTurnstile(data["cf-turnstile-response"], {
+    remoteIp: ip,
+    expectedAction: "contact",
+  });
   // Only a definitive "rejected" verdict blocks — a missing token or an
   // unreachable Cloudflare falls through to the honeypot above.
   if (captcha.reason === "rejected") {

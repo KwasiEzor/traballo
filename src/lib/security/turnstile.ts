@@ -4,12 +4,16 @@
  *
  * `TURNSTILE_SITE_KEY`    — public, rendered in the browser widget.
  * `TURNSTILE_SITE_SECRET` — private, used here to validate the token.
+ * `TURNSTILE_HOSTNAMES`   — optional, comma-separated allow-list. When set,
+ *                          the hostname Cloudflare reports for the token must
+ *                          be one of these (defence against token replay from
+ *                          another site). Never include localhost.
  *
- * Policy: only an explicit "rejected" verdict from Cloudflare blocks a
- * submission. A missing token (ad-blocker, widget failed to load, hostname
- * not yet allow-listed) or an unreachable Cloudflare falls through to the
- * honeypot, which is the always-on baseline — a broken widget must never
- * take the contact form down with it.
+ * Policy: only an explicit negative verdict from Cloudflare — token rejected,
+ * wrong action, or wrong hostname — blocks a submission. A missing token
+ * (ad-blocker, widget failed to load, hostname not yet allow-listed) or an
+ * unreachable Cloudflare falls through to the honeypot, which is the
+ * always-on baseline: a broken widget must never take the form down with it.
  */
 
 const SITEVERIFY_URL =
@@ -36,6 +40,13 @@ export type TurnstileReason =
 
 export type TurnstileResult = { success: boolean; reason: TurnstileReason };
 
+type SiteverifyResponse = {
+  success?: boolean;
+  action?: string;
+  hostname?: string;
+  "error-codes"?: string[];
+};
+
 export function turnstileSiteKey(): string {
   if (wantsTestKeys()) return TEST_SITE_KEY;
   return process.env.TURNSTILE_SITE_KEY ?? "";
@@ -45,9 +56,16 @@ export function turnstileEnabled(): boolean {
   return wantsTestKeys() || Boolean(process.env.TURNSTILE_SITE_SECRET);
 }
 
+function allowedHostnames(): string[] {
+  return (process.env.TURNSTILE_HOSTNAMES ?? "")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 export async function verifyTurnstile(
   token: string,
-  remoteIp?: string
+  opts: { remoteIp?: string; expectedAction?: string } = {}
 ): Promise<TurnstileResult> {
   const secret = wantsTestKeys()
     ? TEST_SECRET
@@ -58,16 +76,36 @@ export async function verifyTurnstile(
   const body = new FormData();
   body.append("secret", secret);
   body.append("response", token);
-  if (remoteIp) body.append("remoteip", remoteIp);
+  if (opts.remoteIp) body.append("remoteip", opts.remoteIp);
 
+  let data: SiteverifyResponse;
   try {
     const res = await fetch(SITEVERIFY_URL, { method: "POST", body });
     if (!res.ok) return { success: false, reason: "unreachable" };
-    const data = (await res.json()) as { success?: boolean };
-    return data.success === true
-      ? { success: true, reason: "ok" }
-      : { success: false, reason: "rejected" };
+    data = (await res.json()) as SiteverifyResponse;
   } catch {
     return { success: false, reason: "unreachable" };
   }
+
+  if (data.success !== true) return { success: false, reason: "rejected" };
+
+  // Dummy test keys resolve on any host/action — skip the strict checks.
+  if (wantsTestKeys()) return { success: true, reason: "ok" };
+
+  if (
+    opts.expectedAction &&
+    data.action &&
+    data.action !== opts.expectedAction
+  ) {
+    return { success: false, reason: "rejected" };
+  }
+
+  const hosts = allowedHostnames();
+  if (hosts.length && data.hostname) {
+    const h = data.hostname.toLowerCase();
+    const ok = hosts.some((allowed) => h === allowed || h.endsWith(`.${allowed}`));
+    if (!ok) return { success: false, reason: "rejected" };
+  }
+
+  return { success: true, reason: "ok" };
 }

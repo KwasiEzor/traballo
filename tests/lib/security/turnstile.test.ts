@@ -32,7 +32,42 @@ describe("verifyTurnstile", () => {
         return HttpResponse.json({ success: true, "challenge_ts": "2026-01-01T00:00:00Z" });
       })
     );
-    const res = await verifyTurnstile("good-token", "203.0.113.5");
+    const res = await verifyTurnstile("good-token", { remoteIp: "203.0.113.5" });
+    expect(res).toEqual({ success: true, reason: "ok" });
+  });
+
+  it("rejects when the token's action does not match", async () => {
+    vi.stubEnv("TURNSTILE_SITE_SECRET", "secret");
+    server.use(
+      http.post(SITEVERIFY, () =>
+        HttpResponse.json({ success: true, action: "login" })
+      )
+    );
+    const res = await verifyTurnstile("t", { expectedAction: "contact" });
+    expect(res).toEqual({ success: false, reason: "rejected" });
+  });
+
+  it("rejects when the token's hostname is not in TURNSTILE_HOSTNAMES", async () => {
+    vi.stubEnv("TURNSTILE_SITE_SECRET", "secret");
+    vi.stubEnv("TURNSTILE_HOSTNAMES", "traballo.pro");
+    server.use(
+      http.post(SITEVERIFY, () =>
+        HttpResponse.json({ success: true, hostname: "evil.example.com" })
+      )
+    );
+    const res = await verifyTurnstile("t");
+    expect(res).toEqual({ success: false, reason: "rejected" });
+  });
+
+  it("accepts a subdomain of an allowed hostname", async () => {
+    vi.stubEnv("TURNSTILE_SITE_SECRET", "secret");
+    vi.stubEnv("TURNSTILE_HOSTNAMES", "traballo.pro");
+    server.use(
+      http.post(SITEVERIFY, () =>
+        HttpResponse.json({ success: true, hostname: "www.traballo.pro" })
+      )
+    );
+    const res = await verifyTurnstile("t");
     expect(res).toEqual({ success: true, reason: "ok" });
   });
 

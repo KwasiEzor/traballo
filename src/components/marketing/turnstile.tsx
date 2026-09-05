@@ -10,15 +10,15 @@ import { useTheme } from "next-themes";
  *
  * Renders nothing when no site key is configured — the form still submits and
  * the server treats verification as skipped.
+ *
+ * `resetKey` — bump it (e.g. after a submit attempt) to force a fresh
+ * challenge; Turnstile tokens are single-use.
  */
 
 declare global {
   interface Window {
     turnstile?: {
-      render: (
-        el: HTMLElement,
-        opts: Record<string, unknown>
-      ) => string;
+      render: (el: HTMLElement, opts: Record<string, unknown>) => string;
       remove: (id: string) => void;
       reset: (id?: string) => void;
     };
@@ -50,7 +50,15 @@ function loadScript(): Promise<void> {
   });
 }
 
-export function Turnstile({ siteKey }: { siteKey?: string }) {
+export function Turnstile({
+  siteKey,
+  action = "contact",
+  resetKey = 0,
+}: {
+  siteKey?: string;
+  action?: string;
+  resetKey?: number;
+}) {
   const ref = React.useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
   const widgetId = React.useRef<string | null>(null);
@@ -65,8 +73,10 @@ export function Turnstile({ siteKey }: { siteKey?: string }) {
       widgetId.current = window.turnstile.render(el, {
         sitekey: siteKey,
         theme: resolvedTheme === "dark" ? "dark" : "light",
-        action: "contact",
+        action,
         "response-field-name": "cf-turnstile-response",
+        "expired-callback": () => window.turnstile?.reset(widgetId.current!),
+        "error-callback": () => {},
       });
     });
 
@@ -80,7 +90,13 @@ export function Turnstile({ siteKey }: { siteKey?: string }) {
     // resolvedTheme intentionally excluded — a live theme swap re-mounting the
     // widget would clear a solved challenge. Initial theme is enough.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [siteKey]);
+  }, [siteKey, action]);
+
+  React.useEffect(() => {
+    if (resetKey > 0 && widgetId.current && window.turnstile) {
+      window.turnstile.reset(widgetId.current);
+    }
+  }, [resetKey]);
 
   if (!siteKey) return null;
 
