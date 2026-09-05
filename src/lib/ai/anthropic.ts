@@ -1,12 +1,18 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { getAnthropicApiKey } from "@/lib/ai/settings";
 
-let client: Anthropic | null = null;
+let cached: { key: string; client: Anthropic } | null = null;
 
-/** Lazy Anthropic client — avoids throwing at build time when the key is absent. */
-export function getAnthropic(): Anthropic | null {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  if (!client) {
-    client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+/**
+ * Anthropic client using the platform key — the admin-managed value in
+ * `app_settings` if present, otherwise ANTHROPIC_API_KEY (env). Returns null
+ * when neither is configured.
+ */
+export async function getAnthropic(): Promise<Anthropic | null> {
+  const key = await getAnthropicApiKey();
+  if (!key) return null;
+  if (cached?.key !== key) {
+    cached = { key, client: new Anthropic({ apiKey: key }) };
   }
-  return client;
+  return cached.client;
 }

@@ -6,6 +6,7 @@
  */
 
 export * from "./auth";
+export * from "./app-settings";
 export * from "./tenants";
 export * from "./users";
 export * from "./artisan-profiles";

@@ -51,7 +51,7 @@ export async function POST(request: Request): Promise<Response> {
     return NextResponse.json({ disabled: true }, { status: 200 });
   }
 
-  const anthropic = getAnthropic();
+  const anthropic = await getAnthropic();
   if (!anthropic) {
     return NextResponse.json({ disabled: true }, { status: 200 });
   }
