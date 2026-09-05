@@ -1,6 +1,5 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import { GeistSans } from "geist/font/sans";
+import type { Metadata, Viewport } from "next";
+import { Inter, Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -11,7 +10,24 @@ const inter = Inter({
   display: "swap",
 });
 
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-plex-mono",
+  display: "swap",
+});
+
 const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro";
+
+export const viewport: Viewport = {
+  themeColor: "#155BA2",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(`https://${rootDomain}`),
@@ -33,6 +49,19 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     siteName: "Traballo",
   },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Traballo",
+  },
 };
 
 export default function RootLayout({
@@ -42,8 +71,13 @@ export default function RootLayout({
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${inter.variable} ${GeistSans.variable}`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${plexMono.variable}`}
     >
+      <head>
+        {/* Next's `appleWebApp.capable` doesn't emit this on its own here;
+            iOS < 17.4 needs the vendor-prefixed tag to launch standalone. */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+      </head>
       <body className="min-h-dvh">
         <ThemeProvider
           attribute="class"
