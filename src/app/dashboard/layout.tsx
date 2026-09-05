@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { requireAuth } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/auth/admin";
+import { adminHome } from "@/lib/admin/nav";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getArtisanProfile, hasCompletedOnboarding } from "@/lib/artisan/profile";
 import { Logo } from "@/components/brand/logo";
@@ -20,7 +21,7 @@ export default async function DashboardLayout({
 
   // A super-admin who lands here (not impersonating) belongs in the console.
   if (isAdminEmail(email) && !auth.impersonating) {
-    redirect("/admin");
+    redirect(adminHome());
   }
 
   if (auth.status === "suspended" && !auth.impersonating) {

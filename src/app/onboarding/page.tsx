@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/auth/admin";
+import { adminHome } from "@/lib/admin/nav";
 import { db } from "@/lib/db";
 import { users } from "@/db/schema";
 import { hasCompletedOnboarding } from "@/lib/artisan/profile";
@@ -15,7 +16,7 @@ export default async function OnboardingPage() {
   const { userId, email, impersonating } = await requireAuth();
 
   if (isAdminEmail(email) && !impersonating) {
-    redirect("/admin");
+    redirect(adminHome());
   }
   if (await hasCompletedOnboarding()) {
     redirect("/dashboard");

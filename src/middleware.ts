@@ -52,16 +52,18 @@ export function middleware(request: NextRequest) {
   if (hostname === `app.${rootDomain}`) {
     const isAuthRoute = url.pathname.startsWith("/auth");
     // Real top-level routes on this host that must NOT be prefixed with
-    // /dashboard: the dashboard itself, the auth pages, and the post-signup
-    // onboarding wizard (dashboard/layout.tsx redirects here until onboarding
-    // is done).
+    // /dashboard: the dashboard itself, the auth pages, the onboarding wizard,
+    // the owner-only site preview, and the super-admin console (so an admin who
+    // signs in here isn't bounced to another origin).
     const isTopLevel =
       isAuthRoute ||
       url.pathname === "/onboarding" ||
       url.pathname.startsWith("/dashboard") ||
       url.pathname.startsWith("/onboarding/") ||
       url.pathname === "/site-preview" ||
-      url.pathname.startsWith("/site-preview/");
+      url.pathname.startsWith("/site-preview/") ||
+      url.pathname === "/admin" ||
+      url.pathname.startsWith("/admin/");
     const target = isTopLevel ? url.pathname : `/dashboard${url.pathname}`;
     if (!isAuthRoute) {
       const gate = requireSession(target);
