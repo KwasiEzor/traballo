@@ -33,7 +33,7 @@ async function main() {
            coalesce(array_agg(u.email) filter (where u.email is not null), '{}') as emails
     from tenants t
     left join users u on u.tenant_id = t.id
-    where t.slug = any(${sql.array(QA_SLUGS)})
+    where t.slug in ${sql(QA_SLUGS)}
     group by t.id, t.slug
   `;
 
@@ -56,10 +56,10 @@ async function main() {
       await tx/*sql*/ `delete from tenants where id = ${t.id}`;
 
       if (userIds.length) {
-        await tx/*sql*/ `delete from "user" where id = any(${tx.array(userIds)})`;
+        await tx/*sql*/ `delete from "user" where id in ${tx(userIds)}`;
       }
       if (emails.length) {
-        await tx/*sql*/ `delete from verification where identifier = any(${tx.array(emails)})`;
+        await tx/*sql*/ `delete from verification where identifier in ${tx(emails)}`;
       }
     }
   });
