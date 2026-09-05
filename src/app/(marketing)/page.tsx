@@ -118,7 +118,7 @@ export default function LandingPage() {
           {PROBLEMS.map((p) => (
             <RevealItem
               key={p.label}
-              className="rounded-xl border border-border bg-card p-6 text-center shadow-sm"
+              className="hover-lift rounded-xl border border-border bg-card p-6 text-center shadow-sm"
             >
               <p.icon className="mx-auto size-6 text-primary" />
               <div className="mt-3 font-display text-3xl font-semibold text-foreground">

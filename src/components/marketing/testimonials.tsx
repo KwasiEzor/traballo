@@ -8,7 +8,7 @@ export function Testimonials() {
     <RevealGroup className="grid gap-6 md:grid-cols-3">
       {TESTIMONIALS.map((t) => (
         <RevealItem key={t.name}>
-          <figure className="flex h-full flex-col rounded-2xl border border-border bg-card p-6 shadow-sm transition-shadow hover:shadow-md">
+          <figure className="hover-lift flex h-full flex-col rounded-2xl border border-border bg-card p-6 shadow-sm">
             <Quote className="size-6 text-copper/60" fill="currentColor" strokeWidth={0} />
             <blockquote className="mt-2 flex-1 text-[15px] leading-relaxed text-foreground text-pretty">
               {t.quote}

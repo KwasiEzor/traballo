@@ -118,7 +118,7 @@ export default function TarifsPage() {
         <RevealGroup className="mt-14 grid gap-6 md:grid-cols-3">
           {INCLUDED.map((item) => (
             <RevealItem key={item.title}>
-              <div className="h-full rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="hover-lift h-full rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <div className="grid size-11 place-items-center rounded-lg bg-primary-subtle text-primary">
                   <item.icon className="size-5" />
                 </div>

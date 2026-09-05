@@ -225,7 +225,7 @@ export default function AProposPage() {
           <RevealGroup className="grid gap-4 sm:grid-cols-2">
             {MARKET.map((s) => (
               <RevealItem key={s.label}>
-                <div className="h-full rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div className="hover-lift h-full rounded-xl border border-border bg-card p-5 shadow-sm">
                   <DimensionMark />
                   <div className="mt-2 font-display text-3xl font-semibold tracking-tight text-foreground">
                     <CountUp value={s.value} prefix={s.prefix} locale="fr-FR" />
@@ -260,7 +260,7 @@ export default function AProposPage() {
         <RevealGroup className="mt-14 grid gap-6 md:grid-cols-3">
           {APPROACH.map((step) => (
             <RevealItem key={step.n}>
-              <div className="relative h-full rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="hover-lift relative h-full rounded-2xl border border-border bg-card p-6 shadow-sm">
                 <span className="font-mono text-sm font-semibold text-copper">
                   {step.n}
                 </span>

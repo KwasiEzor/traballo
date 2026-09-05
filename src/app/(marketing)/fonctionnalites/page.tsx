@@ -139,7 +139,7 @@ export default function FonctionnalitesPage() {
         <SectionIntro eyebrow="Et aussi" title="Les détails qui comptent" />
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {GRID.map((f) => (
-            <Card key={f.title} className="p-5">
+            <Card key={f.title} className="hover-lift p-5">
               <f.icon className="size-5 text-primary" />
               <h3 className="mt-3 font-display text-base font-semibold text-foreground">
                 {f.title}

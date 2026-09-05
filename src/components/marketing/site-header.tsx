@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Logo } from "@/components/brand/logo";
 import {
   Sheet,
@@ -65,6 +66,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <ThemeToggle />
           <Button asChild variant="ghost" size="sm">
             <a href={`${APP_URL}/auth/signin`}>Se connecter</a>
           </Button>
@@ -73,39 +75,42 @@ export function SiteHeader() {
           </Button>
         </div>
 
-        <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" aria-label="Ouvrir le menu">
-              <Menu className="size-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-full max-w-xs p-0">
-            <SheetTitle className="sr-only">Menu</SheetTitle>
-            <div className="flex h-16 items-center border-b border-border px-6">
-              <Logo />
-            </div>
-            <nav className="flex flex-col gap-1 p-4">
-              {MARKETING_NAV.map((item) => (
-                <SheetClose asChild key={item.href}>
-                  <Link
-                    href={item.href}
-                    className="rounded-lg px-3 py-3 text-base font-medium text-foreground hover:bg-muted"
-                  >
-                    {item.label}
-                  </Link>
-                </SheetClose>
-              ))}
-            </nav>
-            <div className="mt-auto flex flex-col gap-2 border-t border-border p-4">
-              <Button asChild variant="outline" size="lg">
-                <a href={`${APP_URL}/auth/signin`}>Se connecter</a>
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle />
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="Ouvrir le menu">
+                <Menu className="size-5" />
               </Button>
-              <Button asChild size="lg">
-                <a href={`${APP_URL}/auth/signup`}>Commencer gratuitement</a>
-              </Button>
-            </div>
-          </SheetContent>
-        </Sheet>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full max-w-xs p-0">
+              <SheetTitle className="sr-only">Menu</SheetTitle>
+              <div className="flex h-16 items-center border-b border-border px-6">
+                <Logo />
+              </div>
+              <nav className="flex flex-col gap-1 p-4">
+                {MARKETING_NAV.map((item) => (
+                  <SheetClose asChild key={item.href}>
+                    <Link
+                      href={item.href}
+                      className="rounded-lg px-3 py-3 text-base font-medium text-foreground hover:bg-muted"
+                    >
+                      {item.label}
+                    </Link>
+                  </SheetClose>
+                ))}
+              </nav>
+              <div className="mt-auto flex flex-col gap-2 border-t border-border p-4">
+                <Button asChild variant="outline" size="lg">
+                  <a href={`${APP_URL}/auth/signin`}>Se connecter</a>
+                </Button>
+                <Button asChild size="lg">
+                  <a href={`${APP_URL}/auth/signup`}>Commencer gratuitement</a>
+                </Button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
       </div>
     </header>
   );

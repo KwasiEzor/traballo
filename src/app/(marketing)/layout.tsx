@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/marketing/site-header";
 import { SiteFooter } from "@/components/marketing/site-footer";
+import { ScrollToTop } from "@/components/marketing/scroll-to-top";
 
 export default function MarketingLayout({
   children,
@@ -11,6 +12,7 @@ export default function MarketingLayout({
       <SiteHeader />
       <main className="flex-1">{children}</main>
       <SiteFooter />
+      <ScrollToTop />
     </div>
   );
 }
