@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { tenants, sites, artisanProfiles } from "@/db/schema";
+import { tenants, sites, artisanProfiles, aiAgentConfig } from "@/db/schema";
 import { tradeLabel } from "@/lib/artisan/trades";
 
 export interface PublicSite {
@@ -24,6 +24,12 @@ export interface PublicSite {
   plan: "free" | "pro" | "business";
   /** Raw sites.sections jsonb (template + section overrides). */
   config: unknown;
+  /** Website AI assistant — null when never configured. */
+  agent: {
+    enabled: boolean;
+    agentName: string;
+    openingMessage: string;
+  } | null;
 }
 
 /** Default services shown per trade when the artisan hasn't customised them. */
@@ -91,10 +97,14 @@ export const resolvePublicSite = cache(async function resolvePublicSite(
   });
   if (!tenant) return null;
 
-  const [site, profile] = await Promise.all([
+  const [site, profile, agent] = await Promise.all([
     db.query.sites.findFirst({ where: eq(sites.tenantId, tenant.id) }),
     db.query.artisanProfiles.findFirst({
       where: eq(artisanProfiles.tenantId, tenant.id),
+    }),
+    db.query.aiAgentConfig.findFirst({
+      where: eq(aiAgentConfig.tenantId, tenant.id),
+      columns: { isEnabled: true, agentName: true, openingMessage: true },
     }),
   ]);
   if (!site || !profile) return null;
@@ -117,5 +127,14 @@ export const resolvePublicSite = cache(async function resolvePublicSite(
     isPublished: site.isPublished,
     plan: tenant.plan,
     config: site.sections ?? null,
+    agent: agent
+      ? {
+          enabled: agent.isEnabled,
+          agentName: agent.agentName?.trim() || "Assistant",
+          openingMessage:
+            agent.openingMessage?.trim() ||
+            `Bonjour, je suis l'assistant de ${profile.businessName}. Comment puis-je vous aider ?`,
+        }
+      : null,
   };
 });

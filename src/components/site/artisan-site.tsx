@@ -3,6 +3,7 @@ import { type PublicSite } from "@/lib/artisan/site-data";
 import { getTemplate } from "@/lib/artisan/templates";
 import { resolveSiteConfig } from "@/lib/artisan/site-config";
 import { FloatingContact } from "@/components/site/floating-contact";
+import { ChatWidget } from "@/components/site/chat-widget";
 import {
   HeroSection,
   ServicesSection,
@@ -36,6 +37,7 @@ export function ArtisanSite({
   const config = resolveSiteConfig(site, area, site.plan, site.config);
   const tpl = getTemplate(config.templateId);
   const chrome = config.chrome;
+  const agentOn = !preview && Boolean(site.agent?.enabled);
 
   return (
     <div style={style} className="min-h-dvh bg-white">
@@ -132,7 +134,22 @@ export function ArtisanSite({
         </div>
       </footer>
 
-      <FloatingContact phone={site.phone} whatsapp={site.whatsappNumber} />
+      <FloatingContact
+        phone={site.phone}
+        whatsapp={site.whatsappNumber}
+        raised={agentOn}
+      />
+
+      {agentOn && (
+        <ChatWidget
+          slug={site.slug}
+          agentName={site.agent!.agentName}
+          openingMessage={site.agent!.openingMessage}
+          primaryColor={site.primaryColor}
+          showBadge={site.plan === "free"}
+          rootDomain={process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro"}
+        />
+      )}
     </div>
   );
 }

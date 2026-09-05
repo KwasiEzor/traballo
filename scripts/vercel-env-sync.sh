@@ -104,7 +104,8 @@ for k in \
   BLOB_READ_WRITE_TOKEN \
   TURNSTILE_SITE_KEY \
   TURNSTILE_SITE_SECRET \
-  TURNSTILE_HOSTNAMES
+  TURNSTILE_HOSTNAMES \
+  ANTHROPIC_API_KEY
 do
   set_var "$k" "$(getv "$k" || true)"
 done
