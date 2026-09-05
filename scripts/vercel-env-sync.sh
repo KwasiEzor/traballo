@@ -100,7 +100,10 @@ for k in \
   GOOGLE_CLIENT_SECRET \
   RESEND_API_KEY \
   ADMIN_EMAILS \
-  EMAIL_FROM
+  EMAIL_FROM \
+  BLOB_READ_WRITE_TOKEN \
+  TURNSTILE_SITE_KEY \
+  TURNSTILE_SITE_SECRET
 do
   set_var "$k" "$(getv "$k" || true)"
 done
