@@ -156,7 +156,8 @@ export async function POST(request: Request): Promise<Response> {
             controller.enqueue(encoder.encode(event.delta.text));
           }
         }
-      } catch {
+      } catch (err) {
+        console.error("[api/agent] stream error:", err);
         if (!full) {
           const msg =
             "Désolé, un problème technique m'empêche de répondre. Laissez vos coordonnées, on vous rappelle.";

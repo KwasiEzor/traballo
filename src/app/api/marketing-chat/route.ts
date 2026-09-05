@@ -83,7 +83,8 @@ export async function POST(request: Request): Promise<Response> {
             controller.enqueue(encoder.encode(event.delta.text));
           }
         }
-      } catch {
+      } catch (err) {
+        console.error("[api/marketing-chat] stream error:", err);
         controller.enqueue(
           encoder.encode(
             "Désolé, un problème technique m'empêche de répondre. Vous pouvez nous écrire via la page Contact."

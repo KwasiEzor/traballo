@@ -20,11 +20,13 @@ export async function getAnthropicApiKey(): Promise<string | null> {
 
   let value: string | null = null;
   try {
-    const row = await db.query.appSettings.findFirst({
-      where: eq(appSettings.key, KEY),
-    });
+    const row = await Promise.race([
+      db.query.appSettings.findFirst({ where: eq(appSettings.key, KEY) }),
+      new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), 2500)),
+    ]);
     if (row?.value) value = decryptSecret(row.value);
-  } catch {
+  } catch (err) {
+    console.error("[ai/settings] app_settings read failed:", err);
     value = null;
   }
   if (!value) value = process.env.ANTHROPIC_API_KEY || null;
