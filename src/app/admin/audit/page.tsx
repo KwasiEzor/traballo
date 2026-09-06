@@ -44,14 +44,14 @@ export default async function AdminAuditPage({
       />
 
       <Card className="overflow-x-auto">
-        <table className="w-full text-sm">
+        <table className="w-full min-w-[560px] text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50 text-left">
-              <th className="px-4 py-3 font-semibold">Quand</th>
-              <th className="px-4 py-3 font-semibold">Admin</th>
+              <th className="px-4 py-3 font-semibold whitespace-nowrap">Quand</th>
+              <th className="hidden px-4 py-3 font-semibold sm:table-cell">Admin</th>
               <th className="px-4 py-3 font-semibold">Action</th>
               <th className="px-4 py-3 font-semibold">Cible</th>
-              <th className="px-4 py-3 font-semibold">Détails</th>
+              <th className="hidden px-4 py-3 font-semibold lg:table-cell">Détails</th>
             </tr>
           </thead>
           <tbody>
@@ -72,7 +72,9 @@ export default async function AdminAuditPage({
                     minute: "2-digit",
                   })}
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{e.actorEmail}</td>
+                <td className="hidden max-w-[12rem] truncate px-4 py-3 text-muted-foreground sm:table-cell">
+                  {e.actorEmail}
+                </td>
                 <td className="px-4 py-3">
                   <Badge variant="neutral">
                     {ACTION_LABEL[e.action] ?? e.action}
@@ -90,7 +92,7 @@ export default async function AdminAuditPage({
                     "—"
                   )}
                 </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">
+                <td className="hidden max-w-[16rem] truncate px-4 py-3 text-xs text-muted-foreground lg:table-cell">
                   {e.meta ? JSON.stringify(e.meta) : "—"}
                 </td>
               </tr>

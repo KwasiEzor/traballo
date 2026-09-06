@@ -87,7 +87,15 @@ export default async function AdminTenantDetailPage({
         ]}
         actions={
           <div className="flex items-center gap-2">
-            <Badge>{tenant.plan}</Badge>
+            <Badge
+              variant={
+                ({ free: "neutral", pro: "default", business: "success" } as const)[
+                  tenant.plan
+                ]
+              }
+            >
+              {tenant.plan}
+            </Badge>
             {tenant.status === "suspended" && (
               <Badge variant="destructive">Suspendu</Badge>
             )}
@@ -95,7 +103,7 @@ export default async function AdminTenantDetailPage({
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Factures" value={invAgg.n} />
         <StatCard label="Clients" value={clientCount.n} />
         <StatCard label="Rendez-vous" value={apptCount.n} />
