@@ -7,6 +7,7 @@ import { LeadEmail } from "@/lib/email/templates/lead-email";
 import { MarketingLeadEmail } from "@/lib/email/templates/marketing-lead-email";
 import { UpgradeRequestEmail } from "@/lib/email/templates/upgrade-request-email";
 import { InvoiceEmail } from "@/lib/email/templates/invoice-email";
+import { PaymentFailedEmail } from "@/lib/email/templates/payment-failed-email";
 import { EMAIL_BRAND } from "@/lib/email/brand";
 
 // React SSR injects <!-- --> markers around interpolated text; strip them so
@@ -173,6 +174,29 @@ describe("email templates — branded shell + content", () => {
     expect(raw).toContain("https://blob.example.com/invoice.pdf");
     expect(text).not.toMatch(/L['’]équipe Traballo/); // signed by the artisan
     expect(text).toMatch(/15 mars 2026/);
+  });
+
+  it("PaymentFailedEmail", async () => {
+    const { raw, text } = await rendered(
+      PaymentFailedEmail({
+        businessName: "Plomberie Durand",
+        amountDue: "29,00 €",
+        portalHint: true,
+      })
+    );
+    expectShell(raw, text);
+    expect(text).toContain("Plomberie Durand");
+    expect(text).toContain("29,00 €");
+    expect(text).toMatch(/plan Free/);
+    expect(raw).toContain(`${EMAIL_BRAND.app}/dashboard/settings?tab=abonnement`);
+  });
+
+  it("PaymentFailedEmail without a portal link", async () => {
+    const { raw, text } = await rendered(
+      PaymentFailedEmail({ businessName: "X" })
+    );
+    expectShell(raw, text);
+    expect(text).not.toMatch(/Mettre à jour le paiement/);
   });
 
   it("InvoiceEmail without a PDF link", async () => {

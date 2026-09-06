@@ -140,6 +140,36 @@ export default async function AdminTenantDetailPage({
 
         <Card>
           <CardHeader>
+            <CardTitle>Facturation</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <Row
+              k="Abonnement"
+              v={
+                tenant.plan === "free"
+                  ? "Aucun (Free)"
+                  : tenant.stripeSubscriptionId
+                    ? "Actif via Stripe"
+                    : "Plan attribué manuellement"
+              }
+            />
+            {tenant.stripeCustomerId ? (
+              <a
+                href={`https://dashboard.stripe.com/customers/${tenant.stripeCustomerId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 pt-1 font-mono text-xs text-primary hover:underline"
+              >
+                {tenant.stripeCustomerId} <ExternalLink className="size-3" />
+              </a>
+            ) : (
+              <p className="text-muted-foreground">Aucun client Stripe.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Profil artisan</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">

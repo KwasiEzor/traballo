@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
 import { eq } from "drizzle-orm";
-import { Check } from "lucide-react";
+import { Check, CreditCard } from "lucide-react";
 import { requireAuth } from "@/lib/auth";
 import { getCurrentUser } from "@/lib/auth/session";
 import { withTenant } from "@/lib/db/tenant";
-import { artisanProfiles } from "@/db/schema";
+import { db } from "@/lib/db";
+import { artisanProfiles, tenants } from "@/db/schema";
 import { PLANS } from "@/lib/marketing/plans";
+import { stripeBillingEnabled } from "@/lib/stripe/plans";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProfileForm } from "./profile-form";
 import { PlanPicker } from "./plan-picker";
+import { openBillingPortal } from "./actions/billing";
+import { CheckoutToast } from "./checkout-toast";
 
 export const metadata: Metadata = { title: "Paramètres" };
 export const dynamic = "force-dynamic";
@@ -19,31 +24,40 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; checkout?: string }>;
 }) {
   const { tenantId, plan, email } = await requireAuth();
-  const { tab } = await searchParams;
-  const [profile, user] = await Promise.all([
+  const { tab, checkout } = await searchParams;
+  const [profile, user, tenantRow] = await Promise.all([
     withTenant(tenantId, (tx) =>
       tx.query.artisanProfiles.findFirst({
         where: eq(artisanProfiles.tenantId, tenantId),
       })
     ),
     getCurrentUser(),
+    db
+      .select({ customerId: tenants.stripeCustomerId })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .limit(1),
   ]);
 
   const currentPlan = PLANS.find((p) => p.id === plan) ?? PLANS[0];
   const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro";
   const marketingUrl = `https://www.${rootDomain}`;
+  const stripeOn = stripeBillingEnabled();
+  const hasCustomer = Boolean(tenantRow[0]?.customerId);
+  const onAbo = tab === "abonnement";
 
   return (
     <>
+      <CheckoutToast status={checkout} />
       <PageHeader
         title="Paramètres"
         description="Profil professionnel, facturation et abonnement."
       />
 
-      <Tabs defaultValue={tab === "abonnement" ? "abonnement" : "profil"}>
+      <Tabs defaultValue={onAbo ? "abonnement" : "profil"}>
         <TabsList>
           <TabsTrigger value="profil">Profil</TabsTrigger>
           <TabsTrigger value="abonnement">Abonnement</TabsTrigger>
@@ -86,12 +100,25 @@ export default async function SettingsPage({
                   ))}
               </ul>
 
+              {stripeOn && hasCustomer && (
+                <form action={openBillingPortal}>
+                  <Button type="submit" variant="outline" size="sm">
+                    <CreditCard className="size-4" />
+                    Gérer mon abonnement
+                  </Button>
+                </form>
+              )}
+
               {plan !== "business" && (
                 <div className="border-t border-border pt-6">
                   <p className="mb-4 text-sm font-medium text-foreground">
                     Changer de plan
                   </p>
-                  <PlanPicker currentPlan={plan} marketingUrl={marketingUrl} />
+                  <PlanPicker
+                    currentPlan={plan}
+                    marketingUrl={marketingUrl}
+                    stripeEnabled={stripeOn}
+                  />
                 </div>
               )}
 
