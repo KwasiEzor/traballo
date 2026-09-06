@@ -335,7 +335,7 @@ export function DesignEditor({
 
 /* ------------------------------- helpers -------------------------------- */
 
-/** Full ordered list of all 7 movable sections, seeded by a preferred order. */
+/** Full ordered list of every movable section, seeded by a preferred order. */
 function fullOrder(preferred: SectionKey[]): SectionKey[] {
   return [
     ...preferred.filter((k) => MOVABLE_SECTIONS.includes(k)),

@@ -9,6 +9,7 @@ import { withTenant } from "@/lib/db/tenant";
 import { db } from "@/lib/db";
 import { artisanProfiles, sites } from "@/db/schema";
 import { TRADES } from "@/lib/artisan/trades";
+import { geocodeAddress } from "@/lib/geo/geocode";
 
 const schema = z.object({
   ownerName: z.string().trim().min(2, "Indiquez votre nom.").max(120),
@@ -55,6 +56,8 @@ export async function completeOnboarding(
       })
     )?.fullName ?? tenant?.slug ?? "Mon entreprise";
 
+  const coords = await geocodeAddress(d.address || d.serviceArea);
+
   await withTenant(tenantId, async (tx) => {
     const existingProfile = await tx.query.artisanProfiles.findFirst({
       where: eq(artisanProfiles.tenantId, tenantId),
@@ -69,6 +72,8 @@ export async function completeOnboarding(
       phone: d.phone,
       whatsappNumber: d.whatsappNumber || null,
       address: [d.address, d.serviceArea].filter(Boolean).join(" · ") || null,
+      latitude: coords?.lat ?? null,
+      longitude: coords?.lng ?? null,
       tradeType: d.tradeType,
     };
 

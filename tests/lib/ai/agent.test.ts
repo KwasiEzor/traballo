@@ -13,6 +13,8 @@ const site: PublicSite = {
   phone: "01 23 45 67 89",
   whatsappNumber: null,
   address: "Lyon 3e",
+  latitude: null,
+  longitude: null,
   logoUrl: null,
   primaryColor: "#1f5fc4",
   templateId: "standard",

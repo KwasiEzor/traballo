@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, uuid, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  index,
+  doublePrecision,
+} from "drizzle-orm/pg-core";
 import { tenants } from "./tenants";
 
 export const artisanProfiles = pgTable(
@@ -14,6 +21,9 @@ export const artisanProfiles = pgTable(
     phone: text("phone"),
     whatsappNumber: text("whatsapp_number"),
     address: text("address"),
+    /** Geocoded from `address` on save (Stadia Maps) — drives the map section. */
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
     vatNumber: text("vat_number"),
     iban: text("iban"),
     logoUrl: text("logo_url"),

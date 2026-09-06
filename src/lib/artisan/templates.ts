@@ -12,6 +12,7 @@ export type SectionKey =
   | "about"
   | "gallery"
   | "zones"
+  | "map"
   | "reviews"
   | "hours"
   | "trust"
@@ -24,6 +25,7 @@ export const MOVABLE_SECTIONS: SectionKey[] = [
   "about",
   "gallery",
   "zones",
+  "map",
   "reviews",
   "hours",
   "trust",
@@ -42,6 +44,10 @@ export const SECTION_META: Record<
   about: { label: "À propos", hint: "Votre approche, votre histoire." },
   gallery: { label: "Galerie", hint: "Photos de vos chantiers.", premium: true },
   zones: { label: "Zones d'intervention", hint: "Villes et secteurs couverts." },
+  map: {
+    label: "Carte",
+    hint: "Plan de localisation, généré depuis votre adresse.",
+  },
   reviews: {
     label: "Avis clients",
     hint: "Témoignages que vous saisissez.",

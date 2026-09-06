@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { SiteMap } from "@/components/site/site-map";
 import {
   Phone,
   Mail,
@@ -286,6 +287,53 @@ export function ZonesSection({
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+/* ---------------------------------- map ---------------------------------- */
+
+export function MapSection({
+  site,
+  content,
+  style,
+}: {
+  site: PublicSite;
+  content: { title?: string; note?: string; lat?: number; lng?: number; address?: string };
+  style: Style;
+}) {
+  if (typeof content.lat !== "number" || typeof content.lng !== "number") {
+    return null;
+  }
+  const dir = `https://www.google.com/maps/dir/?api=1&destination=${content.lat},${content.lng}`;
+  return (
+    <section id="carte" className="border-y border-slate-100 bg-slate-50">
+      <div className={`${wrap} ${pad(style)}`}>
+        <h2 className={h2(style)}>{content.title || "Où nous trouver"}</h2>
+        {content.note && (
+          <p className="mt-2 max-w-lg text-slate-600">{content.note}</p>
+        )}
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+          <SiteMap
+            lat={content.lat}
+            lng={content.lng}
+            label={site.businessName}
+            color={site.primaryColor}
+          />
+        </div>
+        {content.address && (
+          <a
+            href={dir}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold"
+            style={{ color: site.primaryColor }}
+          >
+            <MapPin className="size-4" />
+            Itinéraire — {content.address}
+          </a>
+        )}
+      </div>
     </section>
   );
 }

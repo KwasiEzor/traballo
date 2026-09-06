@@ -14,6 +14,8 @@ export interface PublicSite {
   phone: string | null;
   whatsappNumber: string | null;
   address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   logoUrl: string | null;
   primaryColor: string;
   templateId: string;
@@ -119,6 +121,8 @@ export const resolvePublicSite = cache(async function resolvePublicSite(
     phone: profile.phone,
     whatsappNumber: profile.whatsappNumber,
     address: profile.address,
+    latitude: profile.latitude ?? null,
+    longitude: profile.longitude ?? null,
     logoUrl: profile.logoUrl,
     primaryColor: site.primaryColor || "#1f5fc4",
     templateId: site.templateId || "standard",

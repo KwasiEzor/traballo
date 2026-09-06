@@ -14,6 +14,8 @@ function site(plan: PublicSite["plan"]): PublicSite {
     phone: "01",
     whatsappNumber: "01",
     address: "Lyon",
+    latitude: null,
+    longitude: null,
     logoUrl: null,
     primaryColor: "#000",
     templateId: "standard",
@@ -36,6 +38,40 @@ describe("plan helpers", () => {
     expect(isPremiumPlan("pro")).toBe(true);
     expect(isPremiumPlan("business")).toBe(true);
     expect(isPremiumPlan("free")).toBe(false);
+  });
+});
+
+describe("resolveSiteConfig — map section", () => {
+  const geo = (): PublicSite => ({ ...site("pro"), latitude: 45.75, longitude: 4.85 });
+
+  it("is off by default even when coordinates exist", () => {
+    const c = resolveSiteConfig(geo(), "Lyon", "pro", null);
+    expect(c.sections.some((s) => s.key === "map")).toBe(false);
+  });
+
+  it("renders when enabled and the profile is geocoded", () => {
+    const stored = { order: ["map"], disabled: [] };
+    const c = resolveSiteConfig(geo(), "Lyon", "pro", stored);
+    const map = c.sections.find((s) => s.key === "map");
+    expect(map).toBeTruthy();
+    expect((map!.content as { lat: number; lng: number }).lat).toBe(45.75);
+  });
+
+  it("stays hidden when enabled but the address was never geocoded", () => {
+    const stored = { order: ["map"], disabled: [] };
+    const c = resolveSiteConfig(site("pro"), "Lyon", "pro", stored);
+    expect(c.sections.some((s) => s.key === "map")).toBe(false);
+  });
+
+  it("is available on the free plan (not premium-gated)", () => {
+    const stored = { order: ["map"], disabled: [] };
+    const c = resolveSiteConfig(
+      { ...site("free"), latitude: 48.85, longitude: 2.35 },
+      "Paris",
+      "free",
+      stored
+    );
+    expect(c.sections.some((s) => s.key === "map")).toBe(true);
   });
 });
 

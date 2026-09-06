@@ -32,6 +32,14 @@ export interface SectionContent {
   about?: { title?: string; body?: string };
   gallery?: { title?: string; images?: string[] };
   zones?: { title?: string; items?: string[] };
+  map?: {
+    title?: string;
+    note?: string;
+    /** From the geocoded profile address — not user-editable. */
+    lat?: number;
+    lng?: number;
+    address?: string;
+  };
   reviews?: { title?: string; items?: ReviewItem[] };
   hours?: { title?: string; note?: string; days?: HourRow[] };
   trust?: { title?: string; items?: ServiceItem[] };
@@ -159,6 +167,12 @@ export const siteConfigSchema = z.object({
           items: z.array(z.string().trim().max(60)).max(30).optional(),
         })
         .optional(),
+      map: z
+        .object({
+          title: z.string().trim().max(80).optional(),
+          note: z.string().trim().max(200).optional(),
+        })
+        .optional(),
       reviews: z
         .object({
           title: z.string().trim().max(80).optional(),
@@ -256,6 +270,13 @@ function defaultContent(
       return { title: "Nos réalisations", images: [] };
     case "zones":
       return { title: "Zones d'intervention", items: zonesFrom(site, area) };
+    case "map":
+      return {
+        title: "Où nous trouver",
+        lat: site.latitude ?? undefined,
+        lng: site.longitude ?? undefined,
+        address: site.address ?? undefined,
+      };
     case "reviews":
       return { title: "Ce que disent nos clients", items: [] };
     case "hours":
@@ -285,6 +306,8 @@ function defaultContent(
 function hasContent(key: SectionKey, c: Record<string, unknown>): boolean {
   if (key === "reviews") return ((c.items as unknown[]) ?? []).length > 0;
   if (key === "gallery") return ((c.images as unknown[]) ?? []).length > 0;
+  if (key === "map")
+    return typeof c.lat === "number" && typeof c.lng === "number";
   return true;
 }
 

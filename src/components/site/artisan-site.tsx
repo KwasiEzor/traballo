@@ -10,6 +10,7 @@ import {
   AboutSection,
   GallerySection,
   ZonesSection,
+  MapSection,
   ReviewsSection,
   HoursSection,
   TrustSection,
@@ -92,6 +93,8 @@ export function ArtisanSite({
           return <GallerySection key={key} content={c} style={tpl.style} />;
         if (key === "zones")
           return <ZonesSection key={key} site={site} content={c} style={tpl.style} />;
+        if (key === "map")
+          return <MapSection key={key} site={site} content={c} style={tpl.style} />;
         if (key === "reviews")
           return <ReviewsSection key={key} site={site} content={c} style={tpl.style} />;
         if (key === "hours")
