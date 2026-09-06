@@ -16,15 +16,40 @@ export interface NavItem {
   exact?: boolean;
 }
 
-export const DASHBOARD_NAV: NavItem[] = [
-  { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, exact: true },
-  { label: "Factures", href: "/dashboard/invoices", icon: ReceiptText },
-  { label: "Clients", href: "/dashboard/clients", icon: Users },
-  { label: "Rendez-vous", href: "/dashboard/appointments", icon: CalendarDays },
-  { label: "Mon site", href: "/dashboard/site", icon: Globe },
-  { label: "Agent IA", href: "/dashboard/agent", icon: Sparkles },
-  { label: "Paramètres", href: "/dashboard/settings", icon: Settings },
+export interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
+
+export const DASHBOARD_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Activité",
+    items: [
+      { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, exact: true },
+      { label: "Factures", href: "/dashboard/invoices", icon: ReceiptText },
+      { label: "Clients", href: "/dashboard/clients", icon: Users },
+      { label: "Rendez-vous", href: "/dashboard/appointments", icon: CalendarDays },
+    ],
+  },
+  {
+    label: "Présence en ligne",
+    items: [
+      { label: "Mon site", href: "/dashboard/site", icon: Globe },
+      { label: "Agent IA", href: "/dashboard/agent", icon: Sparkles },
+    ],
+  },
+  {
+    label: "Compte",
+    items: [
+      { label: "Paramètres", href: "/dashboard/settings", icon: Settings },
+    ],
+  },
 ];
+
+/** Flat list — kept for title lookup and anything that just needs every item. */
+export const DASHBOARD_NAV: NavItem[] = DASHBOARD_NAV_GROUPS.flatMap(
+  (g) => g.items
+);
 
 /** Human title for a dashboard pathname (used by the top bar). */
 export function dashboardTitle(pathname: string): string {

@@ -6,10 +6,10 @@ import { adminHome } from "@/lib/admin/nav";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getArtisanProfile, hasCompletedOnboarding } from "@/lib/artisan/profile";
 import { Logo } from "@/components/brand/logo";
-import { SidebarNav } from "@/components/dashboard/sidebar-nav";
+import { SidebarContent } from "@/components/dashboard/sidebar-content";
 import { Topbar } from "@/components/dashboard/topbar";
-import { UpgradeButton } from "@/components/dashboard/upgrade-cta";
 import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner";
+import { getDashboardChrome } from "@/lib/dashboard/chrome";
 
 export default async function DashboardLayout({
   children,
@@ -48,9 +48,10 @@ export default async function DashboardLayout({
 
   if (!(await hasCompletedOnboarding())) redirect("/onboarding");
 
-  const [user, profile] = await Promise.all([
+  const [user, profile, chrome] = await Promise.all([
     getCurrentUser(),
     getArtisanProfile(),
+    getDashboardChrome(),
   ]);
 
   const displayName = profile?.businessName || user?.name || "Mon compte";
@@ -59,31 +60,13 @@ export default async function DashboardLayout({
     <div className="grid min-h-dvh lg:grid-cols-[16rem_1fr]">
       {/* Desktop sidebar */}
       <aside className="hidden border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
-        <div className="flex h-16 items-center border-b border-sidebar-border px-5">
+        <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-5">
           <Link href="/dashboard" className="rounded-md">
             <Logo />
           </Link>
         </div>
-        <div className="flex-1 overflow-y-auto p-3">
-          <SidebarNav />
-        </div>
-        <div className="space-y-3 border-t border-sidebar-border p-4">
-          {plan !== "business" && (
-            <div className="rounded-lg bg-sidebar-accent/50 p-3">
-              <p className="text-xs font-medium text-sidebar-foreground">
-                Plan {plan === "free" ? "Free" : "Pro"}
-              </p>
-              <p className="mt-0.5 text-[11px] text-sidebar-foreground/60">
-                {plan === "free"
-                  ? "Débloquez factures illimitées et rendez-vous."
-                  : "Débloquez l'agent IA et WhatsApp Business."}
-              </p>
-              <UpgradeButton plan={plan} className="mt-2 w-full" />
-            </div>
-          )}
-          <p className="text-xs text-sidebar-foreground/60">
-            {profile?.businessName ?? "Traballo"}
-          </p>
+        <div className="min-h-0 flex-1">
+          <SidebarContent name={displayName} plan={plan} chrome={chrome} />
         </div>
       </aside>
 
@@ -92,11 +75,8 @@ export default async function DashboardLayout({
           <ImpersonationBanner by={auth.impersonatedBy} />
         )}
         <Topbar
-          user={{
-            name: displayName,
-            email: email,
-            plan: plan,
-          }}
+          user={{ name: displayName, email, plan }}
+          chrome={chrome}
         />
         <main className="flex-1 bg-muted/30 px-4 py-6 sm:px-6 sm:py-8">
           <div className="mx-auto w-full max-w-6xl">{children}</div>
