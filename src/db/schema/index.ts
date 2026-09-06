@@ -20,6 +20,7 @@ export * from "./availability";
 export * from "./ai-agent-config";
 export * from "./ai-conversations";
 export * from "./ai-messages";
+export * from "./notifications";
 
 /**
  * SCHÉMA RÉSUMÉ (pour référence rapide des agents)

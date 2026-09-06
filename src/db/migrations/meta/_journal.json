@@ -71,6 +71,13 @@
       "when": 1788646590552,
       "tag": "0009_admin_console",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1788685202525,
+      "tag": "0010_short_brood",
+      "breakpoints": true
     }
   ]
 }
