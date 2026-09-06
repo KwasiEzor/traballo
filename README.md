@@ -1,162 +1,162 @@
-# Traballo — Setup Claude Code Agents
+# Traballo
 
-> Configuration complète pour un développement IA-assisté optimal de Traballo.
+> Le business pack des artisans francophones — France · Belgique · Luxembourg.
 
-## Démarrage rapide
+SaaS multi-tenant qui donne à chaque artisan, en un seul abonnement : un site
+web public, la facturation conforme (Factur-X), un agent IA de prise de contact,
+la gestion des rendez-vous et des clients.
+
+**Production :** [www.traballo.pro](https://www.traballo.pro) ·
+dashboard artisan `app.traballo.pro` · console admin `admin.traballo.pro` ·
+site artisan `<slug>.traballo.pro`
+
+---
+
+## Stack
+
+| Domaine | Choix |
+|---|---|
+| Framework | Next.js 15 (App Router, React 19, TypeScript strict) |
+| Style | Tailwind CSS v4 (`@theme inline`, tokens OKLCH) · shadcn/ui |
+| Base de données | Neon Postgres (serverless) · Drizzle ORM · RLS Postgres |
+| Auth | Better Auth (e-mail/mot de passe, Google, magic link, vérification e-mail) |
+| Paiement | Stripe (Checkout abonnement, portail client, webhooks) |
+| E-mail | Resend + React Email (shell de marque partagé) |
+| IA | Anthropic SDK — `claude-haiku-4-5` (agent site + assistant marketing) |
+| Hébergement | Vercel (Fluid Compute) |
+| Anti-spam | Cloudflare Turnstile |
+| Tests | Vitest (unit + intégration) · Playwright (e2e) · MSW |
+
+---
+
+## Fonctionnalités livrées
+
+- **Sites publics artisans** — templates, éditeur de contenu, domaine
+  personnalisé, SEO (`sitemap`, `robots`, OpenGraph), formulaire de contact.
+- **Facturation** — factures, lignes, PDF, envoi e-mail au client, statuts
+  (`draft → sent → viewed → paid → overdue`).
+- **Rendez-vous & disponibilités** — agenda artisan, créneaux hebdomadaires.
+- **Carnet de clients**.
+- **Agent IA** (plan Business) — assistant conversationnel sur le site de
+  l'artisan, streaming, quotas, capture de lead → e-mail + notification.
+- **Assistant IA marketing** — Q&R produit + capture de lead sur le site
+  Traballo.
+- **Abonnements Stripe** — plans Free / Pro / Business, mensuel + annuel,
+  Checkout, portail client, provisionnement via webhook, e-mail d'échec de
+  paiement + dunning.
+- **Console super-admin** — métriques & graphiques (MRR, funnel, cohortes),
+  gestion des tenants, impersonation signée (bannière + journal d'audit),
+  export CSV, clé API Anthropic configurable.
+- **E-mails transactionnels** — shell de marque commun : vérification,
+  réinitialisation, magic link, bienvenue, facture, lead, échec de paiement.
+- **Notifications** — socle livré (table `notifications`, `createNotification`,
+  gating par plan) ; centre in-app + relances factures + rappels RDV en cours.
+  Voir [`NOTIFICATIONS_PLAN.md`](./NOTIFICATIONS_PLAN.md).
+- **Thème clair/sombre**, PWA (manifest + icônes).
+
+---
+
+## Architecture
+
+### Routage multi-tenant (`src/middleware.ts`)
+
+| Hôte | Sert |
+|---|---|
+| `app.traballo.pro` | dashboard artisan → `/dashboard/*` |
+| `admin.traballo.pro` | console super-admin → `/admin/*` |
+| `<slug>.traballo.pro` | site public de l'artisan → `/sites/[slug]/*` |
+| domaine custom | résolu via `sites.custom_domain` |
+
+Les sessions `app.` et `admin.` sont distinctes (cookies host-only, pas de
+partage cross-sous-domaine).
+
+### Isolation des données
+
+- Toute logique tenant passe par `withTenant(tenantId, …)` /
+  `getTenantDb()` (`src/lib/db/tenant.ts`) — la transaction bascule dans le
+  rôle `authenticated` et pose `app.current_tenant_id` pour la RLS.
+- `db` (export de `src/lib/db`) = connexion propriétaire Neon, **bypass RLS** —
+  réservée à l'auth bootstrap, aux migrations, aux scripts, aux webhooks.
+- Chaque table tenant a une policy `tenant_isolation` + un index sur
+  `tenant_id`. Tests : `pnpm test:security`.
+
+### Pièges connus (voir `CLAUDE.md`)
+
+- Le **query builder relationnel Drizzle** (`db.query.X.findFirst`) peut se
+  bloquer à travers le pooler Neon pour certaines tables — préférer
+  `db.select()` côté fiabilité.
+- Les **bind params de `sql\`\``** doivent être des chaînes ISO, pas des
+  `Date` (postgres-js `prepare: false`).
+
+---
+
+## Démarrage local
 
 ```bash
-# Installer Claude Code
-npm install -g @anthropic-ai/claude-code
-
-# Lancer dans le projet
-cd traballo/
-claude
-
-# Premier lancement — Claude lit automatiquement CLAUDE.md
-# et charge la mémoire du projet
+pnpm install
+cp .env.example .env.local   # puis remplir (voir DEPLOYMENT.md)
+pnpm db:migrate              # applique les migrations Drizzle
+pnpm dev                     # http://localhost:3000
 ```
+
+Variables d'environnement requises : `DATABASE_URL` (poolée),
+`DATABASE_URL_UNPOOLED` (directe), `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`,
+`NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_ROOT_DOMAIN`, `RESEND_API_KEY`,
+`EMAIL_FROM`, `ADMIN_EMAILS`. Optionnelles : `GOOGLE_CLIENT_ID/SECRET`,
+`ANTHROPIC_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+`STRIPE_PRICE_{PRO,BUSINESS}_{MONTH,YEAR}`, `TURNSTILE_SITE_KEY/SECRET`,
+`BLOB_READ_WRITE_TOKEN`. Liste complète et synchro Vercel :
+[`scripts/vercel-env-sync.sh`](./scripts/vercel-env-sync.sh).
 
 ---
 
-## Structure du setup
-
-```
-traballo/
-├── CLAUDE.md                          ← Mémoire principale (chargée à chaque session)
-├── .claude/
-│   ├── settings.json                  ← Config Claude Code (modèle, permissions, hooks)
-│   ├── agents/                        ← Sous-agents spécialisés
-│   │   ├── architect.md               ← Décisions d'architecture (Opus 4.6)
-│   │   ├── api-developer.md           ← Backend, Server Actions, API routes
-│   │   ├── frontend-developer.md      ← Composants React, pages, formulaires
-│   │   ├── tdd-engineer.md            ← Tests (toujours avant le code)
-│   │   ├── database-engineer.md       ← Schéma Drizzle, migrations, RLS
-│   │   └── security-reviewer.md       ← Audit sécurité, isolation tenant (lecture seule)
-│   ├── commands/                      ← Commandes slash personnalisées
-│   │   ├── implement.md               ← /implement [feature]
-│   │   ├── review.md                  ← /review [cible]
-│   │   └── migrate.md                 ← /migrate [description]
-│   ├── rules/                         ← Règles spécifiques (chargées à la demande)
-│   │   ├── tdd.md                     ← Convention TDD complète
-│   │   ├── security.md                ← Règles de sécurité non-négociables
-│   │   └── token-optimization.md      ← Gestion optimale du contexte
-│   ├── hooks/                         ← Lifecycle hooks
-│   │   ├── pre-bash.js                ← Bloque les commandes dangereuses
-│   │   ├── post-write.js              ← Lint auto après écriture
-│   │   └── on-stop.js                 ← Résumé de session
-│   └── memory/
-│       └── MEMORY.md                  ← Mémoire auto-persistée entre sessions
-├── src/
-│   ├── app/
-│   │   ├── api/CLAUDE.md              ← Règles spécifiques aux API routes
-│   │   └── (dashboard)/CLAUDE.md     ← Règles spécifiques au dashboard
-│   ├── db/schema/index.ts             ← Schéma DB (importé dans CLAUDE.md)
-│   └── lib/result.ts                  ← Pattern Result<T,E>
-├── tests/
-│   ├── setup.ts                       ← Config globale Vitest
-│   ├── fixtures/index.ts              ← Données de test réutilisables
-│   ├── mocks/
-│   │   ├── server.ts                  ← Serveur MSW
-│   │   └── handlers.ts                ← Mocks Stripe, Resend, Anthropic...
-│   ├── integration/actions/           ← Tests des Server Actions
-│   └── security/                      ← Tests d'isolation multi-tenant
-├── vitest.config.ts                   ← Config tests unitaires + intégration
-└── package.json                       ← Scripts pnpm
-```
-
----
-
-## Sous-agents — quand utiliser lequel
-
-| Sous-agent | Quand l'utiliser | Modèle | Accès |
-|---|---|---|---|
-| `architect` | Design, ADR, schéma DB avant code | Opus 4.6 | Lecture seule |
-| `api-developer` | API routes, Server Actions, logique backend | Sonnet 4.6 | Lecture + Écriture |
-| `frontend-developer` | Composants React, pages, formulaires, UI | Sonnet 4.6 | Lecture + Écriture |
-| `tdd-engineer` | Tests (toujours avant le code) | Sonnet 4.6 | Lecture + Écriture |
-| `database-engineer` | Migrations Drizzle, schéma, RLS, index | Sonnet 4.6 | Lecture + Écriture |
-| `security-reviewer` | Audit avant merge, isolation tenant | Opus 4.6 | **Lecture seule** |
-
-**Syntaxe d'invocation :**
-```
-use architect pour concevoir le module de facturation
-use tdd-engineer pour écrire les tests de createInvoiceAction
-use security-reviewer pour auditer les routes /api/invoices/
-```
-
----
-
-## Commandes slash disponibles
+## Scripts
 
 ```bash
-/implement [feature]    # Implémenter une feature complète (suit le process TDD)
-/review [cible]         # Review de code avant merge (sécurité + qualité)
-/migrate [description]  # Créer une migration DB avec RLS
+pnpm dev              # serveur de développement (Turbopack)
+pnpm build            # build production
+pnpm test             # Vitest (unit + intégration)
+pnpm test:e2e         # Playwright
+pnpm test:security    # tests d'isolation multi-tenant (RUN_DB_SECURITY_TESTS=1)
+pnpm typecheck        # next typegen && tsc --noEmit
+pnpm lint             # ESLint + Prettier
+pnpm check            # db:audit + typecheck + lint + test
+pnpm db:generate      # génère une migration depuis le schéma
+pnpm db:migrate       # applique les migrations
+pnpm db:studio        # GUI Drizzle
 ```
 
 ---
 
-## Workflow TDD — à suivre impérativement
+## Workflow
 
-```
-1. Identifier l'exigence (TRB-XXX dans le PRD)
-2. use tdd-engineer → écrire le test (RED — doit échouer)
-3. pnpm test [fichier] → confirmer l'échec
-4. use api-developer ou frontend-developer → implémenter (GREEN)
-5. pnpm test [fichier] → confirmer la réussite
-6. Refactorer si nécessaire (tests toujours verts)
-7. use security-reviewer → audit si route/action modifiée
-8. pnpm check → typecheck + lint + tests complets avant commit
-```
+- **TDD** : écrire le test avant le code (RED → GREEN → refactor).
+- **Commit après chaque étape significative** (feature fonctionnelle,
+  migration, fix critique). Ne pas committer du code qui ne compile pas ou
+  des tests qui échouent.
+- Une table = un fichier dans `src/db/schema/`. Toujours RLS + index
+  `tenant_id` sur les tables tenant.
+- Server Actions : suffixe `Action`, toujours try/catch, validation Zod.
 
 ---
 
-## Gestion optimale des tokens
+## Documentation
 
-**Principe : moins = mieux**
-
-```bash
-# Charger uniquement le module concerné
-"Lis src/app/(dashboard)/invoices/ et implémente..."
-
-# Ne PAS faire
-"Lis tout le projet et..."
-
-# Nouvelle session si contexte pollué
-/clear  ou  /compact
-```
-
-Voir `.claude/rules/token-optimization.md` pour le guide complet.
+| Fichier | Contenu |
+|---|---|
+| [`CLAUDE.md`](./CLAUDE.md) | mémoire projet — architecture critique, conventions, sécurité |
+| [`traballo-prd.md`](./traballo-prd.md) | product requirements (TRB-XXX) |
+| [`DEPLOYMENT.md`](./DEPLOYMENT.md) | déploiement Vercel + DNS + Stripe + Resend |
+| [`AUDIT.md`](./AUDIT.md) | audit sécurité / dette technique |
+| [`IMPROVEMENT_PLAN.md`](./IMPROVEMENT_PLAN.md) | plan de durcissement |
+| [`NOTIFICATIONS_PLAN.md`](./NOTIFICATIONS_PLAN.md) | plan du système de notifications |
 
 ---
 
-## Hooks automatiques
+## Développement IA-assisté
 
-| Hook | Déclencheur | Action |
-|---|---|---|
-| `pre-bash.js` | Avant toute commande bash | Bloque `rm -rf`, SQL DROP, écriture .env |
-| `post-write.js` | Après écriture d'un fichier TS | Lance ESLint + fix auto |
-| `on-stop.js` | Fin de session | Résumé : tests, erreurs TS, fichiers modifiés |
-
----
-
-## Scripts utiles
-
-```bash
-pnpm check          # typecheck + lint + tests (avant chaque commit)
-pnpm check:full     # check complet + coverage + build
-pnpm test:watch     # mode développement TDD
-pnpm test:coverage  # rapport de couverture HTML
-pnpm db:studio      # GUI pour explorer la DB locale
-pnpm supabase:start # démarrer la DB locale
-```
-
----
-
-## Ressources
-
-- [Documentation Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview)
-- [Supabase RLS guide](https://supabase.com/docs/guides/database/postgres/row-level-security)
-- [Drizzle ORM docs](https://orm.drizzle.team/docs/overview)
-- [Next.js 15 App Router](https://nextjs.org/docs/app)
-- [PRD Traballo](./docs/prd.md)
+Le dépôt est pensé pour Claude Code : [`CLAUDE.md`](./CLAUDE.md) (mémoire
+projet chargée à chaque session — architecture critique, conventions, règles
+de sécurité), un `CLAUDE.md` contextuel dans `src/app/api/`, et
+[`.claude/launch.json`](./.claude/launch.json) pour le serveur de preview.
+Lancer `claude` à la racine du projet.
