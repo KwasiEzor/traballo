@@ -780,9 +780,10 @@ function SectionFields({
             onChange={(v) => set("note", v)}
           />
           <p className="text-xs text-muted-foreground">
-            La carte est générée à partir de l&apos;adresse de votre profil.
-            Renseignez-la dans <span className="font-medium">Réglages → Profil</span>{" "}
-            pour que la carte s&apos;affiche.
+            La carte est générée à partir de l&apos;adresse de votre profil
+            (<span className="font-medium">Réglages → Profil</span>). Indiquez une
+            adresse complète — ex.&nbsp;«&nbsp;51 rue du Marais, 6061 Charleroi&nbsp;» —
+            puis enregistrez : la carte apparaît ensuite ici.
           </p>
         </div>
       );

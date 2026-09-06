@@ -83,7 +83,20 @@ export function ProfileForm({ profile }: { profile?: ArtisanProfile }) {
 
       <div className="space-y-1.5">
         <Label htmlFor="address">Adresse</Label>
-        <Textarea id="address" name="address" rows={2} defaultValue={profile?.address ?? ""} />
+        <Textarea
+          id="address"
+          name="address"
+          rows={2}
+          defaultValue={profile?.address ?? ""}
+          placeholder="51 rue du Marais, 6061 Charleroi"
+        />
+        <p className="text-xs text-muted-foreground">
+          Adresse complète — numéro, rue, code postal, ville — pour placer votre
+          atelier sur la carte du site. Ex.&nbsp;: «&nbsp;51 rue du Marais, 6061
+          Charleroi&nbsp;». Évitez les mentions de zone («&nbsp;et 30&nbsp;km
+          alentour&nbsp;»), elles gênent la localisation. La carte se met à jour
+          à l&apos;enregistrement.
+        </p>
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">

@@ -155,7 +155,10 @@ export function OnboardingWizard({ businessName }: { businessName: string }) {
                 placeholder="+33 6 12 34 56 78"
               />
             </Field>
-            <Field label="Adresse de l'atelier" hint="Facultatif.">
+            <Field
+              label="Adresse de l'atelier"
+              hint="Facultatif. Adresse complète (n°, rue, code postal, ville) — elle place votre atelier sur la carte du site."
+            >
               <Input
                 value={form.address}
                 onChange={(e) => set("address", e.target.value)}
