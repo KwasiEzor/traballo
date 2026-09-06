@@ -13,7 +13,10 @@ import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const ROOT = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro";
-const APP = process.env.NEXT_PUBLIC_APP_URL || `https://app.${ROOT}`;
+// The webhook endpoint must be publicly reachable — always the deployed app,
+// never a localhost NEXT_PUBLIC_APP_URL. Override with STRIPE_WEBHOOK_URL if needed.
+const WEBHOOK_URL =
+  process.env.STRIPE_WEBHOOK_URL || `https://app.${ROOT}/api/webhooks/stripe`;
 
 type PlanId = "pro" | "business";
 type Interval = "month" | "year";
@@ -145,7 +148,7 @@ async function ensurePortal(priceIds: string[]) {
 }
 
 async function ensureWebhook() {
-  const url = `${APP}/api/webhooks/stripe`;
+  const url = WEBHOOK_URL;
   const events: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
     "checkout.session.completed",
     "customer.subscription.created",
