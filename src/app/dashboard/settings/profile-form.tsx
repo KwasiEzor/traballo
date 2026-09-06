@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, MapPin, MapPinOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,11 +20,16 @@ import { TRADES } from "@/lib/artisan/trades";
 import { saveProfile } from "./actions/save-profile";
 import type { ArtisanProfile } from "@/db/schema";
 
+type Located = "yes" | "no" | "none";
+
 export function ProfileForm({ profile }: { profile?: ArtisanProfile }) {
   const router = useRouter();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [tradeType, setTradeType] = React.useState(profile?.tradeType ?? "autre");
+  const [located, setLocated] = React.useState<Located>(
+    profile?.latitude != null ? "yes" : profile?.address ? "no" : "none"
+  );
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,8 +48,18 @@ export function ProfileForm({ profile }: { profile?: ArtisanProfile }) {
       tradeType,
     });
     setLoading(false);
-    if (res?.error) return setError(res.error);
-    toast.success("Profil enregistré.");
+    if ("error" in res) return setError(res.error);
+
+    setLocated(res.located);
+    if (res.located === "yes") {
+      toast.success("Profil enregistré — adresse localisée sur la carte.");
+    } else if (res.located === "no") {
+      toast.warning(
+        "Profil enregistré, mais l'adresse n'a pas été localisée. Précisez le numéro, le code postal et la ville."
+      );
+    } else {
+      toast.success("Profil enregistré.");
+    }
     router.refresh();
   }
 
@@ -97,6 +112,19 @@ export function ProfileForm({ profile }: { profile?: ArtisanProfile }) {
           alentour&nbsp;»), elles gênent la localisation. La carte se met à jour
           à l&apos;enregistrement.
         </p>
+        {located === "yes" && (
+          <p className="flex items-center gap-1.5 text-xs font-medium text-success">
+            <MapPin className="size-3.5" />
+            Adresse localisée sur la carte.
+          </p>
+        )}
+        {located === "no" && (
+          <p className="flex items-center gap-1.5 text-xs font-medium text-warning">
+            <MapPinOff className="size-3.5" />
+            Adresse non localisée — la carte du site ne s&apos;affichera pas tant
+            qu&apos;elle n&apos;est pas reconnue.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">

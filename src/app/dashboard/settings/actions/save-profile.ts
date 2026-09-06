@@ -25,7 +25,16 @@ const profileSchema = z.object({
   tradeType: z.string().optional(),
 });
 
-export async function saveProfile(input: z.infer<typeof profileSchema>) {
+/** Whether the saved address resolved to a point on the map. */
+export type GeoStatus = "yes" | "no" | "none";
+
+export type SaveProfileResult =
+  | { error: string }
+  | { success: true; located: GeoStatus };
+
+export async function saveProfile(
+  input: z.infer<typeof profileSchema>
+): Promise<SaveProfileResult> {
   try {
     const { tenantId } = await requireAuth();
 
@@ -44,11 +53,20 @@ export async function saveProfile(input: z.infer<typeof profileSchema>) {
     const addressChanged =
       (validated.address || null) !== (existing?.address ?? null);
     let geo: { latitude: number | null; longitude: number | null } | null = null;
+    let located: GeoStatus;
     if (!validated.address) {
       geo = { latitude: null, longitude: null };
+      located = "none";
     } else if (addressChanged || existing?.latitude == null) {
       const coords = await geocodeAddress(validated.address);
-      if (coords) geo = { latitude: coords.lat, longitude: coords.lng };
+      if (coords) {
+        geo = { latitude: coords.lat, longitude: coords.lng };
+        located = "yes";
+      } else {
+        located = "no";
+      }
+    } else {
+      located = "yes"; // address unchanged, already geocoded
     }
 
     await withTenant(tenantId, async (tx) => {
@@ -83,7 +101,7 @@ export async function saveProfile(input: z.infer<typeof profileSchema>) {
     });
 
     revalidatePath("/dashboard/settings");
-    return { success: true };
+    return { success: true, located };
   } catch (error) {
     unstable_rethrow(error);
     console.error("Save profile error:", error);
