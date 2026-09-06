@@ -18,11 +18,11 @@ site artisan `<slug>.traballo.pro`
 |---|---|
 | [![Landing](docs/screenshots/landing.png)](docs/screenshots/landing.png) | [![Fonctionnalités](docs/screenshots/fonctionnalites.png)](docs/screenshots/fonctionnalites.png) |
 
-| Tarifs | Dashboard artisan |
+| Tarifs | Site artisan public |
 |---|---|
-| [![Tarifs](docs/screenshots/tarifs.png)](docs/screenshots/tarifs.png) | _à venir_ |
+| [![Tarifs](docs/screenshots/tarifs.png)](docs/screenshots/tarifs.png) | [![Site artisan](docs/screenshots/site-artisan.png)](docs/screenshots/site-artisan.png) |
 
-| Console super-admin | Site artisan public |
+| Dashboard artisan | Console super-admin |
 |---|---|
 | _à venir_ | _à venir_ |
 
