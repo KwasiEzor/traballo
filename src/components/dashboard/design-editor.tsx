@@ -34,6 +34,7 @@ import {
   type TemplateId,
 } from "@/lib/artisan/templates";
 import type { StoredSiteConfig, ChromeConfig } from "@/lib/artisan/site-config";
+import { SOCIAL_PLATFORMS, SOCIAL_META } from "@/lib/artisan/social";
 import { saveSiteConfig, type ConfigState } from "@/app/dashboard/site/actions";
 
 const initial: ConfigState = {};
@@ -256,7 +257,33 @@ export function DesignEditor({
             />
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="space-y-2 border-t border-border pt-4">
+            <div>
+              <div className="text-sm font-medium text-foreground">Réseaux sociaux</div>
+              <div className="text-xs text-muted-foreground">
+                Une icône s&apos;affiche en pied de page pour chaque lien renseigné.
+                Videz le champ pour la retirer.
+              </div>
+            </div>
+            {SOCIAL_PLATFORMS.map((p) => (
+              <div key={p} className="space-y-1.5">
+                <Label className="text-xs">{SOCIAL_META[p].label}</Label>
+                <Input
+                  type="url"
+                  inputMode="url"
+                  value={chrome.social?.[p] ?? ""}
+                  placeholder={SOCIAL_META[p].placeholder}
+                  onChange={(e) =>
+                    setChrome({
+                      social: { ...chrome.social, [p]: e.target.value },
+                    })
+                  }
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between border-t border-border pt-4">
             <div>
               <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                 Retirer « Créé avec Traballo »

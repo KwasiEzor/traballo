@@ -9,6 +9,12 @@ import {
   type TemplateId,
 } from "@/lib/artisan/templates";
 import { servicesFor, type PublicSite } from "@/lib/artisan/site-data";
+import {
+  SOCIAL_PLATFORMS,
+  normalizeSocialUrl,
+  type SocialPlatform,
+  type SocialLink,
+} from "@/lib/artisan/social";
 
 /* --------------------------------- types --------------------------------- */
 
@@ -57,6 +63,8 @@ export interface ChromeConfig {
   showCallButton?: boolean;
   /** Floating WhatsApp button (bottom-right). Default on. */
   showWhatsappButton?: boolean;
+  /** Per-network profile URLs. A network is shown iff its URL is set. */
+  social?: Partial<Record<SocialPlatform, string>>;
 }
 
 /** Stored verbatim in sites.sections (jsonb). All fields optional. */
@@ -81,6 +89,7 @@ export interface ResolvedChrome {
   showBadge: boolean;
   showCallButton: boolean;
   showWhatsappButton: boolean;
+  social: SocialLink[];
 }
 
 export interface ResolvedSiteConfig {
@@ -131,6 +140,16 @@ export const siteConfigSchema = z.object({
       hideBadge: z.boolean().optional(),
       showCallButton: z.boolean().optional(),
       showWhatsappButton: z.boolean().optional(),
+      social: z
+        .object({
+          facebook: z.string().trim().max(300).optional(),
+          instagram: z.string().trim().max(300).optional(),
+          linkedin: z.string().trim().max(300).optional(),
+          tiktok: z.string().trim().max(300).optional(),
+          youtube: z.string().trim().max(300).optional(),
+          google: z.string().trim().max(300).optional(),
+        })
+        .optional(),
     })
     .optional(),
   content: z
@@ -376,6 +395,10 @@ export function resolveSiteConfig(
     showBadge: !(ch.hideBadge && paid),
     showCallButton: ch.showCallButton !== false,
     showWhatsappButton: ch.showWhatsappButton !== false,
+    social: SOCIAL_PLATFORMS.flatMap((platform) => {
+      const url = normalizeSocialUrl(ch.social?.[platform]);
+      return url ? [{ platform, url }] : [];
+    }),
   };
 
   return {

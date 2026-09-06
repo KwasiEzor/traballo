@@ -75,6 +75,47 @@ describe("resolveSiteConfig — map section", () => {
   });
 });
 
+describe("resolveSiteConfig chrome — social links", () => {
+  it("has no social links by default", () => {
+    const c = resolveSiteConfig(site("free"), "Lyon", "free", null);
+    expect(c.chrome.social).toEqual([]);
+  });
+
+  it("keeps set links in platform order and normalizes bare URLs", () => {
+    const stored = {
+      chrome: {
+        social: {
+          instagram: "instagram.com/plomberie",
+          facebook: "https://facebook.com/plomberie",
+        },
+      },
+    };
+    const c = resolveSiteConfig(site("pro"), "Lyon", "pro", stored);
+    expect(c.chrome.social).toEqual([
+      { platform: "facebook", url: "https://facebook.com/plomberie" },
+      { platform: "instagram", url: "https://instagram.com/plomberie" },
+    ]);
+  });
+
+  it("drops empty, malformed and non-http links", () => {
+    const stored = {
+      chrome: {
+        social: {
+          facebook: "",
+          instagram: "   ",
+          linkedin: "javascript:alert(1)",
+          youtube: "not a url",
+          tiktok: "https://tiktok.com/@x",
+        },
+      },
+    };
+    const c = resolveSiteConfig(site("business"), "Lyon", "business", stored);
+    expect(c.chrome.social).toEqual([
+      { platform: "tiktok", url: "https://tiktok.com/@x" },
+    ]);
+  });
+});
+
 describe("resolveSiteConfig chrome — floating buttons", () => {
   it("defaults both floating buttons on", () => {
     const c = resolveSiteConfig(site("free"), "Lyon", "free", null);

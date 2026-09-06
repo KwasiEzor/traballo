@@ -4,6 +4,7 @@ import { getTemplate } from "@/lib/artisan/templates";
 import { resolveSiteConfig } from "@/lib/artisan/site-config";
 import { FloatingContact } from "@/components/site/floating-contact";
 import { ChatWidget } from "@/components/site/chat-widget";
+import { SocialLinks } from "@/components/site/social-links";
 import {
   HeroSection,
   ServicesSection,
@@ -117,10 +118,11 @@ export function ArtisanSite({
       })}
 
       <footer className="border-t border-slate-100 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center gap-2 px-5 text-center text-xs text-slate-500">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 text-center text-xs text-slate-500">
           {chrome.footerTagline && (
             <p className="text-slate-600">{chrome.footerTagline}</p>
           )}
+          {chrome.social.length > 0 && <SocialLinks links={chrome.social} />}
           <div className="flex flex-col items-center justify-between gap-2 sm:w-full sm:flex-row">
             <span>
               © {new Date().getFullYear()} {site.businessName}
