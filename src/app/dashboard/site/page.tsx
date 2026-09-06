@@ -9,6 +9,7 @@ import { SitePreviewFrame } from "@/components/dashboard/site-preview-frame";
 import { isPremiumPlan } from "@/lib/artisan/templates";
 import type { StoredSiteConfig } from "@/lib/artisan/site-config";
 import { SiteEditor } from "./site-editor";
+import { PublishCard } from "./publish-card";
 import { DesignEditor } from "@/components/dashboard/design-editor";
 
 export const metadata: Metadata = { title: "Mon site" };
@@ -36,6 +37,13 @@ export default async function SitePage() {
         title="Mon site"
         description="Personnalisez votre vitrine publique."
       />
+      <div className="mb-8">
+        <PublishCard
+          slug={tenant?.slug ?? "mon-site"}
+          rootDomain={rootDomain}
+          initialPublished={site?.isPublished ?? false}
+        />
+      </div>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <div className="space-y-8">
           <DesignEditor config={config} isPaid={isPremiumPlan(plan)} />

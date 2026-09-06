@@ -3,13 +3,12 @@
 import * as React from "react";
 import { useActionState } from "react";
 import { toast } from "sonner";
-import { Check, Loader2, ExternalLink, Lock } from "lucide-react";
+import { Check, Loader2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Alert, AlertContent, AlertDescription } from "@/components/ui/alert";
 import { SITE_SAVED_EVENT } from "@/components/dashboard/site-preview-frame";
@@ -32,17 +31,14 @@ export function SiteEditor({
 }) {
   const [state, action, pending] = useActionState(saveSite, initial);
   const [color, setColor] = React.useState(site?.primaryColor ?? BRAND_COLORS[0].value);
-  const [published, setPublished] = React.useState(site?.isPublished ?? false);
 
   React.useEffect(() => {
     if (state.ok) {
-      toast.success("Site enregistré.");
+      toast.success("Réglages enregistrés.");
       window.dispatchEvent(new Event(SITE_SAVED_EVENT));
     }
     if (state.error) toast.error(state.error);
   }, [state]);
-
-  const publicUrl = `https://${slug}.${rootDomain}`;
 
   return (
     <form action={action} className="space-y-6">
@@ -55,35 +51,6 @@ export function SiteEditor({
       )}
 
       <input type="hidden" name="primaryColor" value={color} />
-      <input type="hidden" name="isPublished" value={published ? "on" : "off"} />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Publication</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium text-foreground">
-                {published ? "En ligne" : "Hors ligne"}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {published
-                  ? "Votre site est visible publiquement."
-                  : "Seul vous pouvez voir votre site."}
-              </div>
-            </div>
-            <Switch checked={published} onCheckedChange={setPublished} />
-          </div>
-          {published && (
-            <Button asChild variant="outline" size="sm" className="w-full">
-              <a href={publicUrl} target="_blank" rel="noopener noreferrer">
-                Voir le site en ligne <ExternalLink className="size-4" />
-              </a>
-            </Button>
-          )}
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>

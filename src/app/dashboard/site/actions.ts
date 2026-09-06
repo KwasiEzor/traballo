@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
-import { sites } from "@/db/schema";
+import { sites, artisanProfiles } from "@/db/schema";
 import { siteConfigSchema } from "@/lib/artisan/site-config";
 
 const schema = z.object({
@@ -13,10 +13,61 @@ const schema = z.object({
   metaTitle: z.string().trim().max(160).optional().default(""),
   metaDescription: z.string().trim().max(320).optional().default(""),
   customDomain: z.string().trim().max(255).optional().default(""),
-  isPublished: z.enum(["on", "off"]).optional(),
 });
 
 export type SiteState = { error?: string; ok?: boolean };
+
+/**
+ * Publish / unpublish the public site. Deliberately its own action so the
+ * toggle in the dashboard takes effect on the spot, without depending on the
+ * "save settings" button that also carries colour / SEO / domain.
+ */
+export async function setSitePublished(published: boolean): Promise<SiteState> {
+  if (typeof published !== "boolean") return { error: "Requête invalide." };
+  const { tenantId } = await requireAuth();
+
+  try {
+    const outcome = await withTenant(tenantId, async (tx) => {
+      if (published) {
+        const profile = await tx.query.artisanProfiles.findFirst({
+          where: eq(artisanProfiles.tenantId, tenantId),
+          columns: { id: true },
+        });
+        if (!profile) {
+          return {
+            error:
+              "Complétez votre profil artisan (métier, coordonnées) avant de publier votre site.",
+          } as const;
+        }
+      }
+
+      const existing = await tx.query.sites.findFirst({
+        where: eq(sites.tenantId, tenantId),
+        columns: { id: true },
+      });
+      if (existing) {
+        await tx
+          .update(sites)
+          .set({ isPublished: published, updatedAt: new Date() })
+          .where(eq(sites.id, existing.id));
+      } else {
+        await tx.insert(sites).values({ tenantId, isPublished: published });
+      }
+      return { ok: true } as const;
+    });
+
+    if ("error" in outcome) return outcome;
+  } catch {
+    return {
+      error: published
+        ? "La publication a échoué. Réessayez."
+        : "La mise hors ligne a échoué. Réessayez.",
+    };
+  }
+
+  revalidatePath("/dashboard/site");
+  return { ok: true };
+}
 
 export async function saveSite(
   _prev: SiteState,
@@ -41,7 +92,6 @@ export async function saveSite(
         metaTitle: d.metaTitle || null,
         metaDescription: d.metaDescription || null,
         customDomain: canCustomDomain ? d.customDomain || null : null,
-        isPublished: d.isPublished === "on",
         updatedAt: new Date(),
       };
       if (existing) {
