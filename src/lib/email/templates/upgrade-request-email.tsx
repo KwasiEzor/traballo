@@ -1,14 +1,14 @@
+/**
+ * An artisan asking to change plan from the dashboard → Traballo admin.
+ */
 import * as React from "react";
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Preview,
-  Text,
-} from "@react-email/components";
+import { EmailLayout, P, Field, Divider } from "@/lib/email/layout";
+
+const PLAN_LABEL: Record<string, string> = {
+  free: "Free",
+  pro: "Pro",
+  business: "Business",
+};
 
 export function UpgradeRequestEmail({
   businessName,
@@ -27,31 +27,27 @@ export function UpgradeRequestEmail({
   currentPlan: string;
   targetPlan: string;
 }) {
+  const target = PLAN_LABEL[targetPlan] ?? targetPlan;
   return (
-    <Html lang="fr">
-      <Head />
-      <Preview>{`${businessName} veut passer au plan ${targetPlan}`}</Preview>
-      <Body style={{ backgroundColor: "#f3f4f6", fontFamily: "system-ui, sans-serif" }}>
-        <Container style={{ margin: "0 auto", padding: "24px", maxWidth: "560px" }}>
-          <Heading style={{ fontSize: "18px", color: "#111827" }}>
-            Demande de passage au plan {targetPlan}
-          </Heading>
-          <Text style={{ fontSize: "14px", color: "#374151", margin: "4px 0" }}>
-            <strong>Entreprise :</strong> {businessName} ({slug})
-          </Text>
-          <Text style={{ fontSize: "14px", color: "#374151", margin: "4px 0" }}>
-            <strong>Contact :</strong> {ownerName} · {email} · {phone}
-          </Text>
-          <Hr style={{ borderColor: "#e5e7eb", margin: "16px 0" }} />
-          <Text style={{ fontSize: "14px", color: "#111827" }}>
-            Passage souhaité : <strong>{currentPlan}</strong> →{" "}
-            <strong>{targetPlan}</strong>
-          </Text>
-          <Text style={{ fontSize: "12px", color: "#9ca3af", marginTop: "16px" }}>
-            Répondez à ce message pour organiser la mise à niveau et la facturation.
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+    <EmailLayout
+      preview={`${businessName} veut passer au plan ${target}`}
+      heading={`Demande de passage au plan ${target}`}
+      footnote="Répondez à ce message pour organiser la mise à niveau et la facturation."
+    >
+      <Field label="Entreprise">
+        {businessName} — {slug}.traballo.pro
+      </Field>
+      <Field label="Contact">
+        {ownerName} · {email} · {phone}
+      </Field>
+      <Divider />
+      <P>
+        Plan actuel : <strong>{PLAN_LABEL[currentPlan] ?? currentPlan}</strong>
+        {" → "}
+        souhaité : <strong>{target}</strong>
+      </P>
+    </EmailLayout>
   );
 }
+
+export default UpgradeRequestEmail;

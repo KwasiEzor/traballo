@@ -1,14 +1,9 @@
+/**
+ * A visitor's request from the artisan's public site (contact form or AI
+ * assistant) → the artisan.
+ */
 import * as React from "react";
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Preview,
-  Text,
-} from "@react-email/components";
+import { EmailLayout, P, Field, Quote, Divider } from "@/lib/email/layout";
 
 export function LeadEmail({
   businessName,
@@ -22,31 +17,22 @@ export function LeadEmail({
   message: string;
 }) {
   return (
-    <Html lang="fr">
-      <Head />
-      <Preview>{`Nouvelle demande de ${name}`}</Preview>
-      <Body style={{ backgroundColor: "#f3f4f6", fontFamily: "system-ui, sans-serif" }}>
-        <Container style={{ margin: "0 auto", padding: "24px", maxWidth: "560px" }}>
-          <Heading style={{ fontSize: "18px", color: "#111827" }}>
-            Nouvelle demande via le site de {businessName}
-          </Heading>
-          <Text style={{ fontSize: "14px", color: "#374151", margin: "4px 0" }}>
-            <strong>Nom :</strong> {name}
-          </Text>
-          <Text style={{ fontSize: "14px", color: "#374151", margin: "4px 0" }}>
-            <strong>Contact :</strong> {contact}
-          </Text>
-          <Hr style={{ borderColor: "#e5e7eb", margin: "16px 0" }} />
-          <Text style={{ fontSize: "14px", color: "#111827", whiteSpace: "pre-wrap" }}>
-            {message}
-          </Text>
-          <Hr style={{ borderColor: "#e5e7eb", margin: "16px 0" }} />
-          <Text style={{ fontSize: "12px", color: "#9ca3af" }}>
-            Répondez directement à ce message ou rappelez le contact indiqué.
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+    <EmailLayout
+      preview={`Nouvelle demande de ${name}`}
+      heading="Nouvelle demande client"
+      footnote={`Reçu via votre site ${businessName}. Rappelez ou répondez au contact indiqué.`}
+    >
+      <P>
+        Un visiteur de votre site <strong>{businessName}</strong> souhaite être
+        recontacté.
+      </P>
+      <Divider />
+      <Field label="Nom">{name}</Field>
+      <Field label="Contact">{contact}</Field>
+      <Divider />
+      <P muted>Sa demande</P>
+      <Quote>{message}</Quote>
+    </EmailLayout>
   );
 }
 

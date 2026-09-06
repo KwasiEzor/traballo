@@ -16,6 +16,7 @@ import { db } from "@/lib/db";
 import { user, session, account, verification } from "@/db/schema/auth";
 import { sendEmail } from "@/lib/email/send";
 import { AuthLinkEmail } from "@/lib/email/templates/auth-link-email";
+import { WelcomeEmail } from "@/lib/email/templates/welcome-email";
 import { ensureTenantForUser } from "@/lib/tenant/provision";
 
 const appUrl =
@@ -60,14 +61,22 @@ export const auth = betterAuth({
     sendVerificationEmail: async ({ user: u, url }) => {
       await sendEmail({
         to: u.email,
-        subject: "Confirmez votre adresse email — Traballo",
+        subject: "Confirmez votre adresse e-mail — Traballo",
         react: AuthLinkEmail({
-          heading: "Confirmez votre email",
-          intro: "Bienvenue sur Traballo. Confirmez votre adresse pour activer votre compte.",
-          cta: "Confirmer mon email",
+          heading: "Confirmez votre e-mail",
+          intro:
+            "Bienvenue sur Traballo. Confirmez votre adresse pour activer votre compte.",
+          cta: "Confirmer mon e-mail",
           url,
         }),
       });
+    },
+    afterEmailVerification: async (u) => {
+      await sendEmail({
+        to: u.email,
+        subject: "Bienvenue sur Traballo — voici comment démarrer",
+        react: WelcomeEmail({ firstName: u.name?.split(" ")[0] }),
+      }).catch(() => {});
     },
   },
 

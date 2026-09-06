@@ -1,14 +1,9 @@
+/**
+ * A prospect leaving their e-mail via the assistant on traballo.pro →
+ * Traballo team.
+ */
 import * as React from "react";
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Preview,
-  Text,
-} from "@react-email/components";
+import { EmailLayout, P, Field, Quote, Divider } from "@/lib/email/layout";
 
 export function MarketingLeadEmail({
   email,
@@ -22,40 +17,29 @@ export function MarketingLeadEmail({
   transcript?: string;
 }) {
   return (
-    <Html lang="fr">
-      <Head />
-      <Preview>{`Nouveau contact via l'assistant du site — ${email}`}</Preview>
-      <Body style={{ backgroundColor: "#f3f4f6", fontFamily: "system-ui, sans-serif" }}>
-        <Container style={{ margin: "0 auto", padding: "24px", maxWidth: "560px" }}>
-          <Heading style={{ fontSize: "18px", color: "#111827" }}>
-            Nouveau contact via l&apos;assistant du site Traballo
-          </Heading>
-          <Text style={{ fontSize: "14px", color: "#374151", margin: "4px 0" }}>
-            <strong>E-mail :</strong> {email}
-          </Text>
-          {name ? (
-            <Text style={{ fontSize: "14px", color: "#374151", margin: "4px 0" }}>
-              <strong>Nom :</strong> {name}
-            </Text>
-          ) : null}
-          {note ? (
-            <>
-              <Hr style={{ borderColor: "#e5e7eb", margin: "16px 0" }} />
-              <Text style={{ fontSize: "14px", color: "#111827", whiteSpace: "pre-wrap" }}>
-                {note}
-              </Text>
-            </>
-          ) : null}
-          {transcript ? (
-            <>
-              <Hr style={{ borderColor: "#e5e7eb", margin: "16px 0" }} />
-              <Text style={{ fontSize: "12px", color: "#6b7280", whiteSpace: "pre-wrap" }}>
-                {transcript}
-              </Text>
-            </>
-          ) : null}
-        </Container>
-      </Body>
-    </Html>
+    <EmailLayout
+      preview={`Nouveau contact via l'assistant du site — ${email}`}
+      heading="Nouveau contact — assistant du site"
+      footnote="Le visiteur a laissé ses coordonnées depuis l'assistant de traballo.pro."
+    >
+      <Field label="E-mail">{email}</Field>
+      {name ? <Field label="Nom">{name}</Field> : null}
+      {note ? (
+        <>
+          <Divider />
+          <P muted>Message</P>
+          <Quote>{note}</Quote>
+        </>
+      ) : null}
+      {transcript ? (
+        <>
+          <Divider />
+          <P muted>Extrait de la conversation</P>
+          <Quote>{transcript}</Quote>
+        </>
+      ) : null}
+    </EmailLayout>
   );
 }
+
+export default MarketingLeadEmail;

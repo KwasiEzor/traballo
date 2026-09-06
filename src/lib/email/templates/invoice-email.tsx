@@ -1,19 +1,11 @@
 /**
- * Invoice email template using React Email
+ * An artisan's invoice → their client. Sent from the artisan's identity;
+ * the shell stays lightly Traballo-branded ("Envoyé via Traballo").
  */
-
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Link,
-  Preview,
-  Section,
-  Text,
-} from "@react-email/components";
 import * as React from "react";
+import { Section, Text } from "@react-email/components";
+import { EmailLayout, P, Btn } from "@/lib/email/layout";
+import { EMAIL_BRAND as B } from "@/lib/email/brand";
 
 interface InvoiceEmailProps {
   invoiceNumber: string;
@@ -25,159 +17,73 @@ interface InvoiceEmailProps {
 }
 
 export function InvoiceEmail({
-  invoiceNumber = "INV-0001",
-  clientName = "John Doe",
-  total = "1000.00",
-  dueDate = "2024-01-31",
+  invoiceNumber = "2026-0001",
+  clientName = "Client",
+  total = "0.00",
+  dueDate = "2026-01-31",
   artisanBusinessName = "Mon Entreprise",
   pdfUrl,
 }: InvoiceEmailProps) {
-  const formattedDueDate = new Date(dueDate).toLocaleDateString("fr-FR", {
+  const due = new Date(dueDate).toLocaleDateString("fr-FR", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
 
   return (
-    <Html>
-      <Head />
-      <Preview>
-        Nouvelle facture {invoiceNumber} de {artisanBusinessName}
-      </Preview>
-      <Body style={main}>
-        <Container style={container}>
-          <Heading style={h1}>Nouvelle facture</Heading>
+    <EmailLayout
+      preview={`Facture ${invoiceNumber} de ${artisanBusinessName}`}
+      heading="Votre facture"
+      footnote={`Facture émise par ${artisanBusinessName}, envoyée via Traballo.`}
+      signature={{ name: artisanBusinessName }}
+    >
+      <P>Bonjour {clientName},</P>
+      <P>
+        Vous avez reçu une nouvelle facture de la part de{" "}
+        <strong>{artisanBusinessName}</strong>.
+      </P>
 
-          <Text style={text}>Bonjour {clientName},</Text>
+      <Section style={box}>
+        <Text style={boxNumber}>Facture {invoiceNumber}</Text>
+        <Text style={boxAmount}>{total} € TTC</Text>
+        <Text style={boxDue}>À régler avant le {due}</Text>
+      </Section>
 
-          <Text style={text}>
-            Vous avez reçu une nouvelle facture de la part de{" "}
-            <strong>{artisanBusinessName}</strong>.
-          </Text>
+      {pdfUrl ? <Btn href={pdfUrl}>Télécharger la facture (PDF)</Btn> : null}
 
-          <Section style={invoiceBox}>
-            <Text style={invoiceNumberStyle}>Facture {invoiceNumber}</Text>
-            <Text style={invoiceAmount}>Montant : {total}€ TTC</Text>
-            <Text style={invoiceDue}>
-              À payer avant le {formattedDueDate}
-            </Text>
-          </Section>
-
-          {pdfUrl && (
-            <Section style={buttonContainer}>
-              <Link href={pdfUrl} style={button}>
-                📄 Télécharger la facture
-              </Link>
-            </Section>
-          )}
-
-          <Text style={text}>
-            Si vous avez des questions concernant cette facture, n'hésitez pas à
-            nous contacter.
-          </Text>
-
-          <Text style={footer}>
-            Cordialement,
-            <br />
-            {artisanBusinessName}
-          </Text>
-
-          <Text style={footerNote}>
-            Ce message a été envoyé automatiquement via Traballo.
-          </Text>
-        </Container>
-      </Body>
-    </Html>
+      <P muted>
+        Pour toute question sur cette facture, répondez directement à cet
+        e-mail.
+      </P>
+    </EmailLayout>
   );
 }
 
-const main = {
-  backgroundColor: "#f6f9fc",
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+const box: React.CSSProperties = {
+  backgroundColor: B.page,
+  border: `1px solid ${B.border}`,
+  borderRadius: "10px",
+  padding: "20px",
+  textAlign: "center",
+  margin: "16px 0",
 };
-
-const container = {
-  backgroundColor: "#ffffff",
-  margin: "0 auto",
-  padding: "20px 0 48px",
-  marginBottom: "64px",
-};
-
-const h1 = {
-  color: "#1f2937",
-  fontSize: "32px",
-  fontWeight: "bold",
-  margin: "40px 0",
-  padding: "0 40px",
-};
-
-const text = {
-  color: "#374151",
-  fontSize: "16px",
-  lineHeight: "26px",
-  padding: "0 40px",
-};
-
-const invoiceBox = {
-  backgroundColor: "#f3f4f6",
-  borderRadius: "8px",
-  margin: "32px 40px",
-  padding: "24px",
-  textAlign: "center" as const,
-};
-
-const invoiceNumberStyle = {
-  fontSize: "14px",
-  color: "#6b7280",
-  margin: "0 0 8px 0",
-};
-
-const invoiceAmount = {
-  fontSize: "28px",
-  fontWeight: "bold",
-  color: "#1f2937",
-  margin: "0 0 8px 0",
-};
-
-const invoiceDue = {
-  fontSize: "14px",
-  color: "#6b7280",
-  margin: "0",
-};
-
-const buttonContainer = {
-  padding: "0 40px",
-  margin: "32px 0",
-  textAlign: "center" as const,
-};
-
-const button = {
-  backgroundColor: "#2563eb",
-  borderRadius: "8px",
-  color: "#ffffff",
-  fontSize: "16px",
-  fontWeight: "bold",
-  textDecoration: "none",
-  textAlign: "center" as const,
-  display: "inline-block",
-  padding: "12px 32px",
-};
-
-const footer = {
-  color: "#6b7280",
-  fontSize: "14px",
-  lineHeight: "24px",
-  padding: "0 40px",
-  marginTop: "32px",
-};
-
-const footerNote = {
-  color: "#9ca3af",
+const boxNumber: React.CSSProperties = {
   fontSize: "12px",
-  lineHeight: "20px",
-  padding: "0 40px",
-  marginTop: "24px",
+  color: B.muted,
+  margin: "0 0 6px",
+  textTransform: "uppercase",
+  letterSpacing: "0.4px",
+};
+const boxAmount: React.CSSProperties = {
+  fontSize: "26px",
+  fontWeight: 700,
+  color: B.ink,
+  margin: "0 0 6px",
+};
+const boxDue: React.CSSProperties = {
+  fontSize: "13px",
+  color: B.muted,
+  margin: 0,
 };
 
 export default InvoiceEmail;
