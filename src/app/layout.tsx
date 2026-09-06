@@ -30,7 +30,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(`https://${rootDomain}`),
+  // Apex 308-redirects to www — use the canonical host so OG/canonical URLs
+  // resolve directly (no redirect for social scrapers).
+  metadataBase: new URL(`https://www.${rootDomain}`),
   title: {
     default: "Traballo — le business pack des artisans",
     template: "%s · Traballo",

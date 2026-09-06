@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = `https://${rootDomain}`;
+  const base = `https://www.${rootDomain}`;
   const now = new Date();
   const routes = [
     "",
