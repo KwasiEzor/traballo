@@ -12,6 +12,24 @@ site artisan `<slug>.traballo.pro`
 
 ---
 
+## Aperçu
+
+| Landing | Fonctionnalités |
+|---|---|
+| [![Landing](docs/screenshots/landing.png)](docs/screenshots/landing.png) | [![Fonctionnalités](docs/screenshots/fonctionnalites.png)](docs/screenshots/fonctionnalites.png) |
+
+| Tarifs | Dashboard artisan |
+|---|---|
+| [![Tarifs](docs/screenshots/tarifs.png)](docs/screenshots/tarifs.png) | _à venir_ |
+
+| Console super-admin | Site artisan public |
+|---|---|
+| _à venir_ | _à venir_ |
+
+<sub>Captures publiques régénérables : `pnpm tsx scripts/screenshots.ts`.</sub>
+
+---
+
 ## Stack
 
 | Domaine | Choix |
