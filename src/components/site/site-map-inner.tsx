@@ -1,8 +1,9 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
+import * as React from "react";
 import L from "leaflet";
-import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 
 // Domain-authenticated by default (works on localhost + the domains allow-listed
 // in the Stadia dashboard). Falls back to a public key if one is exposed.
@@ -27,6 +28,18 @@ function pinIcon(color: string) {
   });
 }
 
+/** The map often mounts inside a lazily-revealed container; make sure Leaflet
+ *  recomputes its size once it's actually on screen. */
+function ResizeOnMount() {
+  const map = useMap();
+  React.useEffect(() => {
+    map.invalidateSize();
+    const t = setTimeout(() => map.invalidateSize(), 200);
+    return () => clearTimeout(t);
+  }, [map]);
+  return null;
+}
+
 export default function SiteMapInner({
   lat,
   lng,
@@ -43,8 +56,10 @@ export default function SiteMapInner({
       center={[lat, lng]}
       zoom={14}
       scrollWheelZoom={false}
+      fadeAnimation={false}
       style={{ height: 340, width: "100%" }}
     >
+      <ResizeOnMount />
       <TileLayer url={TILE_URL} attribution={ATTRIBUTION} />
       <Marker position={[lat, lng]} icon={pinIcon(color)}>
         <Popup>{label}</Popup>
