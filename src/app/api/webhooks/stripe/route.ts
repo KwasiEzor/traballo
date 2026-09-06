@@ -9,6 +9,7 @@ import {
 } from "@/lib/stripe/billing";
 import { sendEmail } from "@/lib/email/send";
 import { PaymentFailedEmail } from "@/lib/email/templates/payment-failed-email";
+import { createNotification } from "@/lib/notifications/create";
 
 export const dynamic = "force-dynamic";
 
@@ -140,6 +141,14 @@ async function handle(stripe: Stripe, event: Stripe.Event): Promise<void> {
           }),
         }).catch(() => {});
       }
+
+      await createNotification({
+        tenantId,
+        type: "billing.payment_failed",
+        title: "Paiement de l'abonnement échoué",
+        body: "Stripe va réessayer. Mettez à jour votre moyen de paiement pour éviter de repasser en Free.",
+        actionUrl: "/dashboard/settings",
+      });
       return;
     }
   }

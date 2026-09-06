@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { tenants, artisanProfiles, aiConversations, aiMessages } from "@/db/schema";
 import { sendEmail } from "@/lib/email/send";
 import { LeadEmail } from "@/lib/email/templates/lead-email";
+import { createNotification } from "@/lib/notifications/create";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +102,14 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: 502 }
     );
   }
+
+  await createNotification({
+    tenantId: tenant.id,
+    type: "leads.ai_lead",
+    title: `Nouveau contact via l'assistant — ${name}`,
+    body: need || "Coordonnées laissées via l'assistant du site.",
+    data: { name, contact, conversationId },
+  });
 
   return NextResponse.json({ ok: true });
 }

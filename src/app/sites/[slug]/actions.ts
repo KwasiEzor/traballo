@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { tenants, artisanProfiles } from "@/db/schema";
 import { sendEmail } from "@/lib/email/send";
 import { LeadEmail } from "@/lib/email/templates/lead-email";
+import { createNotification } from "@/lib/notifications/create";
 
 const schema = z.object({
   slug: z.string().min(1).max(120),
@@ -56,5 +57,14 @@ export async function submitLead(
       error: "L'envoi a échoué. Réessayez ou appelez directement.",
     };
   }
+
+  await createNotification({
+    tenantId: tenant.id,
+    type: "leads.site_enquiry",
+    title: `Nouvelle demande — ${d.name}`,
+    body: d.message.slice(0, 240),
+    data: { name: d.name, contact: d.contact },
+  });
+
   return { ok: true };
 }
