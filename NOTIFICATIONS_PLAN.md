@@ -3,6 +3,25 @@
 > Rédigé le 2026-09-06. Recherche + évaluation, pré-implémentation.
 > Références PRD : TRB-056→060, TRB-071, TRB-087, TRB-094→098, TRB-107, TRB-115.
 
+## Statut
+
+| Phase | État |
+|---|---|
+| **0 — Fondations** (schéma + `createNotification` + types + tests) | ✅ commit `f7d7f09` — **migration 0010 pas encore appliquée en base** (`pnpm db:migrate` à lancer) |
+| 1 — Centre in-app artisan | à faire |
+| 2→9 | à faire |
+
+**Câblage des événements existants** (leads site/IA, paiement échoué → `createNotification`) : à faire **après** application de la migration 0010, sinon `db.insert(notifications)` échoue en prod.
+
+### Décisions prises par défaut (à confirmer)
+
+1. Plan Vercel — **supposé Pro** (crons horaires/minute OK). À vérifier avant Phase 3/4.
+2. Prise de RDV publique — **option (b)** : notifs RDV limitées aux rendez-vous créés dans le dashboard.
+3. Fournisseur SMS — non tranché (Phase 6).
+4. Reçus de paiement — délégués à Stripe pour l'instant.
+5. Gating — transactionnel = tous · relances/rappels auto = Pro+ · SMS/WhatsApp = Business · **push = Pro+** (voir `minPlan` dans `types.ts`).
+6. Digest vs temps réel — **temps réel** immédiat ; `leads.ai_conversation` marqué `digestable` pour plus tard.
+
 ## 1. État des lieux
 
 ### Ce qui existe
