@@ -51,8 +51,8 @@ export default async function InvoiceDetailPage({
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <Card>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <Card className="min-w-0">
           <CardContent className="pt-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -148,7 +148,7 @@ export default async function InvoiceDetailPage({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="min-w-0">
           <CardContent className="space-y-4 pt-6 text-sm">
             <Row label="Créée le" value={formatDate(invoice.createdAt)} />
             {invoice.sentAt && (

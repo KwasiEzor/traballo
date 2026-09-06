@@ -45,7 +45,7 @@ export default async function SitePage() {
         />
       </div>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <div className="space-y-8">
+        <div className="min-w-0 space-y-8">
           <DesignEditor config={config} isPaid={isPremiumPlan(plan)} />
           <SiteEditor
             site={site ?? undefined}
@@ -54,7 +54,7 @@ export default async function SitePage() {
             canCustomDomain={isPremiumPlan(plan)}
           />
         </div>
-        <div className="self-start lg:sticky lg:top-6">
+        <div className="min-w-0 self-start lg:sticky lg:top-6">
           <div className="mb-2 text-sm font-medium text-foreground">Aperçu</div>
           <SitePreviewFrame previewUrl="/site-preview" />
         </div>

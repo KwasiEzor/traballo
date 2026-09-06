@@ -87,10 +87,10 @@ export function SitePreviewFrame({
         </div>
       </div>
 
-      <div className="bg-muted/40 p-4">
-        <div ref={holderRef} className="mx-auto w-full">
+      <div className="overflow-hidden bg-muted/40 p-4">
+        <div ref={holderRef} className="mx-auto w-full max-w-full">
           <div
-            className="mx-auto overflow-hidden rounded-lg border border-border bg-white shadow-sm"
+            className="mx-auto max-w-full overflow-hidden rounded-lg border border-border bg-white shadow-sm"
             style={{ width: w * scale, height: h * scale }}
           >
             <iframe

@@ -63,8 +63,8 @@ export default async function ClientDetailPage({
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
-        <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <div className="min-w-0 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Coordonnées</CardTitle>
@@ -118,7 +118,7 @@ export default async function ClientDetailPage({
           <ClientDangerZone clientId={client.id} />
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card>
             <CardHeader className="flex-row items-center justify-between">
               <CardTitle>Factures</CardTitle>
