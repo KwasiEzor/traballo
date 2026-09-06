@@ -34,10 +34,13 @@ export function middleware(request: NextRequest) {
 
   // Admin subdomain → /admin/*
   if (hostname === `admin.${rootDomain}`) {
-    const target = url.pathname.startsWith("/admin")
-      ? url.pathname
-      : `/admin${url.pathname}`;
-    if (!url.pathname.startsWith("/auth")) {
+    const isAuthRoute = url.pathname.startsWith("/auth");
+    // Auth pages are served as-is; everything else maps under /admin/*.
+    const target =
+      isAuthRoute || url.pathname.startsWith("/admin")
+        ? url.pathname
+        : `/admin${url.pathname}`;
+    if (!isAuthRoute) {
       const gate = requireSession(target);
       if (gate) return gate;
     }
