@@ -763,6 +763,29 @@ function SectionFields({
           max={4}
         />
       );
+    case "map":
+      return (
+        <div className="space-y-3">
+          <T
+            label="Titre de la section"
+            value={str("title")}
+            placeholder="Où nous trouver"
+            onChange={(v) => set("title", v)}
+          />
+          <T
+            label="Texte sous le titre (facultatif)"
+            area
+            value={str("note")}
+            placeholder="Parking gratuit devant l'atelier."
+            onChange={(v) => set("note", v)}
+          />
+          <p className="text-xs text-muted-foreground">
+            La carte est générée à partir de l&apos;adresse de votre profil.
+            Renseignez-la dans <span className="font-medium">Réglages → Profil</span>{" "}
+            pour que la carte s&apos;affiche.
+          </p>
+        </div>
+      );
     case "cta":
     case "contact":
       return (
