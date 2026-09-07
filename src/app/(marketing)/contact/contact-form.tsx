@@ -20,13 +20,26 @@ import { submitContact, type ContactState } from "./actions";
 
 const initial: ContactState = { ok: false };
 
+const TOPICS = [
+  ["decouverte", "Découverte du produit"],
+  ["migration", "Migration depuis un autre outil"],
+  ["facturation", "Facturation électronique"],
+  ["partenariat", "Partenariat"],
+  ["beta", "Retour bêta (bug / suggestion)"],
+  ["autre", "Autre"],
+] as const;
+
 export function ContactForm({
   turnstileSiteKey,
+  defaultTopic = "decouverte",
 }: {
   turnstileSiteKey?: string;
+  defaultTopic?: string;
 }) {
   const [state, action, pending] = useActionState(submitContact, initial);
-  const [topic, setTopic] = React.useState("decouverte");
+  const [topic, setTopic] = React.useState(
+    TOPICS.some(([v]) => v === defaultTopic) ? defaultTopic : "decouverte"
+  );
   const [resetKey, setResetKey] = React.useState(0);
   const firstRender = React.useRef(true);
 
@@ -121,15 +134,11 @@ export function ContactForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="decouverte">Découverte du produit</SelectItem>
-              <SelectItem value="migration">
-                Migration depuis un autre outil
-              </SelectItem>
-              <SelectItem value="facturation">
-                Facturation électronique
-              </SelectItem>
-              <SelectItem value="partenariat">Partenariat</SelectItem>
-              <SelectItem value="autre">Autre</SelectItem>
+              {TOPICS.map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

@@ -42,8 +42,13 @@ const CHANNELS = [
   },
 ];
 
-export default function ContactPage() {
+export default async function ContactPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ topic?: string }>;
+}) {
   const siteKey = turnstileSiteKey();
+  const { topic } = await searchParams;
 
   return (
     <>
@@ -123,7 +128,7 @@ export default function ContactPage() {
                 className="pointer-events-none absolute inset-0 bg-blueprint opacity-[0.3] [mask-image:radial-gradient(ellipse_70%_50%_at_100%_0%,black,transparent)]"
               />
               <div className="relative">
-                <ContactForm turnstileSiteKey={siteKey} />
+                <ContactForm turnstileSiteKey={siteKey} defaultTopic={topic} />
               </div>
             </div>
           </Reveal>

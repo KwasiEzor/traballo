@@ -10,7 +10,14 @@ const schema = z.object({
   name: z.string().trim().min(2, "Indiquez votre nom.").max(120),
   email: z.string().trim().email("Adresse e-mail invalide."),
   company: z.string().trim().max(160).optional().default(""),
-  topic: z.enum(["decouverte", "migration", "facturation", "partenariat", "autre"]),
+  topic: z.enum([
+    "decouverte",
+    "migration",
+    "facturation",
+    "partenariat",
+    "beta",
+    "autre",
+  ]),
   message: z.string().trim().min(10, "Détaillez un peu votre demande.").max(4000),
   // Honeypot — must stay empty.
   website: z.string().max(0).optional().default(""),
@@ -28,6 +35,7 @@ const TOPIC_LABELS: Record<string, string> = {
   migration: "Migration depuis un autre outil",
   facturation: "Facturation électronique",
   partenariat: "Partenariat",
+  beta: "Retour bêta (bug / suggestion)",
   autre: "Autre",
 };
 

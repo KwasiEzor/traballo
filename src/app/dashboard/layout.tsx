@@ -6,6 +6,8 @@ import { adminHome } from "@/lib/admin/nav";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getArtisanProfile, hasCompletedOnboarding } from "@/lib/artisan/profile";
 import { Logo } from "@/components/brand/logo";
+import { BetaBadge } from "@/components/shared/beta-badge";
+import { BetaBanner } from "@/components/shared/beta-banner";
 import { SidebarContent } from "@/components/dashboard/sidebar-content";
 import { Topbar } from "@/components/dashboard/topbar";
 import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner";
@@ -60,10 +62,11 @@ export default async function DashboardLayout({
     <div className="grid min-h-dvh lg:grid-cols-[16rem_1fr]">
       {/* Desktop sidebar */}
       <aside className="hidden border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
-        <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-5">
+        <div className="flex h-16 shrink-0 items-center gap-2 border-b border-sidebar-border px-5">
           <Link href="/dashboard" className="rounded-md">
             <Logo />
           </Link>
+          <BetaBadge />
         </div>
         <div className="min-h-0 flex-1">
           <SidebarContent name={displayName} plan={plan} chrome={chrome} />
@@ -78,6 +81,7 @@ export default async function DashboardLayout({
           user={{ name: displayName, email, plan }}
           chrome={chrome}
         />
+        <BetaBanner />
         <main className="flex-1 bg-muted/30 px-4 py-6 sm:px-6 sm:py-8">
           <div className="mx-auto w-full max-w-6xl">{children}</div>
         </main>

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Logo } from "@/components/brand/logo";
+import { BetaBadge } from "@/components/shared/beta-badge";
 import {
   Sheet,
   SheetContent,
@@ -41,9 +42,12 @@ export function SiteHeader() {
       )}
     >
       <div className="container-page flex h-16 items-center justify-between gap-4">
-        <Link href="/" aria-label="Accueil Traballo" className="rounded-md">
-          <Logo />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/" aria-label="Accueil Traballo" className="rounded-md">
+            <Logo />
+          </Link>
+          <BetaBadge />
+        </div>
 
         <nav className="hidden items-center gap-1 md:flex">
           {MARKETING_NAV.map((item) => {
@@ -85,8 +89,9 @@ export function SiteHeader() {
             </SheetTrigger>
             <SheetContent side="right" className="w-full max-w-xs p-0">
               <SheetTitle className="sr-only">Menu</SheetTitle>
-              <div className="flex h-16 items-center border-b border-border px-6">
+              <div className="flex h-16 items-center gap-2 border-b border-border px-6">
                 <Logo />
+                <BetaBadge />
               </div>
               <nav className="flex flex-col gap-1 p-4">
                 {MARKETING_NAV.map((item) => (
