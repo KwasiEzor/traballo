@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { SiteMap } from "@/components/site/site-map";
+import { ReviewsCarousel } from "@/components/site/reviews-carousel";
 import {
   Phone,
   Mail,
@@ -8,7 +9,6 @@ import {
   ShieldCheck,
   CheckCircle2,
   Star,
-  Quote,
 } from "lucide-react";
 import { heroImageFor, type PublicSite } from "@/lib/artisan/site-data";
 import type { TemplateDef } from "@/lib/artisan/templates";
@@ -352,42 +352,15 @@ export function ReviewsSection({
   const items = content.items ?? [];
   if (items.length === 0) return null;
   return (
-    <section className="border-y border-slate-100 bg-slate-50">
+    <section id="avis" className="border-y border-slate-100 bg-slate-50">
       <div className={`${wrap} ${pad(style)}`}>
         <h2 className={h2(style)}>{content.title}</h2>
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          {items.map((r, i) => (
-            <figure
-              key={`${r.name}-${i}`}
-              className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6"
-            >
-              <Quote
-                className="size-6"
-                style={{ color: site.primaryColor }}
-                fill="currentColor"
-                strokeWidth={0}
-              />
-              {typeof r.rating === "number" && (
-                <div className="mt-2 flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, s) => (
-                    <Star
-                      key={s}
-                      className="size-4"
-                      style={{ color: site.primaryColor }}
-                      fill={s < r.rating! ? "currentColor" : "none"}
-                      strokeWidth={s < r.rating! ? 0 : 1.5}
-                    />
-                  ))}
-                </div>
-              )}
-              <blockquote className="mt-3 flex-1 text-[15px] leading-relaxed text-slate-700">
-                {r.text}
-              </blockquote>
-              <figcaption className="mt-4 text-sm font-semibold text-slate-900">
-                {r.name}
-              </figcaption>
-            </figure>
-          ))}
+        <div className="mt-8">
+          <ReviewsCarousel
+            items={items}
+            primaryColor={site.primaryColor}
+            businessName={site.businessName}
+          />
         </div>
       </div>
     </section>
