@@ -6,6 +6,8 @@ import { tenants, artisanProfiles, aiConversations, aiMessages } from "@/db/sche
 import { sendEmail } from "@/lib/email/send";
 import { LeadEmail } from "@/lib/email/templates/lead-email";
 import { createNotification } from "@/lib/notifications/create";
+import { rateLimit, clientIp } from "@/lib/security/rate-limit";
+import { tenantLeadCapReached } from "@/lib/security/lead-cap";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,8 @@ const bodySchema = z.object({
   name: z.string().trim().min(2, "Indiquez votre nom.").max(120),
   contact: z.string().trim().min(4, "Téléphone ou e-mail requis.").max(160),
   need: z.string().trim().max(2000).optional().default(""),
+  // Honeypot — must stay empty.
+  website: z.string().max(200).optional().default(""),
 });
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -27,12 +31,29 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
   const { slug, conversationId, name, contact, need } = parsed.data;
 
+  // Honeypot — pretend it worked, send nothing.
+  if (parsed.data.website) return NextResponse.json({ ok: true });
+
+  const ip = clientIp(request.headers);
+  if (!rateLimit(`agent-lead:${ip}`, 5, 10 * 60_000).ok) {
+    return NextResponse.json(
+      { error: "Trop de demandes. Réessayez dans quelques minutes." },
+      { status: 429 }
+    );
+  }
+
   const tenant = await db.query.tenants.findFirst({
     where: eq(tenants.slug, slug),
     columns: { id: true },
   });
   if (!tenant) {
     return NextResponse.json({ error: "Site introuvable." }, { status: 404 });
+  }
+
+  // Hard per-tenant daily cap — drop silently past the ceiling.
+  if (await tenantLeadCapReached(tenant.id)) {
+    console.warn(`[api/agent/lead] daily lead cap reached for tenant ${tenant.id}`);
+    return NextResponse.json({ ok: true });
   }
 
   const conversation = await db.query.aiConversations.findFirst({

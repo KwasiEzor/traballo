@@ -367,6 +367,7 @@ function LeadForm({
 }) {
   const [name, setName] = React.useState("");
   const [contact, setContact] = React.useState("");
+  const [website, setWebsite] = React.useState(""); // honeypot — stays empty
   const [busy, setBusy] = React.useState(false);
   const [err, setErr] = React.useState<string | null>(null);
 
@@ -396,6 +397,7 @@ function LeadForm({
           conversationId,
           name,
           contact,
+          website,
           need: lastNeed.slice(0, 2000),
         }),
       });
@@ -418,6 +420,16 @@ function LeadForm({
       {err && (
         <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{err}</p>
       )}
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        value={website}
+        onChange={(e) => setWebsite(e.target.value)}
+        className="hidden"
+      />
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}

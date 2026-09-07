@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { aiConversations, aiMessages } from "@/db/schema";
 import { getAnthropic } from "@/lib/ai/anthropic";
 import { loadAgentContext } from "@/lib/ai/context";
+import { rateLimit, clientIp } from "@/lib/security/rate-limit";
 import {
   AGENT_MODEL,
   AGENT_MAX_TOKENS,
@@ -44,6 +45,17 @@ export async function POST(request: Request): Promise<Response> {
 
   if (messages[messages.length - 1]!.role !== "user") {
     return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
+  }
+
+  // Per-IP throttle before any Anthropic spend. A bot rotating visitorId /
+  // conversationId bypasses the per-conversation cap below; this does not.
+  const ip = clientIp(request.headers);
+  const limited = rateLimit(`agent:${ip}`, 30, 5 * 60_000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Trop de messages. Patientez un instant." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } }
+    );
   }
 
   const ctx = await loadAgentContext(slug);
