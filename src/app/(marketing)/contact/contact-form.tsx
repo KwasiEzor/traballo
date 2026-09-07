@@ -15,7 +15,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Alert, AlertContent, AlertDescription } from "@/components/ui/alert";
-import { Turnstile } from "@/components/marketing/turnstile";
+import { Turnstile } from "@/components/shared/turnstile";
 import { submitContact, type ContactState } from "./actions";
 
 const initial: ContactState = { ok: false };

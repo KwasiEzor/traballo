@@ -1,13 +1,26 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
+import { Turnstile } from "@/components/shared/turnstile";
 import { submitLead, type LeadState } from "@/app/sites/[slug]/actions";
 
 const initial: LeadState = {};
 
-export function LeadForm({ slug }: { slug: string }) {
+export function LeadForm({
+  slug,
+  turnstileSiteKey,
+}: {
+  slug: string;
+  turnstileSiteKey?: string;
+}) {
   const [state, action, pending] = useActionState(submitLead, initial);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+
+  // Turnstile tokens are single-use — refresh the widget after a failed try.
+  useEffect(() => {
+    if (state.error) setCaptchaResetKey((k) => k + 1);
+  }, [state.error]);
 
   if (state.ok) {
     return (
@@ -64,6 +77,15 @@ export function LeadForm({ slug }: { slug: string }) {
           className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-[15px] outline-none focus:border-[var(--sp)] focus:ring-2 focus:ring-[var(--sp)]/20"
         />
       </div>
+
+      {turnstileSiteKey && (
+        <Turnstile
+          siteKey={turnstileSiteKey}
+          action="site-lead"
+          resetKey={captchaResetKey}
+        />
+      )}
+
       <button
         type="submit"
         disabled={pending}

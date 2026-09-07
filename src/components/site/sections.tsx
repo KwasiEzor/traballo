@@ -18,6 +18,7 @@ import type {
   HourRow,
 } from "@/lib/artisan/site-config";
 import { LeadForm } from "@/components/site/lead-form";
+import { turnstileSiteKey } from "@/lib/security/turnstile";
 
 type Style = TemplateDef["style"];
 
@@ -559,7 +560,11 @@ export function ContactSection({
           </div>
         </div>
         <div className="rounded-2xl border border-slate-200 p-6 sm:p-8">
-          {preview ? <PreviewLeadForm color={site.primaryColor} /> : <LeadForm slug={site.slug} />}
+          {preview ? (
+            <PreviewLeadForm color={site.primaryColor} />
+          ) : (
+            <LeadForm slug={site.slug} turnstileSiteKey={turnstileSiteKey() || undefined} />
+          )}
         </div>
       </div>
     </section>
