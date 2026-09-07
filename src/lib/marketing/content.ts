@@ -50,6 +50,46 @@ export const TESTIMONIALS = [
     location: "Luxembourg",
     initials: "LF",
   },
+  {
+    quote:
+      "Mes devis partent le jour même depuis mon téléphone, sur le chantier. Les relances de paiement se font toutes seules, j'ai arrêté de courir après les factures.",
+    name: "Karim M.",
+    role: "Menuisier-agenceur",
+    location: "Lyon",
+    initials: "KM",
+  },
+  {
+    quote:
+      "Les clients laissent un avis, il remonte sur ma page. En trois mois je suis passé de zéro à une vraie présence en ligne, sans agence.",
+    name: "Céline V.",
+    role: "Peintre en bâtiment",
+    location: "Liège",
+    initials: "CV",
+  },
+  {
+    quote:
+      "La prise de rendez-vous en ligne m'a changé la vie. Les gens réservent un créneau eux-mêmes, je valide d'un clic. Plus d'allers-retours par SMS.",
+    name: "Thomas R.",
+    role: "Carreleur",
+    location: "Nantes",
+    initials: "TR",
+  },
+  {
+    quote:
+      "Format Factur-X, transmission PEPPOL, tout est géré. Mon comptable ne me réclame plus rien en fin de trimestre.",
+    name: "Nadia H.",
+    role: "Paysagiste (entreprise de 4 personnes)",
+    location: "Luxembourg",
+    initials: "NH",
+  },
+  {
+    quote:
+      "Dépannage serrurerie, je suis souvent en intervention. L'assistant prend les demandes urgentes, me les résume et je rappelle en priorité les vraies urgences.",
+    name: "Bruno P.",
+    role: "Serrurier-métallier",
+    location: "Marseille",
+    initials: "BP",
+  },
 ];
 
 export const PILLARS = [
