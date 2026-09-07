@@ -7,7 +7,11 @@
  * `TURNSTILE_HOSTNAMES`   — optional, comma-separated allow-list. When set,
  *                          the hostname Cloudflare reports for the token must
  *                          be one of these (defence against token replay from
- *                          another site). Never include localhost.
+ *                          another site). Never include localhost. Pass
+ *                          `allowAnyHostname` to skip this check for a single
+ *                          call — needed on the artisan vitrine, which is
+ *                          served from arbitrary custom domains that cannot be
+ *                          enumerated in the env var.
  *
  * Policy: only an explicit negative verdict from Cloudflare — token rejected,
  * wrong action, or wrong hostname — blocks a submission. A missing token
@@ -65,7 +69,11 @@ function allowedHostnames(): string[] {
 
 export async function verifyTurnstile(
   token: string,
-  opts: { remoteIp?: string; expectedAction?: string } = {}
+  opts: {
+    remoteIp?: string;
+    expectedAction?: string;
+    allowAnyHostname?: boolean;
+  } = {}
 ): Promise<TurnstileResult> {
   const secret = wantsTestKeys()
     ? TEST_SECRET
@@ -101,7 +109,7 @@ export async function verifyTurnstile(
   }
 
   const hosts = allowedHostnames();
-  if (hosts.length && data.hostname) {
+  if (!opts.allowAnyHostname && hosts.length && data.hostname) {
     const h = data.hostname.toLowerCase();
     const ok = hosts.some((allowed) => h === allowed || h.endsWith(`.${allowed}`));
     if (!ok) return { success: false, reason: "rejected" };

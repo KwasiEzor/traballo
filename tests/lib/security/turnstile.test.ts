@@ -59,6 +59,29 @@ describe("verifyTurnstile", () => {
     expect(res).toEqual({ success: false, reason: "rejected" });
   });
 
+  it("skips the hostname allow-list when allowAnyHostname is set", async () => {
+    vi.stubEnv("TURNSTILE_SITE_SECRET", "secret");
+    vi.stubEnv("TURNSTILE_HOSTNAMES", "traballo.pro");
+    server.use(
+      http.post(SITEVERIFY, () =>
+        HttpResponse.json({ success: true, hostname: "plomberie-durand.fr" })
+      )
+    );
+    const res = await verifyTurnstile("t", { allowAnyHostname: true });
+    expect(res).toEqual({ success: true, reason: "ok" });
+  });
+
+  it("still rejects a bad token even with allowAnyHostname", async () => {
+    vi.stubEnv("TURNSTILE_SITE_SECRET", "secret");
+    server.use(
+      http.post(SITEVERIFY, () =>
+        HttpResponse.json({ success: false, "error-codes": ["invalid-input-response"] })
+      )
+    );
+    const res = await verifyTurnstile("bad", { allowAnyHostname: true });
+    expect(res).toEqual({ success: false, reason: "rejected" });
+  });
+
   it("accepts a subdomain of an allowed hostname", async () => {
     vi.stubEnv("TURNSTILE_SITE_SECRET", "secret");
     vi.stubEnv("TURNSTILE_HOSTNAMES", "traballo.pro");
