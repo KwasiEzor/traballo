@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, LifeBuoy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/logo";
+import { Mascot } from "@/components/shared/mascot";
 import { DimensionMark } from "@/components/marketing/dimension-mark";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -44,6 +45,8 @@ export function NotFoundContent() {
       </header>
 
       <div className="container-page relative z-10 flex flex-1 flex-col items-center justify-center py-12 text-center sm:py-16">
+        <Mascot pose="error" size={140} className="mx-auto mb-2" />
+
         <motion.div {...rise(0)}>
           <DimensionMark label="Erreur 404" />
         </motion.div>

@@ -1,16 +1,14 @@
 import Link from "next/link";
-import { ShieldX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/logo";
+import { Mascot } from "@/components/shared/mascot";
 
 export default function ForbiddenPage() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-background px-6 text-center">
       <Logo />
       <div className="max-w-md">
-        <div className="mx-auto grid size-14 place-items-center rounded-full bg-destructive/10 text-destructive">
-          <ShieldX className="size-7" />
-        </div>
+        <Mascot pose="error" size={112} className="mx-auto" />
         <h1 className="mt-5 font-display text-2xl font-semibold tracking-tight text-foreground">
           Accès refusé
         </h1>
