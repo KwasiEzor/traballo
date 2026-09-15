@@ -52,7 +52,7 @@ export default async function AppointmentsPage() {
 
       {rows.length === 0 ? (
         <EmptyState
-          icon={CalendarDays}
+          mascotPose="empty"
           title="Aucun rendez-vous"
           description="Définissez vos disponibilités puis planifiez votre premier rendez-vous."
           action={

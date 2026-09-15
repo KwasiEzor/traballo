@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Users, Mail, Phone } from "lucide-react";
+import { Plus, Mail, Phone } from "lucide-react";
 import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
 import { clients as clientsTable } from "@/db/schema";
@@ -45,7 +45,7 @@ export default async function ClientsPage() {
 
       {clients.length === 0 ? (
         <EmptyState
-          icon={Users}
+          mascotPose="empty"
           title="Votre carnet est vide"
           description="Ajoutez vos clients pour créer des factures et des rendez-vous plus vite."
           action={

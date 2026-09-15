@@ -113,7 +113,7 @@ export default async function DashboardHome({
           <CardContent>
             {summary.recentInvoices.length === 0 ? (
               <EmptyState
-                icon={ReceiptText}
+                mascotPose="empty"
                 title="Aucune facture"
                 description="Créez votre première facture pour la retrouver ici."
                 action={
@@ -165,7 +165,7 @@ export default async function DashboardHome({
           <CardContent>
             {summary.nextAppointments.length === 0 ? (
               <EmptyState
-                icon={CalendarDays}
+                mascotPose="empty"
                 title="Aucun rendez-vous"
                 description="Vos rendez-vous à venir apparaîtront ici."
                 action={
