@@ -45,7 +45,12 @@ export function OnboardingWizard({ businessName }: { businessName: string }) {
 
   return (
     <div className="mx-auto w-full max-w-xl">
-      <Mascot pose="welcome" size={88} className="mx-auto mb-6" />
+      <Mascot
+        key={step === STEPS.length - 1 ? "success" : "welcome"}
+        pose={step === STEPS.length - 1 ? "success" : "welcome"}
+        size={88}
+        className="mx-auto mb-6"
+      />
 
       {/* Stepper */}
       <ol className="mb-8 flex items-center gap-2">

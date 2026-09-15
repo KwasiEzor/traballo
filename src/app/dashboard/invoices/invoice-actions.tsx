@@ -15,6 +15,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { celebrate } from "@/components/shared/celebrate";
 import { generateInvoicePDF } from "./actions/generate-pdf";
 import { sendInvoiceEmail } from "./actions/send-invoice";
 import { updateInvoiceStatus } from "./actions/update-status";
@@ -58,7 +59,7 @@ export function InvoiceActions({ invoice }: Props) {
     const res = await updateInvoiceStatus(invoice.id, "paid");
     setBusy(null);
     if ("error" in res && res.error) return toast.error(res.error);
-    toast.success("Facture marquée comme payée.");
+    celebrate("Facture marquée comme payée.");
     router.refresh();
   }
 

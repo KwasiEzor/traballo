@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Check, X, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { celebrate } from "@/components/shared/celebrate";
 import { updateAppointmentStatus } from "../actions/update-status";
 
 export function AppointmentActions({
@@ -22,7 +23,9 @@ export function AppointmentActions({
     const res = await updateAppointmentStatus(id, next);
     setBusy(false);
     if (res && "error" in res && res.error) return toast.error(res.error);
-    toast.success("Statut mis à jour.");
+    if (next === "confirmed") celebrate("Rendez-vous confirmé.");
+    else if (next === "completed") celebrate("Rendez-vous marqué comme terminé.");
+    else toast.success("Statut mis à jour.");
     router.refresh();
   }
 
