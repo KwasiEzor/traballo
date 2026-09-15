@@ -18,6 +18,7 @@ export function PaymentFailedEmail({
     <EmailLayout
       preview="Le paiement de votre abonnement Traballo a échoué."
       heading="Paiement échoué"
+      mascotPose="error"
       footnote="Sans régularisation, votre compte repassera automatiquement au plan Free. Votre site et vos factures restent accessibles."
     >
       <P>Bonjour,</P>

@@ -13,6 +13,7 @@ import {
   Text,
 } from "@react-email/components";
 import { EMAIL_BRAND as B } from "./brand";
+import { EmailMascot, type EmailMascotPose } from "./mascot";
 
 /* ------------------------------------------------------------------ */
 /* Shell — branded header + professional signature, used by every mail */
@@ -21,12 +22,16 @@ import { EMAIL_BRAND as B } from "./brand";
 export function EmailLayout({
   preview,
   heading,
+  mascotPose,
   children,
   footnote,
   signature,
 }: {
   preview: string;
   heading?: string;
+  /** Emotional moments only (welcome, payment issue) — omit for routine
+      notifications and for anything sent on to the artisan's own client. */
+  mascotPose?: EmailMascotPose;
   children: React.ReactNode;
   /** Extra fine-print line above the copyright (e.g. security notice). */
   footnote?: string;
@@ -66,6 +71,7 @@ export function EmailLayout({
 
           {/* card */}
           <Section style={s.card}>
+            {mascotPose ? <EmailMascot pose={mascotPose} /> : null}
             {heading ? <Heading style={s.h1}>{heading}</Heading> : null}
             {children}
           </Section>
