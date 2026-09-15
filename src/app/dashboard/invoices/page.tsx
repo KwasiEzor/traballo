@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, ReceiptText } from "lucide-react";
+import { Plus } from "lucide-react";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
@@ -70,7 +70,7 @@ export default async function InvoicesPage() {
 
       {invoices.length === 0 ? (
         <EmptyState
-          icon={ReceiptText}
+          mascotPose="empty"
           title="Aucune facture"
           description="Créez votre première facture. Elle sera générée au format conforme."
           action={
