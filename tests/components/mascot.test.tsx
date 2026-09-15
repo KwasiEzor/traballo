@@ -32,4 +32,12 @@ describe("Mascot", () => {
     expect(wrapper.style.width).toBe("64px");
     expect(wrapper.style.height).toBe("64px");
   });
+
+  it("keeps the image intact inside the idle-loop wrapper", () => {
+    // Regression guard: the idle breathing loop wraps <Image> in an extra
+    // motion.div — make sure that nesting doesn't break rendering.
+    const { getByRole, container } = render(<Mascot pose="success" />);
+    expect(getByRole("img")).toBeInTheDocument();
+    expect(container.querySelectorAll("img")).toHaveLength(1);
+  });
 });

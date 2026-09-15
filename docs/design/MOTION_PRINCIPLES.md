@@ -15,8 +15,13 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 - **Entrées de contenu** (reveal, mascotte, cartes) : `duration: 0.5–0.6s`
 - **Micro-interactions** (hover, focus, changement d'état d'un bouton) :
   `duration: 0.15–0.25s`, `ease: "easeOut"` ou la courbe ci-dessus
-- **Décors en boucle** (marquee, drift) : `linear`, jamais l'expo-out
-  (réservée aux transitions avec un début et une fin)
+- **Décors en boucle continue** (marquee, drift) : `linear`, jamais l'expo-out
+  (réservée aux transitions avec un début et une fin) — une vitesse
+  constante évite l'à-coup au point de bouclage.
+- **Boucles oscillantes** (respiration, pulse — va-et-vient, pas de
+  bouclage brut) : `easeInOut` + `repeatType: "mirror"`. C'est l'inverse
+  du cas précédent : ici l'accélération/décélération aux extrêmes est ce
+  qui rend le mouvement organique plutôt que mécanique.
 
 Ne pas introduire de nouvelle courbe d'easing sans raison — la cohérence
 prime sur la nouveauté.
@@ -58,10 +63,16 @@ fade + scale + rise (`opacity 0→1, scale 0.9→1, y 8→0`, 0.5s, expo-out) �
 ne pas varier cette entrée pose par pose, la reconnaissance vient de la
 cohérence.
 
-Aujourd'hui : PNG statique détouré + wrapper `motion`. La bascule vers une
-mascotte réellement animée (Lottie, décision prise pour la Phase 5) se fera
-poste par poste, en gardant le PNG comme repli si le fichier Lottie n'est
-pas encore disponible pour une pose donnée.
+Aujourd'hui : PNG statique détouré + entrée `motion` (fade + scale + rise),
+puis une respiration au repos en boucle (`y: 0 ↔ -4px`, 1.8s, easeInOut +
+mirror) une fois l'entrée terminée — un entre-deux peu coûteux en attendant
+mieux.
+
+Lottie (Phase 5) est **en pause** : ni les PNG ni les SVG vectorisés
+(`public/mascot/SVG/`, auto-tracés, non riggés) ne peuvent servir de base à
+une vraie animation par calques — il faudrait repartir d'un art vectoriel
+propre avec les éléments séparés (yeux, bouche, bras, queue), donc un vrai
+travail de motion design. On y reviendra quand ce budget existera.
 
 ## Où regarder le code de référence
 

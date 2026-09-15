@@ -48,13 +48,30 @@ export function Mascot({
       animate={reduced ? undefined : { opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.5, ease: EASE }}
     >
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes={`${size}px`}
-        className="object-contain"
-      />
+      {/* Respiration au repos — en attendant une vraie mascotte animée
+          (Lottie, en pause pour le moment, voir MOTION_PRINCIPLES.md) */}
+      <motion.div
+        className="relative size-full"
+        animate={reduced ? undefined : { y: -4 }}
+        transition={
+          reduced
+            ? undefined
+            : {
+                duration: 1.8,
+                repeat: Infinity,
+                repeatType: "mirror",
+                ease: "easeInOut",
+              }
+        }
+      >
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes={`${size}px`}
+          className="object-contain"
+        />
+      </motion.div>
     </motion.div>
   );
 }
