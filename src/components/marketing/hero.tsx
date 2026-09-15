@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProductFrame } from "@/components/marketing/product-frame";
 import { GrainGradient } from "@/components/marketing/grain-gradient";
 import { DashboardMock, ChatMock } from "@/components/marketing/mockups";
+import { Mascot } from "@/components/shared/mascot";
 import { APP_URL } from "@/lib/marketing/nav";
 
 const trust = [
@@ -117,6 +118,17 @@ export function Hero() {
           <ProductFrame designWidth={680} className="shadow-glow">
             <DashboardMock />
           </ProductFrame>
+
+          {/* Mirrors the "Agent IA en ligne" pill on the opposite corner —
+              the mascot greets, it doesn't compete with the product shots. */}
+          <motion.div
+            className="absolute -left-4 -top-6 hidden lg:block"
+            initial={reduced ? undefined : { opacity: 0, scale: 0.9, y: -8 }}
+            animate={reduced ? undefined : { opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 1.05, ease: EASE }}
+          >
+            <Mascot pose="welcome" size={64} />
+          </motion.div>
 
           <motion.div
             className="absolute -bottom-8 -left-6 hidden w-52 rounded-lg border border-border bg-card shadow-lg sm:block"
