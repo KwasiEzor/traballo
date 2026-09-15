@@ -21,6 +21,10 @@ const MASCOT_POSES = {
     src: "/mascot/removed/trabby-3D-error-rmv.png",
     alt: "Le castor Traballo, perplexe",
   },
+  assistant: {
+    src: "/mascot/removed/trabby-2D-rmv.png",
+    alt: "Le castor Traballo, votre assistant",
+  },
 } as const;
 
 export type MascotPose = keyof typeof MASCOT_POSES;

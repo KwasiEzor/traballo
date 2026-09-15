@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { MessageSquare, X, Send, Loader2, Sparkles } from "lucide-react";
+import { X, Send, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Mascot } from "@/components/shared/mascot";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -118,7 +119,7 @@ export function MarketingChat() {
         className="fixed bottom-5 right-5 z-50 flex size-13 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105"
         style={{ width: "3.25rem", height: "3.25rem" }}
       >
-        {open ? <X className="size-5" /> : <MessageSquare className="size-5" />}
+        {open ? <X className="size-5" /> : <Mascot pose="assistant" size={44} />}
       </button>
 
       {open && (

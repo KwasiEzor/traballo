@@ -26,6 +26,13 @@ describe("Mascot", () => {
     );
   });
 
+  it("renders the assistant pose (chatbot launcher)", () => {
+    const { getByRole } = render(<Mascot pose="assistant" />);
+    const img = getByRole("img");
+    expect(img).toHaveAttribute("alt", "Le castor Traballo, votre assistant");
+    expect(img.getAttribute("src")).toContain("trabby-2D-rmv.png");
+  });
+
   it("applies the requested size to the wrapping element", () => {
     const { container } = render(<Mascot pose="welcome" size={64} />);
     const wrapper = container.firstChild as HTMLElement;
