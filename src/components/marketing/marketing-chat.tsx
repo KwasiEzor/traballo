@@ -116,7 +116,7 @@ export function MarketingChat() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Fermer l'assistant" : "Poser une question à l'assistant"}
-        className="fixed bottom-5 right-5 z-50 flex size-13 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105"
+        className="fixed bottom-5 right-5 z-50 flex size-13 items-center justify-center rounded-full border border-border bg-card text-foreground shadow-lg transition-transform hover:scale-105"
         style={{ width: "3.25rem", height: "3.25rem" }}
       >
         {open ? <X className="size-5" /> : <Mascot pose="assistant" size={44} />}
