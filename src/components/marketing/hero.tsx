@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductFrame } from "@/components/marketing/product-frame";
 import { GrainGradient } from "@/components/marketing/grain-gradient";
-import { DashboardMock, ChatMock } from "@/components/marketing/mockups";
+import { DashboardMock } from "@/components/marketing/mockups";
+import { HeroChatDemo } from "@/components/marketing/hero-chat-demo";
 import { Mascot } from "@/components/shared/mascot";
 import { APP_URL } from "@/lib/marketing/nav";
 
@@ -136,7 +137,7 @@ export function Hero() {
             animate={reduced ? undefined : { opacity: 1, y: 0, x: 0 }}
             transition={{ duration: 0.7, delay: 1, ease: EASE }}
           >
-            <ChatMock compact />
+            <HeroChatDemo />
           </motion.div>
 
           <motion.div
