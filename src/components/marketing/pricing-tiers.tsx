@@ -4,7 +4,6 @@ import * as React from "react";
 import {
   motion,
   useMotionValue,
-  useReducedMotion,
   useSpring,
   useTransform,
 } from "motion/react";
@@ -16,12 +15,7 @@ import { TiltCard } from "@/components/motion/tilt-card";
 import { DraftBorder } from "@/components/motion/draft-border";
 import { DrawnCheck } from "@/components/motion/drawn-check";
 import { OdometerNumber } from "@/components/motion/odometer-number";
-
-const UPGRADE_NOTES = [
-  "Démarrage gratuit, pour toujours",
-  "+ facturation illimitée, RDV en ligne, sans marque",
-  "+ agent IA, WhatsApp Business, support prioritaire",
-];
+import { DimensionMark } from "@/components/marketing/dimension-mark";
 
 export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
   const [yearly, setYearly] = React.useState(true);
@@ -67,7 +61,7 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
       )}
 
       {withToggle && (
-        <div className="relative mb-10 flex justify-center">
+        <div className="relative mb-12 flex justify-center">
           <div className="inline-flex items-center rounded-full border border-border bg-muted/60 p-1">
             {(
               [
@@ -112,23 +106,7 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
         </div>
       )}
 
-      {/* Dimension line — the upgrade path, drafted like a technical annotation */}
-      <div
-        aria-hidden="true"
-        className="relative mb-6 hidden grid-cols-3 lg:grid"
-      >
-        <div className="pointer-events-none absolute inset-x-6 top-2.5 border-t border-dashed border-copper/45" />
-        {UPGRADE_NOTES.map((note) => (
-          <div key={note} className="relative flex flex-col items-center px-6 text-center">
-            <span className="h-2.5 w-px bg-copper/60" />
-            <span className="mt-2 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-copper/80">
-              {note}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div className="grid items-start gap-6 lg:grid-cols-3">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_1.16fr_1fr] lg:gap-7">
         {PLANS.map((plan, index) => {
           const price = yearly ? plan.priceYearly : plan.priceMonthly;
           const yearlySaving =
@@ -139,34 +117,35 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
           const card = (
             <div
               className={cn(
-                "relative flex h-full flex-col rounded-2xl border bg-card p-6 shadow-sm",
-                plan.featured
-                  ? "border-primary/60 shadow-glow lg:-mt-6 lg:p-8"
-                  : "border-border"
+                "relative flex h-full flex-col rounded-2xl bg-card p-6 shadow-sm",
+                plan.featured && "shadow-glow lg:-mt-8 lg:p-9"
               )}
             >
               <DraftBorder
                 radius={16}
                 delay={index * 0.15}
                 duration={plan.featured ? 1.4 : 1}
-                className={plan.featured ? "text-primary/70" : "text-border"}
+                strokeWidth={plan.featured ? 2 : 1.5}
+                className={plan.featured ? "text-primary" : "text-border"}
               />
 
               {plan.featured && (
-                <>
-                  <PulseGlow />
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 rounded-2xl bg-blueprint opacity-[0.35] [mask-image:radial-gradient(ellipse_70%_45%_at_50%_0%,black,transparent)]"
-                  />
-                </>
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-2xl bg-blueprint opacity-[0.35] [mask-image:radial-gradient(ellipse_70%_45%_at_50%_0%,black,transparent)]"
+                />
               )}
 
-              <div className="relative flex items-center justify-between gap-3">
-                <h3 className="font-display text-lg font-semibold text-foreground">
+              <div className="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                <h3
+                  className={cn(
+                    "font-display font-semibold text-foreground",
+                    plan.featured ? "text-xl" : "text-lg"
+                  )}
+                >
                   {plan.name}
                 </h3>
-                {plan.featured && <StampBadge />}
+                {plan.featured && <DimensionMark label="Le plus choisi" />}
               </div>
               <p className="relative mt-1.5 text-sm text-muted-foreground">
                 {plan.tagline}
@@ -174,11 +153,21 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
 
               <div className="relative mt-5 flex items-baseline gap-1">
                 {price === 0 ? (
-                  <span className="font-display text-4xl font-semibold tracking-tight text-foreground">
+                  <span
+                    className={cn(
+                      "font-display font-semibold tracking-tight text-foreground",
+                      plan.featured ? "text-5xl" : "text-4xl"
+                    )}
+                  >
                     0 €
                   </span>
                 ) : (
-                  <span className="inline-flex items-baseline font-display text-4xl font-semibold tracking-tight text-foreground">
+                  <span
+                    className={cn(
+                      "inline-flex items-baseline font-display font-semibold tracking-tight text-foreground",
+                      plan.featured ? "text-5xl" : "text-4xl"
+                    )}
+                  >
                     <OdometerNumber value={price} />
                     <span>&nbsp;€</span>
                   </span>
@@ -249,39 +238,5 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
         })}
       </div>
     </div>
-  );
-}
-
-function PulseGlow() {
-  const reduced = useReducedMotion();
-  return (
-    <motion.div
-      aria-hidden="true"
-      className="pointer-events-none absolute -inset-px rounded-2xl"
-      style={{
-        boxShadow:
-          "0 0 0 1px color-mix(in oklch, var(--primary) 55%, transparent), 0 24px 60px -18px color-mix(in oklch, var(--primary) 55%, transparent)",
-      }}
-      animate={reduced ? undefined : { opacity: [0.55, 1, 0.55] }}
-      transition={
-        reduced ? undefined : { duration: 3.2, repeat: Infinity, ease: "easeInOut" }
-      }
-    />
-  );
-}
-
-function StampBadge() {
-  const reduced = useReducedMotion();
-  return (
-    <motion.span
-      initial={reduced ? undefined : { opacity: 0, scale: 0.5, rotate: -24 }}
-      whileInView={reduced ? undefined : { opacity: 1, scale: 1, rotate: -8 }}
-      viewport={{ once: true, margin: "-10% 0px -10% 0px" }}
-      transition={{ type: "spring", stiffness: 260, damping: 14, delay: 0.5 }}
-      style={reduced ? { rotate: -8 } : undefined}
-      className="inline-flex shrink-0 items-center rounded-full border-2 border-dashed border-primary-foreground/50 bg-primary px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-primary-foreground shadow-sm"
-    >
-      Le plus choisi
-    </motion.span>
   );
 }
