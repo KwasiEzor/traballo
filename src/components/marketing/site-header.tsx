@@ -74,7 +74,7 @@ export function SiteHeader() {
           <Button asChild variant="ghost" size="sm">
             <a href={`${APP_URL}/auth/signin`}>Se connecter</a>
           </Button>
-          <Button asChild size="sm">
+          <Button asChild variant="cta" size="sm">
             <a href={`${APP_URL}/auth/signup`}>Commencer gratuitement</a>
           </Button>
         </div>
@@ -109,7 +109,7 @@ export function SiteHeader() {
                 <Button asChild variant="outline" size="lg">
                   <a href={`${APP_URL}/auth/signin`}>Se connecter</a>
                 </Button>
-                <Button asChild size="lg">
+                <Button asChild variant="cta" size="lg">
                   <a href={`${APP_URL}/auth/signup`}>Commencer gratuitement</a>
                 </Button>
               </div>
