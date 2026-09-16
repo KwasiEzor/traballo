@@ -29,9 +29,7 @@ function Highlight({ children }: { children: React.ReactNode }) {
   const reduced = useReducedMotion();
   return (
     <span className="relative inline-block">
-      <span className="relative z-10 bg-gradient-to-r from-primary to-copper bg-clip-text text-transparent [text-shadow:0_2px_24px_color-mix(in_oklch,var(--background)_88%,transparent)]">
-        {children}
-      </span>
+      <span className="relative z-10">{children}</span>
       <motion.div
         aria-hidden="true"
         className="absolute -inset-x-2 -z-0 h-[0.6em] origin-left"
@@ -80,9 +78,9 @@ export function Hero() {
               </Badge>
             </motion.div>
 
-            <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight text-balance sm:text-5xl md:text-6xl">
+            <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl md:text-6xl">
               <motion.span
-                className="block bg-gradient-to-r from-primary to-copper bg-clip-text text-transparent [text-shadow:0_2px_24px_color-mix(in_oklch,var(--background)_88%,transparent)]"
+                className="block"
                 initial={reduced ? undefined : { opacity: 0, y: 24 }}
                 animate={reduced ? undefined : { opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
