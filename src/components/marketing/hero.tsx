@@ -29,7 +29,9 @@ function Highlight({ children }: { children: React.ReactNode }) {
   const reduced = useReducedMotion();
   return (
     <span className="relative inline-block">
-      <span className="relative z-10">{children}</span>
+      <span className="relative z-10 bg-gradient-to-r from-primary to-copper bg-clip-text text-transparent [text-shadow:0_2px_24px_color-mix(in_oklch,var(--background)_88%,transparent)]">
+        {children}
+      </span>
       <motion.div
         aria-hidden="true"
         className="absolute -inset-x-2 -z-0 h-[0.6em] origin-left"
@@ -78,9 +80,9 @@ export function Hero() {
               </Badge>
             </motion.div>
 
-            <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl md:text-6xl">
+            <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight text-balance sm:text-5xl md:text-6xl">
               <motion.span
-                className="block"
+                className="block bg-gradient-to-r from-primary to-copper bg-clip-text text-transparent [text-shadow:0_2px_24px_color-mix(in_oklch,var(--background)_88%,transparent)]"
                 initial={reduced ? undefined : { opacity: 0, y: 24 }}
                 animate={reduced ? undefined : { opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
@@ -165,18 +167,6 @@ export function Hero() {
             animate={reduced ? undefined : { opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.35, ease: EASE }}
           >
-            {/* washi-tape strip pinning the mascot to the board — striped so
-                it reads as tape, and high enough to actually peek past the
-                mascot instead of hiding behind it. */}
-            <div
-              aria-hidden="true"
-              className="absolute left-9 -top-2 h-8 w-24 -rotate-6 rounded-[2px] shadow-sm sm:left-12 sm:-top-3"
-              style={{
-                background:
-                  "repeating-linear-gradient(45deg, color-mix(in oklch, var(--copper) 55%, transparent) 0 6px, color-mix(in oklch, var(--copper) 25%, transparent) 6px 12px)",
-              }}
-            />
-
             <motion.div
               className="absolute -left-1 top-0 z-20 sm:left-2"
               initial={reduced ? undefined : { opacity: 0, scale: 0.85, rotate: -6, y: -8 }}
