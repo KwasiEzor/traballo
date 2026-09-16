@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   motion,
   useMotionValue,
+  useReducedMotion,
   useSpring,
   useTransform,
 } from "motion/react";
@@ -15,7 +16,6 @@ import { TiltCard } from "@/components/motion/tilt-card";
 import { DraftBorder } from "@/components/motion/draft-border";
 import { DrawnCheck } from "@/components/motion/drawn-check";
 import { OdometerNumber } from "@/components/motion/odometer-number";
-import { DimensionMark } from "@/components/marketing/dimension-mark";
 
 export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
   const [yearly, setYearly] = React.useState(true);
@@ -136,23 +136,23 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
               />
 
               {plan.featured && (
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 rounded-2xl bg-blueprint opacity-[0.35] [mask-image:radial-gradient(ellipse_70%_45%_at_50%_0%,black,transparent)]"
-                />
+                <>
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 rounded-2xl bg-blueprint opacity-[0.35] [mask-image:radial-gradient(ellipse_70%_45%_at_50%_0%,black,transparent)]"
+                  />
+                  <FeaturedBadge />
+                </>
               )}
 
-              <div className="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                <h3
-                  className={cn(
-                    "font-display font-semibold text-foreground",
-                    plan.featured ? "text-xl" : "text-lg"
-                  )}
-                >
-                  {plan.name}
-                </h3>
-                {plan.featured && <DimensionMark label="Le plus choisi" />}
-              </div>
+              <h3
+                className={cn(
+                  "relative font-display font-semibold text-foreground",
+                  plan.featured ? "text-xl" : "text-lg"
+                )}
+              >
+                {plan.name}
+              </h3>
               <p className="relative mt-1.5 text-sm text-muted-foreground">
                 {plan.tagline}
               </p>
@@ -242,5 +242,28 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
         })}
       </div>
     </div>
+  );
+}
+
+/**
+ * Overlaps the top edge of the featured card, centered, so it reads as
+ * "the one to pick" at a glance regardless of viewport width — instead of
+ * competing for space inside the card header, where it could get lost or
+ * wrap awkwardly on narrow screens.
+ */
+function FeaturedBadge() {
+  const reduced = useReducedMotion();
+  return (
+    <motion.div
+      initial={reduced ? undefined : { opacity: 0, scale: 0.6, y: 8 }}
+      whileInView={reduced ? undefined : { opacity: 1, scale: 1, y: 0 }}
+      viewport={{ once: true, margin: "-10% 0px -10% 0px" }}
+      transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.3 }}
+      className="absolute -top-4 left-1/2 z-20 -translate-x-1/2"
+    >
+      <span className="inline-flex items-center whitespace-nowrap rounded-full bg-primary px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-primary-foreground shadow-glow">
+        Le plus choisi
+      </span>
+    </motion.div>
   );
 }
