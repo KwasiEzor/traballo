@@ -67,7 +67,12 @@ export function HeroChatDemo() {
           <Sparkles className="size-3" />
         </div>
         <div className="font-medium text-foreground">Assistant IA</div>
-        <span className="ml-auto size-1.5 rounded-full bg-success" />
+        <span className="relative ml-auto flex size-1.5">
+          {!reduced && (
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/60" />
+          )}
+          <span className="relative inline-flex size-1.5 rounded-full bg-success" />
+        </span>
       </div>
       <div className="ml-auto max-w-[85%] rounded-lg rounded-br-sm bg-primary px-2.5 py-1.5 text-primary-foreground">
         {QUESTION}

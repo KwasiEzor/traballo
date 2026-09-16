@@ -1,7 +1,8 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, useMotionValue, useSpring, useTransform, useScroll } from "motion/react";
 import { ShieldCheck, MapPin, FileCheck2, ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,90 @@ const trust = [
 ];
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+// The headline's variable trade word — starts on "artisan" (matching the
+// static first paint) then cycles through the métiers Traballo actually
+// serves, typed and deleted like a real typewriter.
+const HERO_TRADES = [
+  "d'artisan",
+  "de plombier",
+  "d'électricien",
+  "de menuisier",
+  "de peintre",
+  "de carreleur",
+  "de couvreur",
+  "de jardinier",
+];
+
+const TRADE_TYPING_MS = 65;
+const TRADE_DELETING_MS = 35;
+const TRADE_PAUSE_TYPED_MS = 1900;
+const TRADE_PAUSE_EMPTY_MS = 350;
+
+function TypingTrade() {
+  const reduced = useReducedMotion();
+  const [display, setDisplay] = React.useState(HERO_TRADES[0]);
+
+  React.useEffect(() => {
+    if (reduced) return;
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const schedule = (fn: () => void, ms: number) => {
+      if (!cancelled) timers.push(setTimeout(fn, ms));
+    };
+    let wordIndex = 0;
+
+    function typeWord() {
+      const word = HERO_TRADES[wordIndex]!;
+      let i = 0;
+      const tick = () => {
+        if (cancelled) return;
+        i += 1;
+        setDisplay(word.slice(0, i));
+        if (i < word.length) {
+          schedule(tick, TRADE_TYPING_MS);
+        } else {
+          schedule(deleteWord, TRADE_PAUSE_TYPED_MS);
+        }
+      };
+      schedule(tick, TRADE_TYPING_MS);
+    }
+
+    function deleteWord() {
+      const word = HERO_TRADES[wordIndex]!;
+      let i = word.length;
+      const tick = () => {
+        if (cancelled) return;
+        i -= 1;
+        setDisplay(word.slice(0, i));
+        if (i > 0) {
+          schedule(tick, TRADE_DELETING_MS);
+        } else {
+          wordIndex = (wordIndex + 1) % HERO_TRADES.length;
+          schedule(typeWord, TRADE_PAUSE_EMPTY_MS);
+        }
+      };
+      schedule(tick, TRADE_DELETING_MS);
+    }
+
+    schedule(deleteWord, TRADE_PAUSE_TYPED_MS);
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
+  }, [reduced]);
+
+  const isComplete = HERO_TRADES.includes(display);
+
+  return (
+    <span aria-hidden="true">
+      {display}
+      {isComplete ? "." : ""}
+      {!reduced && <span className="animate-pulse">▍</span>}
+    </span>
+  );
+}
 
 /** A copper highlighter stroke drawn under a key phrase — the headline's
  * one deliberate nod to the mascot's warm palette, not just brand-blue.
@@ -53,9 +138,39 @@ function Highlight({ children }: { children: React.ReactNode }) {
 
 export function Hero() {
   const reduced = useReducedMotion();
+  const sectionRef = React.useRef<HTMLElement>(null);
+
+  // Hover tilt on the collage — a subtle 3D lean toward the cursor, as if
+  // the pinned mockup/mascot/chat card were physical objects on a board.
+  // Desktop/mouse only (skipped on touch and prefers-reduced-motion).
+  const tiltX = useMotionValue(0);
+  const tiltY = useMotionValue(0);
+  const springConfig = { stiffness: 150, damping: 20, mass: 0.5 };
+  const rotateX = useSpring(useTransform(tiltY, [-0.5, 0.5], [6, -6]), springConfig);
+  const rotateY = useSpring(useTransform(tiltX, [-0.5, 0.5], [-6, 6]), springConfig);
+
+  function handleCollagePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (reduced || e.pointerType !== "mouse") return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    tiltX.set((e.clientX - rect.left) / rect.width - 0.5);
+    tiltY.set((e.clientY - rect.top) / rect.height - 0.5);
+  }
+  function handleCollagePointerLeave() {
+    tiltX.set(0);
+    tiltY.set(0);
+  }
+
+  // Scroll parallax — the three collage layers drift at different rates as
+  // the hero scrolls past, closest (mascot) moving most, giving a sense of
+  // depth instead of the whole collage panning as one flat image.
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end start"] });
+  const parallaxSpring = { stiffness: 100, damping: 30 };
+  const yMascot = useSpring(useTransform(scrollYProgress, [0, 1], [0, reduced ? 0 : -55]), parallaxSpring);
+  const yFrame = useSpring(useTransform(scrollYProgress, [0, 1], [0, reduced ? 0 : -10]), parallaxSpring);
+  const yChat = useSpring(useTransform(scrollYProgress, [0, 1], [0, reduced ? 0 : -40]), parallaxSpring);
 
   return (
-    <section className="relative overflow-hidden border-b border-border">
+    <section ref={sectionRef} className="relative overflow-hidden border-b border-border">
       <GrainGradient />
 
       <div className="container-page relative pt-10 pb-8 sm:pt-24 sm:pb-28">
@@ -80,35 +195,40 @@ export function Hero() {
               </Badge>
             </motion.div>
 
-            <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl md:text-6xl">
+            <h1
+              className="mt-6 font-display text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl md:text-6xl"
+              aria-label="Tout votre business d'artisan. Un seul tableau de bord."
+            >
               <motion.span
                 className="block"
-                initial={reduced ? undefined : { opacity: 0, y: 24 }}
-                animate={reduced ? undefined : { opacity: 1, y: 0 }}
+                initial={reduced ? undefined : { opacity: 0, y: 24, filter: "blur(6px)" }}
+                animate={reduced ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
                 transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
               >
                 Tout votre
               </motion.span>
               <motion.span
                 className="block"
-                initial={reduced ? undefined : { opacity: 0, y: 24 }}
-                animate={reduced ? undefined : { opacity: 1, y: 0 }}
+                initial={reduced ? undefined : { opacity: 0, y: 24, filter: "blur(6px)" }}
+                animate={reduced ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
                 transition={{ duration: 0.7, delay: 0.19, ease: EASE }}
               >
-                <Highlight>business d&apos;artisan.</Highlight>
+                <Highlight>
+                  business <TypingTrade />
+                </Highlight>
               </motion.span>
               <motion.span
                 className="block bg-gradient-to-r from-primary to-copper bg-clip-text text-transparent"
-                initial={reduced ? undefined : { opacity: 0, y: 24 }}
-                animate={reduced ? undefined : { opacity: 1, y: 0 }}
+                initial={reduced ? undefined : { opacity: 0, y: 24, filter: "blur(6px)" }}
+                animate={reduced ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
                 transition={{ duration: 0.7, delay: 0.28, ease: EASE }}
               >
                 Un seul tableau
               </motion.span>
               <motion.span
                 className="block bg-gradient-to-r from-primary to-copper bg-clip-text text-transparent"
-                initial={reduced ? undefined : { opacity: 0, y: 24 }}
-                animate={reduced ? undefined : { opacity: 1, y: 0 }}
+                initial={reduced ? undefined : { opacity: 0, y: 24, filter: "blur(6px)" }}
+                animate={reduced ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
                 transition={{ duration: 0.7, delay: 0.34, ease: EASE }}
               >
                 de bord.
@@ -167,47 +287,70 @@ export function Hero() {
             animate={reduced ? undefined : { opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.35, ease: EASE }}
           >
+            {/* Tilt wrapper — leans toward the cursor like a pinned object
+                reacting to a hand nearby. Separate element from the entrance
+                motion.div above so the two transforms (fade-in vs hover tilt)
+                don't fight over the same style. */}
             <motion.div
-              className="absolute -left-1 top-0 z-20 sm:left-2"
-              initial={reduced ? undefined : { opacity: 0, scale: 0.85, rotate: -6, y: -8 }}
-              animate={reduced ? undefined : { opacity: 1, scale: 1, rotate: -4, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.9, ease: EASE }}
+              className="relative"
+              style={{ rotateX, rotateY, transformPerspective: 1000 }}
+              onPointerMove={handleCollagePointerMove}
+              onPointerLeave={handleCollagePointerLeave}
             >
-              <div className="rotate-[-4deg]">
-                <Mascot pose="welcome" size={112} />
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="relative z-10 mt-14 rotate-2 sm:mt-20 lg:mt-24"
-              initial={reduced ? undefined : { opacity: 0, y: 30, rotate: 5 }}
-              animate={reduced ? undefined : { opacity: 1, y: 0, rotate: 2 }}
-              transition={{ duration: 0.9, delay: 0.5, ease: EASE }}
-            >
-              <ProductFrame designWidth={600} className="shadow-glow">
-                <DashboardMock />
-              </ProductFrame>
-
-              {/* "online" tag anchored to the frame itself — a badge that
-                  belongs to the product, not a pill floating in empty space */}
-              <motion.div
-                className="absolute -top-3 -right-3 z-20 flex items-center gap-1.5 rounded-full border border-copper/30 bg-copper-subtle px-2.5 py-1 text-[11px] font-medium text-copper shadow-sm"
-                initial={reduced ? undefined : { opacity: 0, scale: 0.9 }}
-                animate={reduced ? undefined : { opacity: 1, scale: 1 }}
-                transition={{ duration: 0.5, delay: 1.1, ease: EASE }}
-              >
-                <Sparkles className="size-3 shrink-0" />
-                Agent IA en ligne
+              <motion.div style={{ y: yMascot }}>
+                <motion.div
+                  className="absolute -left-1 top-0 z-20 sm:left-2"
+                  initial={reduced ? undefined : { opacity: 0, scale: 0.85, rotate: -6, y: -8 }}
+                  animate={reduced ? undefined : { opacity: 1, scale: 1, rotate: -4, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.9, ease: EASE }}
+                >
+                  <div className="rotate-[-4deg]">
+                    <Mascot pose="welcome" size={112} />
+                  </div>
+                </motion.div>
               </motion.div>
-            </motion.div>
 
-            <motion.div
-              className="absolute -bottom-6 -left-4 z-20 w-48 -rotate-3 rounded-lg border border-border bg-card shadow-lg sm:-left-8 sm:w-52"
-              initial={reduced ? undefined : { opacity: 0, y: 20, x: -10, rotate: -8 }}
-              animate={reduced ? undefined : { opacity: 1, y: 0, x: 0, rotate: -3 }}
-              transition={{ duration: 0.7, delay: 1.05, ease: EASE }}
-            >
-              <HeroChatDemo />
+              <motion.div style={{ y: yFrame }}>
+                <motion.div
+                  className="relative z-10 mt-14 rotate-2 sm:mt-20 lg:mt-24"
+                  initial={reduced ? undefined : { opacity: 0, y: 30, rotate: 5 }}
+                  animate={reduced ? undefined : { opacity: 1, y: 0, rotate: 2 }}
+                  transition={{ duration: 0.9, delay: 0.5, ease: EASE }}
+                >
+                  <ProductFrame designWidth={600} className="shadow-glow">
+                    <DashboardMock />
+                  </ProductFrame>
+
+                  {/* "online" tag anchored to the frame itself — a badge that
+                      belongs to the product, not a pill floating in empty space */}
+                  <motion.div
+                    className="absolute -top-3 -right-3 z-20 flex items-center gap-1.5 rounded-full border border-copper/30 bg-copper-subtle px-2.5 py-1 text-[11px] font-medium text-copper shadow-sm"
+                    initial={reduced ? undefined : { opacity: 0, scale: 0.9 }}
+                    animate={reduced ? undefined : { opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5, delay: 1.1, ease: EASE }}
+                  >
+                    <Sparkles className="size-3 shrink-0" />
+                    <span className="relative flex size-1.5">
+                      {!reduced && (
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-copper/60" />
+                      )}
+                      <span className="relative inline-flex size-1.5 rounded-full bg-copper" />
+                    </span>
+                    Agent IA en ligne
+                  </motion.div>
+                </motion.div>
+              </motion.div>
+
+              <motion.div style={{ y: yChat }}>
+                <motion.div
+                  className="absolute -bottom-6 -left-4 z-20 w-48 -rotate-3 rounded-lg border border-border bg-card shadow-lg sm:-left-8 sm:w-52"
+                  initial={reduced ? undefined : { opacity: 0, y: 20, x: -10, rotate: -8 }}
+                  animate={reduced ? undefined : { opacity: 1, y: 0, x: 0, rotate: -3 }}
+                  transition={{ duration: 0.7, delay: 1.05, ease: EASE }}
+                >
+                  <HeroChatDemo />
+                </motion.div>
+              </motion.div>
             </motion.div>
           </motion.div>
         </div>
