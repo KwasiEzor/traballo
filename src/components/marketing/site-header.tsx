@@ -49,7 +49,7 @@ export function SiteHeader() {
           <BetaBadge />
         </div>
 
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden items-center gap-1 lg:flex">
           {MARKETING_NAV.map((item) => {
             const active = pathname === item.href;
             return (
@@ -69,7 +69,7 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           <ThemeToggle />
           <Button asChild variant="ghost" size="sm">
             <a href={`${APP_URL}/auth/signin`}>Se connecter</a>
@@ -79,7 +79,7 @@ export function SiteHeader() {
           </Button>
         </div>
 
-        <div className="flex items-center gap-1 md:hidden">
+        <div className="flex items-center gap-1 lg:hidden">
           <ThemeToggle />
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
