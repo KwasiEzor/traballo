@@ -161,10 +161,8 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
                 {price === 0 ? (
                   <span
                     className={cn(
-                      "font-display font-semibold tracking-tight text-foreground",
-                      plan.featured
-                        ? "text-5xl text-glow-copper"
-                        : "text-4xl text-glow-primary"
+                      "font-display font-semibold tracking-tight text-foreground text-shadow-price",
+                      plan.featured ? "text-5xl" : "text-4xl"
                     )}
                   >
                     0 €
@@ -172,10 +170,8 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
                 ) : (
                   <span
                     className={cn(
-                      "inline-flex items-baseline font-display font-semibold tracking-tight text-foreground",
-                      plan.featured
-                        ? "text-5xl text-glow-copper"
-                        : "text-4xl text-glow-primary"
+                      "inline-flex items-baseline font-display font-semibold tracking-tight text-foreground text-shadow-price",
+                      plan.featured ? "text-5xl" : "text-4xl"
                     )}
                   >
                     <OdometerNumber value={price} />

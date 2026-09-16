@@ -315,20 +315,10 @@
       0 8px 22px -6px color-mix(in oklch, var(--foreground) 14%, transparent);
   }
 
-  /* Colored halo behind large price numerals — a tight fringe plus a wide
-     bloom, so the price reads as lit up rather than merely tinted. Visible
-     against both light and dark card surfaces. */
-  .text-glow-primary {
-    text-shadow:
-      0 0 2px color-mix(in oklch, var(--primary) 75%, transparent),
-      0 0 14px color-mix(in oklch, var(--primary) 60%, transparent),
-      0 0 42px color-mix(in oklch, var(--primary) 45%, transparent);
-  }
-  .text-glow-copper {
-    text-shadow:
-      0 0 2px color-mix(in oklch, var(--copper) 75%, transparent),
-      0 0 14px color-mix(in oklch, var(--copper) 60%, transparent),
-      0 0 42px color-mix(in oklch, var(--copper) 45%, transparent);
+  /* Soft drop shadow under large price numerals, for depth/pop off the
+     card surface — no color bloom, just lift. */
+  .text-shadow-price {
+    text-shadow: 0 2px 8px color-mix(in oklch, var(--foreground) 22%, transparent);
   }
 
   /* Consistent card hover across marketing: lift + shadow + brand-tinted
