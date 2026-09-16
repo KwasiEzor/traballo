@@ -211,17 +211,30 @@ export function Hero() {
                 className="block"
                 initial={reduced ? undefined : { opacity: 0, y: 24, filter: "blur(6px)" }}
                 animate={reduced ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={{ duration: 0.7, delay: 0.19, ease: EASE }}
+                transition={{ duration: 0.7, delay: 0.17, ease: EASE }}
+              >
+                business
+              </motion.span>
+              {/* Always its own line, independent of "business" above — the
+                  trade word's length changes as it types/deletes, and pinning
+                  it to a fixed line (rather than letting it share a line and
+                  wrap unpredictably) keeps the rest of the headline from
+                  jumping as the word grows and shrinks. */}
+              <motion.span
+                className="block"
+                initial={reduced ? undefined : { opacity: 0, y: 24, filter: "blur(6px)" }}
+                animate={reduced ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
+                transition={{ duration: 0.7, delay: 0.24, ease: EASE }}
               >
                 <Highlight>
-                  business <TypingTrade />
+                  <TypingTrade />
                 </Highlight>
               </motion.span>
               <motion.span
                 className="block bg-gradient-to-r from-primary to-copper bg-clip-text text-transparent"
                 initial={reduced ? undefined : { opacity: 0, y: 24, filter: "blur(6px)" }}
                 animate={reduced ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={{ duration: 0.7, delay: 0.28, ease: EASE }}
+                transition={{ duration: 0.7, delay: 0.31, ease: EASE }}
               >
                 Un seul tableau
               </motion.span>
@@ -229,7 +242,7 @@ export function Hero() {
                 className="block bg-gradient-to-r from-primary to-copper bg-clip-text text-transparent"
                 initial={reduced ? undefined : { opacity: 0, y: 24, filter: "blur(6px)" }}
                 animate={reduced ? undefined : { opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={{ duration: 0.7, delay: 0.34, ease: EASE }}
+                transition={{ duration: 0.7, delay: 0.38, ease: EASE }}
               >
                 de bord.
               </motion.span>
