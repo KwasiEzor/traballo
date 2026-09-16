@@ -184,7 +184,7 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.9, ease: EASE }}
             >
               <div className="rotate-[-4deg]">
-                <Mascot pose="welcome" size={112} className="drop-shadow-xl" />
+                <Mascot pose="welcome" size={112} />
               </div>
             </motion.div>
 
