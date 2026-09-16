@@ -120,7 +120,7 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
                 "relative flex h-full flex-col rounded-2xl bg-card p-6 shadow-sm transition-shadow duration-300",
                 plan.featured
                   ? "shadow-glow hover:shadow-glow-lg lg:-mt-8 lg:p-9"
-                  : "hover:shadow-lg"
+                  : "hover:shadow-glow-soft"
               )}
             >
               <DraftBorder
@@ -128,7 +128,11 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
                 delay={index * 0.15}
                 duration={plan.featured ? 1.4 : 1}
                 strokeWidth={plan.featured ? 2 : 1.5}
-                className={plan.featured ? "text-primary" : "text-border"}
+                className={
+                  plan.featured
+                    ? "text-primary"
+                    : "text-border transition-colors duration-300 group-hover:text-primary/55"
+                }
               />
 
               {plan.featured && (
@@ -230,12 +234,10 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
             </div>
           );
 
-          return plan.featured ? (
-            <div key={plan.id} className="lg:z-10">
+          return (
+            <div key={plan.id} className={cn(plan.featured && "lg:z-10")}>
               <TiltCard>{card}</TiltCard>
             </div>
-          ) : (
-            <div key={plan.id}>{card}</div>
           );
         })}
       </div>

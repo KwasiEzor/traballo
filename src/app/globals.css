@@ -282,6 +282,15 @@
       0 4px 12px -4px color-mix(in oklch, var(--foreground) 10%, transparent);
   }
 
+  /* A quieter .shadow-glow — same three layers, for a hover halo on
+     surfaces that shouldn't compete with a fully-featured card. */
+  .shadow-glow-soft {
+    box-shadow:
+      0 1px 2px color-mix(in oklch, var(--foreground) 6%, transparent),
+      0 16px 36px -12px color-mix(in oklch, var(--primary) 20%, transparent),
+      0 4px 12px -4px color-mix(in oklch, var(--foreground) 8%, transparent);
+  }
+
   /* Deeper .shadow-glow — same three layers, so it transitions smoothly as
      a hover target (e.g. `shadow-glow hover:shadow-glow-lg`). */
   .shadow-glow-lg {
