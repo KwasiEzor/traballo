@@ -30,9 +30,26 @@ import { PILLARS, FAQ_GENERAL } from "@/lib/marketing/content";
 const PILLAR_ICONS = { Globe, FileCheck2, Sparkles, CalendarDays } as const;
 
 const PROBLEMS = [
-  { icon: Clock, value: 5, prefix: "3 à ", suffix: " h", label: "perdues chaque semaine sur l'administratif" },
-  { icon: Search, value: 89, suffix: " %", label: "des artisans n'ont pas d'outils numériques adaptés" },
-  { icon: TrendingDown, value: 30, prefix: "20–", suffix: " %", label: "de rendez-vous manqués sans rappel automatique" },
+  {
+    icon: Clock,
+    value: 5,
+    prefix: "3 à ",
+    suffix: " h",
+    label: "perdues chaque semaine à gérer devis, factures et rendez-vous à la main",
+  },
+  {
+    icon: Search,
+    value: 50,
+    suffix: " %",
+    label: "des artisans utiliseraient encore des outils numériques inadaptés à leur métier",
+  },
+  {
+    icon: TrendingDown,
+    value: 30,
+    prefix: "20–",
+    suffix: " %",
+    label: "des rendez-vous seraient manqués faute de rappel automatique",
+  },
 ];
 
 const STEPS = [
