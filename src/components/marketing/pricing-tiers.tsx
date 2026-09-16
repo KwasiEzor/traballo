@@ -117,8 +117,10 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
           const card = (
             <div
               className={cn(
-                "relative flex h-full flex-col rounded-2xl bg-card p-6 shadow-sm",
-                plan.featured && "shadow-glow lg:-mt-8 lg:p-9"
+                "relative flex h-full flex-col rounded-2xl bg-card p-6 shadow-sm transition-shadow duration-300",
+                plan.featured
+                  ? "shadow-glow hover:shadow-glow-lg lg:-mt-8 lg:p-9"
+                  : "hover:shadow-lg"
               )}
             >
               <DraftBorder
