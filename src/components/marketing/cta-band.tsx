@@ -26,14 +26,10 @@ export function CtaBand({
           {subtitle}
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button
-            asChild
-            size="lg"
-            className="w-full bg-primary-foreground text-primary hover:bg-primary-foreground/90 sm:w-auto"
-          >
+          <Button asChild variant="cta" size="lg" className="w-full sm:w-auto">
             <a href={`${APP_URL}/auth/signup`}>
               Commencer gratuitement
-              <ArrowRight className="size-4" />
+              <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
             </a>
           </Button>
           <Button
