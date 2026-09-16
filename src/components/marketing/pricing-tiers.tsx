@@ -197,7 +197,7 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
                   plan.featured &&
                     "group bg-copper text-copper-foreground hover:bg-copper hover:brightness-95"
                 )}
-                variant={plan.featured ? "primary" : "outline"}
+                variant="primary"
                 size="lg"
               >
                 <a href={`${APP_URL}/auth/signup?plan=${plan.id}`}>
