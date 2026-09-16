@@ -22,19 +22,29 @@ const trust = [
 const EASE = [0.16, 1, 0.3, 1] as const;
 
 /** A copper highlighter stroke drawn under a key phrase — the headline's
- * one deliberate nod to the mascot's warm palette, not just brand-blue. */
+ * one deliberate nod to the mascot's warm palette, not just brand-blue.
+ * A hand-drawn SVG blob (not a plain rectangle) so it reads as a marker
+ * stroke, not a stray colour artifact. */
 function Highlight({ children }: { children: React.ReactNode }) {
   const reduced = useReducedMotion();
   return (
     <span className="relative inline-block">
       <span className="relative z-10">{children}</span>
-      <motion.span
+      <motion.div
         aria-hidden="true"
-        className="absolute inset-x-0 bottom-0.5 -z-0 h-[0.34em] w-full origin-left rounded-sm bg-copper/35 sm:bottom-1.5"
-        initial={reduced ? undefined : { scaleX: 0 }}
-        animate={reduced ? undefined : { scaleX: 1 }}
+        className="absolute -inset-x-2 -z-0 h-[0.6em] origin-left"
+        style={{ bottom: "-0.05em" }}
+        initial={reduced ? undefined : { scaleX: 0, rotate: -1 }}
+        animate={reduced ? undefined : { scaleX: 1, rotate: -1 }}
         transition={{ duration: 0.5, delay: 0.55, ease: EASE }}
-      />
+      >
+        <svg viewBox="0 0 120 20" preserveAspectRatio="none" className="h-full w-full">
+          <path
+            d="M0,5 C15,2 30,7 45,4 C60,1 75,6 90,3 C100,1 110,4 120,3 L120,17 C108,20 95,15 80,18 C65,21 50,16 35,19 C20,22 8,18 0,19 Z"
+            className="fill-copper/55"
+          />
+        </svg>
+      </motion.div>
     </span>
   );
 }
@@ -46,7 +56,7 @@ export function Hero() {
     <section className="relative overflow-hidden border-b border-border">
       <GrainGradient />
 
-      <div className="container-page relative pt-16 pb-20 sm:pt-24 sm:pb-28">
+      <div className="container-page relative pt-10 pb-8 sm:pt-24 sm:pb-28">
         <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-[1fr_1.15fr] lg:gap-10 xl:gap-12">
           {/* Copy — left-aligned, editorial rather than centered-and-stacked.
               min-w-0 overrides the grid item's default min-width:auto, which
@@ -91,12 +101,20 @@ export function Hero() {
                 animate={reduced ? undefined : { opacity: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.28, ease: EASE }}
               >
-                Un seul tableau de bord.
+                Un seul tableau
+              </motion.span>
+              <motion.span
+                className="block bg-gradient-to-r from-primary to-copper bg-clip-text text-transparent"
+                initial={reduced ? undefined : { opacity: 0, y: 24 }}
+                animate={reduced ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.34, ease: EASE }}
+              >
+                de bord.
               </motion.span>
             </h1>
 
             <motion.p
-              className="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-muted-foreground"
+              className="mt-5 max-w-xl text-lg leading-relaxed text-pretty text-muted-foreground"
               initial={reduced ? undefined : { opacity: 0, y: 14 }}
               animate={reduced ? undefined : { opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4, ease: EASE }}
@@ -107,7 +125,7 @@ export function Hero() {
             </motion.p>
 
             <motion.div
-              className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center"
+              className="mt-6 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:items-center"
               initial={reduced ? undefined : { opacity: 0, y: 14 }}
               animate={reduced ? undefined : { opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
@@ -124,7 +142,7 @@ export function Hero() {
             </motion.div>
 
             <motion.ul
-              className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground"
+              className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground sm:mt-8"
               initial={reduced ? undefined : { opacity: 0 }}
               animate={reduced ? undefined : { opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.6 }}
@@ -138,17 +156,25 @@ export function Hero() {
             </motion.ul>
           </div>
 
-          {/* Visual collage — a tilted pinboard, not a centered browser mock */}
+          {/* Visual collage — a tilted pinboard, not a centered browser mock.
+              Deliberately two elements (mascot + frame) plus one supporting
+              card, not five competing stickers. */}
           <motion.div
-            className="relative mx-auto w-full max-w-sm pt-6 pb-10 sm:max-w-md lg:mx-0 lg:max-w-none lg:pt-2"
+            className="relative mx-auto w-full max-w-sm pt-2 pb-6 sm:max-w-md sm:pt-6 sm:pb-10 lg:mx-0 lg:max-w-none lg:pt-2"
             initial={reduced ? undefined : { opacity: 0, y: 30 }}
             animate={reduced ? undefined : { opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.35, ease: EASE }}
           >
-            {/* washi-tape strip pinning the mascot to the board */}
+            {/* washi-tape strip pinning the mascot to the board — striped so
+                it reads as tape, and high enough to actually peek past the
+                mascot instead of hiding behind it. */}
             <div
               aria-hidden="true"
-              className="absolute left-10 top-6 h-7 w-20 -rotate-6 rounded-sm bg-copper/25 sm:left-14 sm:top-8"
+              className="absolute left-9 -top-2 h-8 w-24 -rotate-6 rounded-[2px] shadow-sm sm:left-12 sm:-top-3"
+              style={{
+                background:
+                  "repeating-linear-gradient(45deg, color-mix(in oklch, var(--copper) 55%, transparent) 0 6px, color-mix(in oklch, var(--copper) 25%, transparent) 6px 12px)",
+              }}
             />
 
             <motion.div
@@ -163,7 +189,7 @@ export function Hero() {
             </motion.div>
 
             <motion.div
-              className="relative z-10 mt-16 rotate-2 sm:mt-20 lg:mt-24"
+              className="relative z-10 mt-14 rotate-2 sm:mt-20 lg:mt-24"
               initial={reduced ? undefined : { opacity: 0, y: 30, rotate: 5 }}
               animate={reduced ? undefined : { opacity: 1, y: 0, rotate: 2 }}
               transition={{ duration: 0.9, delay: 0.5, ease: EASE }}
@@ -171,6 +197,18 @@ export function Hero() {
               <ProductFrame designWidth={600} className="shadow-glow">
                 <DashboardMock />
               </ProductFrame>
+
+              {/* "online" tag anchored to the frame itself — a badge that
+                  belongs to the product, not a pill floating in empty space */}
+              <motion.div
+                className="absolute -top-3 -right-3 z-20 flex items-center gap-1.5 rounded-full border border-copper/30 bg-copper-subtle px-2.5 py-1 text-[11px] font-medium text-copper shadow-sm"
+                initial={reduced ? undefined : { opacity: 0, scale: 0.9 }}
+                animate={reduced ? undefined : { opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, delay: 1.1, ease: EASE }}
+              >
+                <Sparkles className="size-3 shrink-0" />
+                Agent IA en ligne
+              </motion.div>
             </motion.div>
 
             <motion.div
@@ -180,31 +218,6 @@ export function Hero() {
               transition={{ duration: 0.7, delay: 1.05, ease: EASE }}
             >
               <HeroChatDemo />
-            </motion.div>
-
-            <motion.div
-              className="absolute -right-2 bottom-6 z-20 w-48 rotate-3 rounded-lg border border-border bg-card p-3 shadow-lg sm:-right-6 sm:w-52"
-              initial={reduced ? undefined : { opacity: 0, y: 20, x: 10, rotate: 8 }}
-              animate={reduced ? undefined : { opacity: 1, y: 0, x: 0, rotate: 3 }}
-              transition={{ duration: 0.7, delay: 0.9, ease: EASE }}
-            >
-              <div className="flex items-center gap-2 text-xs font-medium text-success">
-                <FileCheck2 className="size-4" />
-                Facture transmise à PEPPOL
-              </div>
-              <div className="mt-1 text-[11px] text-muted-foreground">
-                2026-0042 · accusé de réception reçu
-              </div>
-            </motion.div>
-
-            <motion.div
-              className="absolute -top-3 right-0 z-20 hidden items-center gap-1.5 rounded-full border border-copper/30 bg-copper-subtle px-3 py-1.5 text-xs font-medium text-copper shadow-sm sm:flex"
-              initial={reduced ? undefined : { opacity: 0, scale: 0.9 }}
-              animate={reduced ? undefined : { opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 1.2, ease: EASE }}
-            >
-              <Sparkles className="size-3.5" />
-              Agent IA en ligne
             </motion.div>
           </motion.div>
         </div>
