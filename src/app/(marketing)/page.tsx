@@ -14,6 +14,7 @@ import { Section, SectionIntro } from "@/components/marketing/section";
 import { Hero } from "@/components/marketing/hero";
 import { TradesMarquee } from "@/components/marketing/trades-marquee";
 import { DimensionMark } from "@/components/marketing/dimension-mark";
+import { ProblemPanel } from "@/components/marketing/problem-panel";
 import { FeatureShowcase } from "@/components/marketing/feature-showcase";
 import { Testimonials } from "@/components/marketing/testimonials";
 import { Faq } from "@/components/marketing/faq";
@@ -23,16 +24,32 @@ import { InvoiceMock, SiteMock, ChatMock } from "@/components/marketing/mockups"
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Reveal, RevealGroup, RevealItem } from "@/components/motion/reveal";
-import { CountUp } from "@/components/motion/count-up";
 import { TiltCard } from "@/components/motion/tilt-card";
 import { PILLARS, FAQ_GENERAL } from "@/lib/marketing/content";
 
 const PILLAR_ICONS = { Globe, FileCheck2, Sparkles, CalendarDays } as const;
 
 const PROBLEMS = [
-  { icon: Clock, value: 5, prefix: "3 à ", suffix: " h", label: "perdues chaque semaine sur l'administratif" },
-  { icon: Search, value: 89, suffix: " %", label: "des artisans n'ont pas d'outils numériques adaptés" },
-  { icon: TrendingDown, value: 30, prefix: "20–", suffix: " %", label: "de rendez-vous manqués sans rappel automatique" },
+  {
+    icon: Clock,
+    value: 5,
+    prefix: "3 à ",
+    suffix: " h",
+    label: "perdues chaque semaine à gérer devis, factures et rendez-vous à la main",
+  },
+  {
+    icon: Search,
+    value: 50,
+    suffix: " %",
+    label: "des artisans utiliseraient encore des outils numériques inadaptés à leur métier",
+  },
+  {
+    icon: TrendingDown,
+    value: 30,
+    prefix: "20–",
+    suffix: " %",
+    label: "des rendez-vous seraient manqués faute de rappel automatique",
+  },
 ];
 
 const STEPS = [
@@ -108,30 +125,13 @@ export default function LandingPage() {
       <TradesMarquee />
 
       {/* Problème */}
-      <Section className="border-b border-border bg-muted/40">
-        <SectionIntro
+      <Section className="border-b border-border bg-muted/40 bg-blueprint">
+        <ProblemPanel
           eyebrow="Le constat"
           title="Vous êtes un excellent artisan. Le numérique vous fait perdre du temps et des clients."
           lede="Papier, Excel, WhatsApp personnel, un vieux site qui ne fonctionne plus. Pendant ce temps, un concurrent moins qualifié mais mieux présenté récupère le chantier."
+          stats={PROBLEMS}
         />
-        <RevealGroup className="mt-14 grid gap-6 sm:grid-cols-3">
-          {PROBLEMS.map((p) => (
-            <RevealItem
-              key={p.label}
-              className="hover-lift rounded-xl border border-border bg-card p-6 text-center shadow-sm"
-            >
-              <p.icon className="mx-auto size-6 text-primary" />
-              <div className="mt-3 font-display text-3xl font-semibold text-foreground">
-                {p.prefix}
-                <CountUp value={p.value} />
-                {p.suffix}
-              </div>
-              <p className="mt-1.5 text-sm text-muted-foreground text-balance">
-                {p.label}
-              </p>
-            </RevealItem>
-          ))}
-        </RevealGroup>
       </Section>
 
       {/* Piliers */}
