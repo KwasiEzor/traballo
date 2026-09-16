@@ -41,7 +41,7 @@ function Highlight({ children }: { children: React.ReactNode }) {
         <svg viewBox="0 0 120 20" preserveAspectRatio="none" className="h-full w-full">
           <path
             d="M0,5 C15,2 30,7 45,4 C60,1 75,6 90,3 C100,1 110,4 120,3 L120,17 C108,20 95,15 80,18 C65,21 50,16 35,19 C20,22 8,18 0,19 Z"
-            className="fill-copper/80"
+            className="fill-copper"
           />
         </svg>
       </motion.div>
