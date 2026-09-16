@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductFrame } from "@/components/marketing/product-frame";
 import { GrainGradient } from "@/components/marketing/grain-gradient";
+import { DimensionMark } from "@/components/marketing/dimension-mark";
 import { DashboardMock } from "@/components/marketing/mockups";
 import { HeroChatDemo } from "@/components/marketing/hero-chat-demo";
 import { Mascot } from "@/components/shared/mascot";
@@ -19,7 +20,24 @@ const trust = [
 ];
 
 const EASE = [0.16, 1, 0.3, 1] as const;
-const HEADLINE = ["Tout votre", "business d'artisan."];
+
+/** A copper highlighter stroke drawn under a key phrase — the headline's
+ * one deliberate nod to the mascot's warm palette, not just brand-blue. */
+function Highlight({ children }: { children: React.ReactNode }) {
+  const reduced = useReducedMotion();
+  return (
+    <span className="relative inline-block">
+      <span className="relative z-10">{children}</span>
+      <motion.span
+        aria-hidden="true"
+        className="absolute inset-x-0 bottom-0.5 -z-0 h-[0.34em] w-full origin-left rounded-sm bg-copper/35 sm:bottom-1.5"
+        initial={reduced ? undefined : { scaleX: 0 }}
+        animate={reduced ? undefined : { scaleX: 1 }}
+        transition={{ duration: 0.5, delay: 0.55, ease: EASE }}
+      />
+    </span>
+  );
+}
 
 export function Hero() {
   const reduced = useReducedMotion();
@@ -29,142 +47,167 @@ export function Hero() {
       <GrainGradient />
 
       <div className="container-page relative pt-16 pb-20 sm:pt-24 sm:pb-28">
-        <div className="mx-auto max-w-3xl text-center">
-          <motion.div
-            initial={reduced ? undefined : { opacity: 0, y: 10 }}
-            animate={reduced ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: EASE }}
-          >
-            <Badge variant="outline" className="mx-auto bg-card/80 backdrop-blur-sm">
-              <span className="relative flex size-1.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
-                <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
-              </span>
-              Facturation électronique obligatoire dès 2026
-            </Badge>
-          </motion.div>
+        <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-[1fr_1.15fr] lg:gap-10 xl:gap-12">
+          {/* Copy — left-aligned, editorial rather than centered-and-stacked.
+              min-w-0 overrides the grid item's default min-width:auto, which
+              would otherwise let the nowrap buttons/badge force this track
+              wider than the viewport on narrow screens. */}
+          <div className="min-w-0">
+            <motion.div
+              initial={reduced ? undefined : { opacity: 0, y: 10 }}
+              animate={reduced ? undefined : { opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: EASE }}
+            >
+              <DimensionMark label="Artisans FR · BE · LU" className="mb-5 hidden sm:inline-flex" />
+              <Badge variant="outline" className="w-fit bg-card/80 backdrop-blur-sm">
+                <span className="relative flex size-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60" />
+                  <span className="relative inline-flex size-1.5 rounded-full bg-primary" />
+                </span>
+                Facturation électronique obligatoire dès 2026
+              </Badge>
+            </motion.div>
 
-          <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl md:text-6xl">
-            {HEADLINE.map((line, i) => (
+            <h1 className="mt-6 font-display text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl md:text-6xl">
               <motion.span
-                key={line}
                 className="block"
                 initial={reduced ? undefined : { opacity: 0, y: 24 }}
                 animate={reduced ? undefined : { opacity: 1, y: 0 }}
-                transition={{ duration: 0.7, delay: 0.1 + i * 0.09, ease: EASE }}
+                transition={{ duration: 0.7, delay: 0.1, ease: EASE }}
               >
-                {line}
+                Tout votre
               </motion.span>
-            ))}
-            <motion.span
-              className="block text-primary"
-              initial={reduced ? undefined : { opacity: 0, y: 24 }}
+              <motion.span
+                className="block"
+                initial={reduced ? undefined : { opacity: 0, y: 24 }}
+                animate={reduced ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.19, ease: EASE }}
+              >
+                <Highlight>business d&apos;artisan.</Highlight>
+              </motion.span>
+              <motion.span
+                className="block bg-gradient-to-r from-primary to-copper bg-clip-text text-transparent"
+                initial={reduced ? undefined : { opacity: 0, y: 24 }}
+                animate={reduced ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.28, ease: EASE }}
+              >
+                Un seul tableau de bord.
+              </motion.span>
+            </h1>
+
+            <motion.p
+              className="mt-6 max-w-xl text-lg leading-relaxed text-pretty text-muted-foreground"
+              initial={reduced ? undefined : { opacity: 0, y: 14 }}
               animate={reduced ? undefined : { opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.28, ease: EASE }}
+              transition={{ duration: 0.6, delay: 0.4, ease: EASE }}
             >
-              Un seul tableau de bord.
-            </motion.span>
-          </h1>
+              Site web professionnel, factures conformes Factur-X, agent IA qui
+              répond à vos clients 24&nbsp;h/24 et rendez-vous automatisés. Prêt en
+              30&nbsp;minutes, à partir de&nbsp;0&nbsp;€.
+            </motion.p>
 
-          <motion.p
-            className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-pretty text-muted-foreground"
-            initial={reduced ? undefined : { opacity: 0, y: 14 }}
-            animate={reduced ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4, ease: EASE }}
-          >
-            Site web professionnel, factures conformes Factur-X, agent IA qui
-            répond à vos clients 24&nbsp;h/24 et rendez-vous automatisés. Prêt en
-            30&nbsp;minutes, à partir de&nbsp;0&nbsp;€.
-          </motion.p>
+            <motion.div
+              className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center"
+              initial={reduced ? undefined : { opacity: 0, y: 14 }}
+              animate={reduced ? undefined : { opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
+            >
+              <Button asChild size="lg" className="w-full sm:w-auto">
+                <a href={`${APP_URL}/auth/signup`}>
+                  Commencer gratuitement
+                  <ArrowRight className="size-4" />
+                </a>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="w-full bg-card/70 backdrop-blur-sm sm:w-auto">
+                <Link href="/tarifs">Voir les tarifs</Link>
+              </Button>
+            </motion.div>
 
+            <motion.ul
+              className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground"
+              initial={reduced ? undefined : { opacity: 0 }}
+              animate={reduced ? undefined : { opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+            >
+              {trust.map((t) => (
+                <li key={t.label} className="flex items-center gap-2">
+                  <t.icon className="size-4 text-primary" />
+                  {t.label}
+                </li>
+              ))}
+            </motion.ul>
+          </div>
+
+          {/* Visual collage — a tilted pinboard, not a centered browser mock */}
           <motion.div
-            className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
-            initial={reduced ? undefined : { opacity: 0, y: 14 }}
+            className="relative mx-auto w-full max-w-sm pt-6 pb-10 sm:max-w-md lg:mx-0 lg:max-w-none lg:pt-2"
+            initial={reduced ? undefined : { opacity: 0, y: 30 }}
             animate={reduced ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
+            transition={{ duration: 0.8, delay: 0.35, ease: EASE }}
           >
-            <Button asChild size="lg" className="w-full sm:w-auto">
-              <a href={`${APP_URL}/auth/signup`}>
-                Commencer gratuitement
-                <ArrowRight className="size-4" />
-              </a>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="w-full bg-card/70 backdrop-blur-sm sm:w-auto">
-              <Link href="/tarifs">Voir les tarifs</Link>
-            </Button>
-          </motion.div>
+            {/* washi-tape strip pinning the mascot to the board */}
+            <div
+              aria-hidden="true"
+              className="absolute left-10 top-6 h-7 w-20 -rotate-6 rounded-sm bg-copper/25 sm:left-14 sm:top-8"
+            />
 
-          <motion.ul
-            className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground"
-            initial={reduced ? undefined : { opacity: 0 }}
-            animate={reduced ? undefined : { opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-          >
-            {trust.map((t) => (
-              <li key={t.label} className="flex items-center gap-2">
-                <t.icon className="size-4 text-primary" />
-                {t.label}
-              </li>
-            ))}
-          </motion.ul>
+            <motion.div
+              className="absolute -left-1 top-0 z-20 sm:left-2"
+              initial={reduced ? undefined : { opacity: 0, scale: 0.85, rotate: -6, y: -8 }}
+              animate={reduced ? undefined : { opacity: 1, scale: 1, rotate: -4, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.9, ease: EASE }}
+            >
+              <div className="rotate-[-4deg]">
+                <Mascot pose="welcome" size={112} className="drop-shadow-xl" />
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="relative z-10 mt-16 rotate-2 sm:mt-20 lg:mt-24"
+              initial={reduced ? undefined : { opacity: 0, y: 30, rotate: 5 }}
+              animate={reduced ? undefined : { opacity: 1, y: 0, rotate: 2 }}
+              transition={{ duration: 0.9, delay: 0.5, ease: EASE }}
+            >
+              <ProductFrame designWidth={600} className="shadow-glow">
+                <DashboardMock />
+              </ProductFrame>
+            </motion.div>
+
+            <motion.div
+              className="absolute -bottom-6 -left-4 z-20 w-48 -rotate-3 rounded-lg border border-border bg-card shadow-lg sm:-left-8 sm:w-52"
+              initial={reduced ? undefined : { opacity: 0, y: 20, x: -10, rotate: -8 }}
+              animate={reduced ? undefined : { opacity: 1, y: 0, x: 0, rotate: -3 }}
+              transition={{ duration: 0.7, delay: 1.05, ease: EASE }}
+            >
+              <HeroChatDemo />
+            </motion.div>
+
+            <motion.div
+              className="absolute -right-2 bottom-6 z-20 w-48 rotate-3 rounded-lg border border-border bg-card p-3 shadow-lg sm:-right-6 sm:w-52"
+              initial={reduced ? undefined : { opacity: 0, y: 20, x: 10, rotate: 8 }}
+              animate={reduced ? undefined : { opacity: 1, y: 0, x: 0, rotate: 3 }}
+              transition={{ duration: 0.7, delay: 0.9, ease: EASE }}
+            >
+              <div className="flex items-center gap-2 text-xs font-medium text-success">
+                <FileCheck2 className="size-4" />
+                Facture transmise à PEPPOL
+              </div>
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                2026-0042 · accusé de réception reçu
+              </div>
+            </motion.div>
+
+            <motion.div
+              className="absolute -top-3 right-0 z-20 hidden items-center gap-1.5 rounded-full border border-copper/30 bg-copper-subtle px-3 py-1.5 text-xs font-medium text-copper shadow-sm sm:flex"
+              initial={reduced ? undefined : { opacity: 0, scale: 0.9 }}
+              animate={reduced ? undefined : { opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 1.2, ease: EASE }}
+            >
+              <Sparkles className="size-3.5" />
+              Agent IA en ligne
+            </motion.div>
+          </motion.div>
         </div>
-
-        <motion.div
-          className="relative mx-auto mt-16 max-w-4xl sm:mt-24"
-          initial={reduced ? undefined : { opacity: 0, y: 40, rotateX: 8 }}
-          animate={reduced ? undefined : { opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ duration: 0.9, delay: 0.55, ease: EASE }}
-          style={{ transformPerspective: 1400 }}
-        >
-          <ProductFrame designWidth={680} className="shadow-glow">
-            <DashboardMock />
-          </ProductFrame>
-
-          {/* Mirrors the "Agent IA en ligne" pill on the opposite corner —
-              the mascot greets, it doesn't compete with the product shots. */}
-          <motion.div
-            className="absolute -left-4 -top-6 hidden lg:block"
-            initial={reduced ? undefined : { opacity: 0, scale: 0.9, y: -8 }}
-            animate={reduced ? undefined : { opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 1.05, ease: EASE }}
-          >
-            <Mascot pose="welcome" size={64} />
-          </motion.div>
-
-          <motion.div
-            className="absolute -bottom-8 -left-6 hidden w-52 rounded-lg border border-border bg-card shadow-lg sm:block"
-            initial={reduced ? undefined : { opacity: 0, y: 20, x: -10 }}
-            animate={reduced ? undefined : { opacity: 1, y: 0, x: 0 }}
-            transition={{ duration: 0.7, delay: 1, ease: EASE }}
-          >
-            <HeroChatDemo />
-          </motion.div>
-
-          <motion.div
-            className="absolute -bottom-6 -right-4 hidden w-56 rounded-lg border border-border bg-card p-3 shadow-lg md:block"
-            initial={reduced ? undefined : { opacity: 0, y: 20, x: 10 }}
-            animate={reduced ? undefined : { opacity: 1, y: 0, x: 0 }}
-            transition={{ duration: 0.7, delay: 0.85, ease: EASE }}
-          >
-            <div className="flex items-center gap-2 text-xs font-medium text-success">
-              <FileCheck2 className="size-4" />
-              Facture transmise à PEPPOL
-            </div>
-            <div className="mt-1 text-[11px] text-muted-foreground">
-              2026-0042 · accusé de réception reçu
-            </div>
-          </motion.div>
-
-          <motion.div
-            className="absolute -right-3 -top-5 hidden items-center gap-1.5 rounded-full border border-copper/30 bg-copper-subtle px-3 py-1.5 text-xs font-medium text-copper shadow-sm lg:flex"
-            initial={reduced ? undefined : { opacity: 0, scale: 0.9 }}
-            animate={reduced ? undefined : { opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 1.15, ease: EASE }}
-          >
-            <Sparkles className="size-3.5" />
-            Agent IA en ligne
-          </motion.div>
-        </motion.div>
       </div>
     </section>
   );
