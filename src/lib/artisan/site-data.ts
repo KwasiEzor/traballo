@@ -56,6 +56,46 @@ const TRADE_SERVICES: Record<string, { title: string; text: string }[]> = {
     { title: "Pose", text: "Portes, fenêtres, parquet, terrasse bois." },
     { title: "Rénovation", text: "Restauration de menuiseries anciennes, ajustements." },
   ],
+  macon: [
+    { title: "Gros œuvre", text: "Fondations, murs porteurs, dalles — construction dans les règles de l'art." },
+    { title: "Extension & agrandissement", text: "Garage, véranda, surélévation, de l'étude à la livraison." },
+    { title: "Rénovation", text: "Ouverture de mur, reprise en sous-œuvre, ravalement de façade." },
+  ],
+  peintre: [
+    { title: "Peinture intérieure", text: "Murs, plafonds, boiseries — finitions soignées, choix des teintes." },
+    { title: "Peinture extérieure", text: "Façades, volets, ravalement, protection durable contre les intempéries." },
+    { title: "Revêtements muraux", text: "Papier peint, enduits décoratifs, toile de verre." },
+  ],
+  carreleur: [
+    { title: "Pose de carrelage", text: "Sol et mur, intérieur et extérieur, tous formats et matériaux." },
+    { title: "Salle de bain & cuisine", text: "Faïence, douche à l'italienne, plan de travail carrelé." },
+    { title: "Rénovation de joints", text: "Reprise de joints abîmés, étanchéité, remplacement de carreaux cassés." },
+  ],
+  couvreur: [
+    { title: "Réfection de toiture", text: "Tuiles, ardoises, zinguerie — remplacement et réparation." },
+    { title: "Étanchéité", text: "Traitement des fuites, isolation de toiture, entretien de gouttières." },
+    { title: "Charpente", text: "Diagnostic, renforcement, traitement contre les nuisibles." },
+  ],
+  serrurier: [
+    { title: "Dépannage urgent", text: "Porte claquée, serrure bloquée — intervention rapide 24 h/24." },
+    { title: "Installation & sécurisation", text: "Serrures multipoints, blindage de porte, verrous certifiés." },
+    { title: "Métallerie", text: "Portails, grilles, garde-corps sur mesure." },
+  ],
+  jardinier: [
+    { title: "Entretien des espaces verts", text: "Tonte, taille, désherbage — un jardin entretenu toute l'année." },
+    { title: "Aménagement paysager", text: "Création de massifs, plantations, terrasses et allées." },
+    { title: "Élagage", text: "Taille raisonnée des arbres et haies, évacuation des déchets verts." },
+  ],
+  demenagement: [
+    { title: "Déménagement complet", text: "Emballage, transport, remontage des meubles — clé en main." },
+    { title: "Garde-meuble", text: "Stockage sécurisé de courte ou longue durée." },
+    { title: "Manutention", text: "Levage, portage d'objets lourds ou volumineux." },
+  ],
+  reparation: [
+    { title: "Dépannage à domicile", text: "Lave-linge, réfrigérateur, four — diagnostic et réparation rapide." },
+    { title: "Pièces détachées", text: "Remplacement de pièces d'origine, garantie sur l'intervention." },
+    { title: "Entretien préventif", text: "Contrôle régulier pour prolonger la durée de vie de vos appareils." },
+  ],
 };
 
 const DEFAULT_SERVICES = [
