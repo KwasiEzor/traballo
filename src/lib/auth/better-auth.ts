@@ -68,6 +68,7 @@ export const auth = betterAuth({
             "Bienvenue sur Traballo. Confirmez votre adresse pour activer votre compte.",
           cta: "Confirmer mon e-mail",
           url,
+          mascotPose: "welcome",
         }),
       });
     },

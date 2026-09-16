@@ -15,6 +15,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Alert, AlertContent, AlertDescription } from "@/components/ui/alert";
+import { Mascot } from "@/components/shared/mascot";
 import { TRADES, BRAND_COLORS, tradeLabel } from "@/lib/artisan/trades";
 import { completeOnboarding, type OnboardingState } from "./actions";
 
@@ -44,6 +45,13 @@ export function OnboardingWizard({ businessName }: { businessName: string }) {
 
   return (
     <div className="mx-auto w-full max-w-xl">
+      <Mascot
+        key={step === STEPS.length - 1 ? "success" : "welcome"}
+        pose={step === STEPS.length - 1 ? "success" : "welcome"}
+        size={88}
+        className="mx-auto mb-6"
+      />
+
       {/* Stepper */}
       <ol className="mb-8 flex items-center gap-2">
         {STEPS.map((label, i) => (

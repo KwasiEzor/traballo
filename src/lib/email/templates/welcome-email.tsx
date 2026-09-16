@@ -11,6 +11,7 @@ export function WelcomeEmail({ firstName }: { firstName?: string }) {
     <EmailLayout
       preview="Votre compte Traballo est prêt — voici comment démarrer."
       heading="Bienvenue sur Traballo 👋"
+      mascotPose="welcome"
     >
       <P>{hello}</P>
       <P>

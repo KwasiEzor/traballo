@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MailCheck } from "lucide-react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
+import { Mascot } from "@/components/shared/mascot";
 
 export const metadata: Metadata = { title: "Vérifiez votre email" };
 
@@ -10,9 +10,7 @@ export default function VerifyEmailPage() {
   return (
     <AuthShell title="Vérifiez votre email">
       <div className="rounded-xl border border-border bg-muted/40 p-6 text-center">
-        <div className="mx-auto grid size-12 place-items-center rounded-full bg-primary-subtle text-primary">
-          <MailCheck className="size-6" />
-        </div>
+        <Mascot pose="success" size={96} className="mx-auto" />
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
           Nous venons de vous envoyer un lien de confirmation. Cliquez dessus pour
           activer votre compte, puis connectez-vous.

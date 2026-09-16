@@ -54,6 +54,20 @@ describe("email templates — branded shell + content", () => {
     expect(raw).toContain("https://app.traballo.pro/verify?token=abc123");
     expect(text).toContain("Confirmer");
     expect(text).toMatch(/ignorez/i);
+    expect(raw).not.toContain("/mascot/removed/"); // no mascot by default
+  });
+
+  it("AuthLinkEmail with an explicit mascotPose (e.g. email verification)", async () => {
+    const { raw } = await rendered(
+      AuthLinkEmail({
+        heading: "Confirmez votre e-mail",
+        intro: "Bienvenue sur Traballo.",
+        cta: "Confirmer",
+        url: "https://app.traballo.pro/verify?token=abc123",
+        mascotPose: "welcome",
+      })
+    );
+    expect(raw).toContain("/mascot/removed/trabby-3D-onboarding-rmv.png");
   });
 
   it("WelcomeEmail", async () => {
@@ -62,6 +76,7 @@ describe("email templates — branded shell + content", () => {
     expect(text).toContain("Bonjour Marc");
     expect(raw).toContain(`${EMAIL_BRAND.app}/dashboard`);
     expect(text).toMatch(/Factur-X/);
+    expect(raw).toContain("/mascot/removed/trabby-3D-onboarding-rmv.png");
   });
 
   it("WelcomeEmail without a first name", async () => {
@@ -174,6 +189,7 @@ describe("email templates — branded shell + content", () => {
     expect(raw).toContain("https://blob.example.com/invoice.pdf");
     expect(text).not.toMatch(/L['’]équipe Traballo/); // signed by the artisan
     expect(text).toMatch(/15 mars 2026/);
+    expect(raw).not.toContain("/mascot/removed/"); // artisan → their client, no Trabby
   });
 
   it("PaymentFailedEmail", async () => {
@@ -189,6 +205,7 @@ describe("email templates — branded shell + content", () => {
     expect(text).toContain("29,00 €");
     expect(text).toMatch(/plan Free/);
     expect(raw).toContain(`${EMAIL_BRAND.app}/dashboard/settings?tab=abonnement`);
+    expect(raw).toContain("/mascot/removed/trabby-3D-error-rmv.png");
   });
 
   it("PaymentFailedEmail without a portal link", async () => {

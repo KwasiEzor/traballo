@@ -131,8 +131,15 @@ export function ArtisanSite({
             {chrome.showBadge && (
               <a
                 href={`https://${process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro"}`}
-                className="hover:text-slate-700"
+                className="flex items-center gap-1.5 hover:text-slate-700"
               >
+                <Image
+                  src="/mascot/trabby-2D.png"
+                  alt=""
+                  width={16}
+                  height={16}
+                  className="object-contain"
+                />
                 Créé avec Traballo
               </a>
             )}
