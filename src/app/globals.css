@@ -282,6 +282,15 @@
       0 4px 12px -4px color-mix(in oklch, var(--foreground) 10%, transparent);
   }
 
+  /* Deeper .shadow-glow — same three layers, so it transitions smoothly as
+     a hover target (e.g. `shadow-glow hover:shadow-glow-lg`). */
+  .shadow-glow-lg {
+    box-shadow:
+      0 2px 4px color-mix(in oklch, var(--foreground) 8%, transparent),
+      0 26px 60px -10px color-mix(in oklch, var(--primary) 42%, transparent),
+      0 8px 22px -6px color-mix(in oklch, var(--foreground) 14%, transparent);
+  }
+
   /* Consistent card hover across marketing: lift + shadow + brand-tinted
      border. Pair with a border + bg-card surface. */
   .hover-lift {
