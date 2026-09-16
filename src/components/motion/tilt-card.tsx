@@ -18,9 +18,12 @@ import { cn } from "@/lib/utils";
 export function TiltCard({
   children,
   className,
+  tint = "--primary",
 }: {
   children: React.ReactNode;
   className?: string;
+  /** CSS custom property (with its leading `--`) the glare is tinted with. */
+  tint?: string;
 }) {
   const ref = React.useRef<HTMLDivElement>(null);
   const [enabled, setEnabled] = React.useState(false);
@@ -38,7 +41,7 @@ export function TiltCard({
   const ry = useSpring(useTransform(mx, [0, 1], [-7, 7]), spring);
   const glareX = useTransform(mx, [0, 1], ["0%", "100%"]);
   const glareY = useTransform(my, [0, 1], ["0%", "100%"]);
-  const glareBackground = useMotionTemplate`radial-gradient(280px circle at ${glareX} ${glareY}, color-mix(in oklch, var(--primary) 16%, transparent), transparent 65%)`;
+  const glareBackground = useMotionTemplate`radial-gradient(280px circle at ${glareX} ${glareY}, color-mix(in oklch, var(${tint}) 16%, transparent), transparent 65%)`;
 
   function onMouseMove(e: React.MouseEvent<HTMLDivElement>) {
     if (!enabled || !ref.current) return;

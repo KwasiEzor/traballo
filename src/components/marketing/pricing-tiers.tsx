@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   motion,
   useMotionValue,
+  useReducedMotion,
   useSpring,
   useTransform,
 } from "motion/react";
@@ -15,7 +16,6 @@ import { TiltCard } from "@/components/motion/tilt-card";
 import { DraftBorder } from "@/components/motion/draft-border";
 import { DrawnCheck } from "@/components/motion/drawn-check";
 import { OdometerNumber } from "@/components/motion/odometer-number";
-import { DimensionMark } from "@/components/marketing/dimension-mark";
 
 export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
   const [yearly, setYearly] = React.useState(true);
@@ -61,7 +61,7 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
       )}
 
       {withToggle && (
-        <div className="relative mb-12 flex justify-center">
+        <div className="relative mb-12 flex justify-center lg:mb-20">
           <div className="inline-flex items-center rounded-full border border-border bg-muted/60 p-1">
             {(
               [
@@ -106,7 +106,7 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
         </div>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_1.16fr_1fr] lg:gap-7">
+      <div className="grid items-start gap-x-6 gap-y-12 lg:grid-cols-[1fr_1.16fr_1fr] lg:gap-x-7">
         {PLANS.map((plan, index) => {
           const price = yearly ? plan.priceYearly : plan.priceMonthly;
           const yearlySaving =
@@ -119,8 +119,8 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
               className={cn(
                 "relative flex h-full flex-col rounded-2xl bg-card p-6 shadow-sm transition-shadow duration-300",
                 plan.featured
-                  ? "shadow-glow hover:shadow-glow-lg lg:-mt-8 lg:p-9"
-                  : "hover:shadow-lg"
+                  ? "shadow-glow-copper hover:shadow-glow-copper-lg lg:-mt-8 lg:p-9"
+                  : "hover:shadow-glow-soft"
               )}
             >
               <DraftBorder
@@ -128,27 +128,31 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
                 delay={index * 0.15}
                 duration={plan.featured ? 1.4 : 1}
                 strokeWidth={plan.featured ? 2 : 1.5}
-                className={plan.featured ? "text-primary" : "text-border"}
+                className={
+                  plan.featured
+                    ? "text-copper"
+                    : "text-primary/50 transition-colors duration-300 group-hover:text-primary"
+                }
               />
 
               {plan.featured && (
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 rounded-2xl bg-blueprint opacity-[0.35] [mask-image:radial-gradient(ellipse_70%_45%_at_50%_0%,black,transparent)]"
-                />
+                <>
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 rounded-2xl bg-blueprint opacity-[0.35] [mask-image:radial-gradient(ellipse_70%_45%_at_50%_0%,black,transparent)]"
+                  />
+                  <FeaturedBadge />
+                </>
               )}
 
-              <div className="relative flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-                <h3
-                  className={cn(
-                    "font-display font-semibold text-foreground",
-                    plan.featured ? "text-xl" : "text-lg"
-                  )}
-                >
-                  {plan.name}
-                </h3>
-                {plan.featured && <DimensionMark label="Le plus choisi" />}
-              </div>
+              <h3
+                className={cn(
+                  "relative font-display font-semibold",
+                  plan.featured ? "text-xl text-copper" : "text-lg text-primary"
+                )}
+              >
+                {plan.name}
+              </h3>
               <p className="relative mt-1.5 text-sm text-muted-foreground">
                 {plan.tagline}
               </p>
@@ -157,7 +161,7 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
                 {price === 0 ? (
                   <span
                     className={cn(
-                      "font-display font-semibold tracking-tight text-foreground",
+                      "font-display font-semibold tracking-tight text-foreground text-shadow-price",
                       plan.featured ? "text-5xl" : "text-4xl"
                     )}
                   >
@@ -166,7 +170,7 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
                 ) : (
                   <span
                     className={cn(
-                      "inline-flex items-baseline font-display font-semibold tracking-tight text-foreground",
+                      "inline-flex items-baseline font-display font-semibold tracking-tight text-foreground text-shadow-price",
                       plan.featured ? "text-5xl" : "text-4xl"
                     )}
                   >
@@ -188,7 +192,11 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
 
               <Button
                 asChild
-                className={cn("relative mt-5 overflow-hidden", plan.featured && "group")}
+                className={cn(
+                  "relative mt-5 overflow-hidden",
+                  plan.featured &&
+                    "group bg-copper text-copper-foreground hover:bg-copper hover:brightness-95"
+                )}
                 variant={plan.featured ? "primary" : "outline"}
                 size="lg"
               >
@@ -217,7 +225,7 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
                       {!isHeader && (
                         <DrawnCheck
                           delay={index * 0.15 + hIndex * 0.05}
-                          className="mt-0.5 text-primary"
+                          className={cn("mt-0.5", plan.featured ? "text-copper" : "text-primary")}
                         />
                       )}
                       <span className={cn(!isHeader && "text-muted-foreground")}>
@@ -230,15 +238,36 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
             </div>
           );
 
-          return plan.featured ? (
-            <div key={plan.id} className="lg:z-10">
-              <TiltCard>{card}</TiltCard>
+          return (
+            <div key={plan.id} className={cn(plan.featured && "lg:z-10")}>
+              <TiltCard tint={plan.featured ? "--copper" : "--primary"}>{card}</TiltCard>
             </div>
-          ) : (
-            <div key={plan.id}>{card}</div>
           );
         })}
       </div>
     </div>
+  );
+}
+
+/**
+ * Overlaps the top edge of the featured card, centered, so it reads as
+ * "the one to pick" at a glance regardless of viewport width — instead of
+ * competing for space inside the card header, where it could get lost or
+ * wrap awkwardly on narrow screens.
+ */
+function FeaturedBadge() {
+  const reduced = useReducedMotion();
+  return (
+    <motion.div
+      initial={reduced ? undefined : { opacity: 0, scale: 0.6, y: 8 }}
+      whileInView={reduced ? undefined : { opacity: 1, scale: 1, y: 0 }}
+      viewport={{ once: true, margin: "-10% 0px -10% 0px" }}
+      transition={{ type: "spring", stiffness: 300, damping: 18, delay: 0.3 }}
+      className="absolute left-1/2 top-0 z-20 -translate-x-1/2 -translate-y-[calc(100%_+_12px)]"
+    >
+      <span className="inline-flex items-center whitespace-nowrap rounded-full bg-copper px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-copper-foreground shadow-glow-copper">
+        Le plus choisi
+      </span>
+    </motion.div>
   );
 }
