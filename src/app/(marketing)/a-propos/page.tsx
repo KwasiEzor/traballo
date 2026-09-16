@@ -107,10 +107,10 @@ export default function AProposPage() {
                 technique.
               </p>
               <div className="mt-8">
-                <Button asChild variant="cta" size="lg">
+                <Button asChild size="lg">
                   <a href={`${APP_URL}/auth/signup`}>
                     Créer un compte gratuit
-                    <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                    <ArrowRight className="size-4" />
                   </a>
                 </Button>
               </div>

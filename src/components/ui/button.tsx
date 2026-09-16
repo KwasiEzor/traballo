@@ -20,7 +20,6 @@ const buttonVariants = cva(
           "bg-success text-success-foreground shadow-sm hover:brightness-95",
         destructive:
           "bg-destructive text-destructive-foreground shadow-sm hover:brightness-95",
-        cta: "group relative overflow-hidden bg-copper text-copper-foreground shadow-glow-copper transition-[transform,box-shadow,filter] duration-200 ease-out after:pointer-events-none after:absolute after:inset-0 after:-translate-x-full after:bg-gradient-to-r after:from-transparent after:via-white/25 after:to-transparent after:transition-transform after:duration-700 after:ease-out hover:-translate-y-0.5 hover:shadow-glow-copper-lg hover:brightness-105 hover:after:translate-x-full active:brightness-95",
       },
       size: {
         sm: "h-9 px-3 text-[13px]",

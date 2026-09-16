@@ -265,10 +265,10 @@ export function Hero() {
               animate={reduced ? undefined : { opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5, ease: EASE }}
             >
-              <Button asChild variant="cta" size="lg" className="w-full sm:w-auto">
+              <Button asChild size="lg" className="w-full sm:w-auto">
                 <a href={`${APP_URL}/auth/signup`}>
                   Commencer gratuitement
-                  <ArrowRight className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+                  <ArrowRight className="size-4" />
                 </a>
               </Button>
               <Button asChild size="lg" variant="outline" className="w-full bg-card/70 backdrop-blur-sm sm:w-auto">

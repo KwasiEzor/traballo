@@ -190,8 +190,25 @@ export function PricingTiers({ withToggle = true }: { withToggle?: boolean }) {
                     : "sans engagement, résiliable à tout moment"}
               </p>
 
-              <Button asChild className="mt-5" variant="cta" size="lg">
-                <a href={`${APP_URL}/auth/signup?plan=${plan.id}`}>{plan.cta}</a>
+              <Button
+                asChild
+                className={cn(
+                  "relative mt-5 overflow-hidden",
+                  plan.featured &&
+                    "group bg-copper text-copper-foreground hover:bg-copper hover:brightness-95"
+                )}
+                variant="primary"
+                size="lg"
+              >
+                <a href={`${APP_URL}/auth/signup?plan=${plan.id}`}>
+                  {plan.featured && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full"
+                    />
+                  )}
+                  <span className="relative">{plan.cta}</span>
+                </a>
               </Button>
 
               <ul className="relative mt-6 space-y-3 text-sm">

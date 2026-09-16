@@ -60,22 +60,22 @@ export function ProblemPanel({
             abstract "89% n'ont pas d'outils adaptés" claim a face and a
             texture instead of just another number. */}
         <Reveal delay={0.1} className="mt-10 max-w-sm">
-          <div className="relative rotate-[-1.5deg] rounded-2xl border border-copper/30 bg-copper p-6 text-copper-foreground shadow-glow-copper transition-transform duration-300 [text-shadow:0_1px_3px_rgb(0_0_0_/_0.2)] hover:rotate-0">
+          <div className="relative rotate-[-1.5deg] rounded-2xl border border-border bg-card p-6 shadow-lg transition-transform duration-300 hover:rotate-0">
             <div
               aria-hidden="true"
-              className="absolute -top-3 left-9 h-6 w-16 -rotate-6 rounded-sm bg-copper-foreground/20 shadow-sm"
+              className="absolute -top-3 left-9 h-6 w-16 -rotate-6 rounded-sm bg-copper/25 shadow-sm"
             />
-            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-copper-foreground/80">
+            <p className="font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               Le carnet du lundi matin
             </p>
             <ul className="mt-4 space-y-2.5">
               {OLD_WAYS.map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-2.5 text-[15px] leading-snug text-copper-foreground/90"
+                  className="flex items-start gap-2.5 text-[15px] leading-snug text-muted-foreground"
                 >
-                  <X className="mt-0.5 size-3.5 shrink-0 text-copper-foreground/70" />
-                  <span className="line-through decoration-copper-foreground/60 decoration-2">
+                  <X className="mt-0.5 size-3.5 shrink-0 text-destructive/70" />
+                  <span className="line-through decoration-destructive/50 decoration-2">
                     {item}
                   </span>
                 </li>
