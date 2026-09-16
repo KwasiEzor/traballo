@@ -312,7 +312,7 @@ export function Hero() {
             >
               <motion.div style={{ y: yMascot }}>
                 <motion.div
-                  className="absolute -left-1 top-0 z-20 sm:left-2"
+                  className="absolute -top-20 -left-1 z-20 sm:-top-24 sm:left-2 lg:-top-28"
                   initial={reduced ? undefined : { opacity: 0, scale: 0.85, rotate: -6, y: -8 }}
                   animate={reduced ? undefined : { opacity: 1, scale: 1, rotate: -4, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.9, ease: EASE }}
