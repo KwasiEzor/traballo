@@ -3,6 +3,12 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 
+// Auth pages are served on app.<rootDomain>, where middleware rewrites "/"
+// to the (authenticated) dashboard — so "back to home" must point at the
+// marketing site's root domain explicitly, not a relative "/".
+const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || "traballo.pro";
+const homeUrl = `https://${rootDomain}`;
+
 /**
  * Two-pane auth layout: form on the left, an institutional-trust panel on the
  * right. On mobile the right panel collapses.
@@ -20,11 +26,11 @@ export function AuthShell({
     <div className="grid min-h-dvh lg:grid-cols-2">
       <div className="flex flex-col px-6 py-8 sm:px-10">
         <div className="flex items-center justify-between gap-4">
-          <Link href="/" className="w-fit rounded-md">
+          <Link href={homeUrl} className="w-fit rounded-md">
             <Logo />
           </Link>
           <Link
-            href="/"
+            href={homeUrl}
             className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="size-4" />
