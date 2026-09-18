@@ -1,8 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const updateSet = vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
+const selectLimit = vi.fn();
+const selectWhere = vi.fn(() => ({ limit: selectLimit }));
+const selectFrom = vi.fn(() => ({ where: selectWhere }));
 vi.mock("@/lib/db", () => ({
-  db: { update: vi.fn(() => ({ set: updateSet })) },
+  db: {
+    update: vi.fn(() => ({ set: updateSet })),
+    select: vi.fn(() => ({ from: selectFrom })),
+  },
 }));
 
 import { planFromSubscription, syncSubscriptionToTenant } from "@/lib/stripe/billing";
@@ -14,6 +20,7 @@ beforeEach(() => {
   vi.stubEnv("STRIPE_PRICE_BUSINESS_MONTH", "price_bm");
   vi.stubEnv("STRIPE_PRICE_BUSINESS_YEAR", "price_by");
   updateSet.mockClear();
+  selectLimit.mockReset().mockResolvedValue([{ plan: "free" }]);
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -59,5 +66,29 @@ describe("syncSubscriptionToTenant", () => {
     expect(updateSet).toHaveBeenCalledWith(
       expect.objectContaining({ plan: "free", stripeSubscriptionId: null })
     );
+  });
+
+  it("returns the previous and new plan for a first subscription", async () => {
+    selectLimit.mockResolvedValue([{ plan: "free" }]);
+    const res = await syncSubscriptionToTenant("t_1", sub("active", "price_pm"));
+    expect(res).toEqual({ previousPlan: "free", newPlan: "pro" });
+  });
+
+  it("returns the previous and new plan for a plan change", async () => {
+    selectLimit.mockResolvedValue([{ plan: "pro" }]);
+    const res = await syncSubscriptionToTenant("t_1", sub("active", "price_bm"));
+    expect(res).toEqual({ previousPlan: "pro", newPlan: "business" });
+  });
+
+  it("returns the previous and new plan for a cancellation", async () => {
+    selectLimit.mockResolvedValue([{ plan: "business" }]);
+    const res = await syncSubscriptionToTenant("t_1", null);
+    expect(res).toEqual({ previousPlan: "business", newPlan: "free" });
+  });
+
+  it("defaults the previous plan to free for an unknown tenant", async () => {
+    selectLimit.mockResolvedValue([]);
+    const res = await syncSubscriptionToTenant("ghost", sub("active", "price_pm"));
+    expect(res).toEqual({ previousPlan: "free", newPlan: "pro" });
   });
 });

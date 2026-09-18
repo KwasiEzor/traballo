@@ -28,8 +28,8 @@ Le plan d'implémentation détaillé du système de notifications
 | Phase | Contenu | État |
 |---|---|---|
 | 0 | Fondations (schéma, `createNotification`, câblage événements existants) | ✅ fait |
-| 1 | Centre in-app artisan (cloche + page + préférences) | ✅ fait — migration 0012 à appliquer avant déploiement |
-| 2 | Emails abonnement manquants (activé/changé/annulé, quota) | à faire |
+| 1 | Centre in-app artisan (cloche + page + préférences) | ✅ fait — migration 0012 appliquée |
+| 2 | Emails abonnement manquants (activé/changé/annulé, quota) | ✅ fait |
 | 3 | Relances de factures + cron (TRB-056→060) | à faire |
 | 4 | Notifications RDV + cron (TRB-087, 094→098) | à faire |
 | 5 | Web push PWA (TRB-115) | à faire |

@@ -8,6 +8,10 @@ import { MarketingLeadEmail } from "@/lib/email/templates/marketing-lead-email";
 import { UpgradeRequestEmail } from "@/lib/email/templates/upgrade-request-email";
 import { InvoiceEmail } from "@/lib/email/templates/invoice-email";
 import { PaymentFailedEmail } from "@/lib/email/templates/payment-failed-email";
+import { SubscriptionStartedEmail } from "@/lib/email/templates/subscription-started-email";
+import { SubscriptionChangedEmail } from "@/lib/email/templates/subscription-changed-email";
+import { SubscriptionCanceledEmail } from "@/lib/email/templates/subscription-canceled-email";
+import { QuotaWarningEmail } from "@/lib/email/templates/quota-warning-email";
 import { EMAIL_BRAND } from "@/lib/email/brand";
 
 // React SSR injects <!-- --> markers around interpolated text; strip them so
@@ -214,6 +218,65 @@ describe("email templates — branded shell + content", () => {
     );
     expectShell(raw, text);
     expect(text).not.toMatch(/Mettre à jour le paiement/);
+  });
+
+  it("SubscriptionStartedEmail", async () => {
+    const { raw, text } = await rendered(
+      SubscriptionStartedEmail({ businessName: "Plomberie Durand", plan: "pro" })
+    );
+    expectShell(raw, text);
+    expect(text).toContain("Plomberie Durand");
+    expect(text).toMatch(/Pro/);
+    expect(raw).toContain(`${EMAIL_BRAND.app}/dashboard/settings?tab=abonnement`);
+    expect(raw).toContain("/mascot/removed/trabby-3D-onboarding-rmv.png");
+  });
+
+  it("SubscriptionChangedEmail (upgrade)", async () => {
+    const { text } = await rendered(
+      SubscriptionChangedEmail({
+        businessName: "Plomberie Durand",
+        previousPlan: "pro",
+        newPlan: "business",
+      })
+    );
+    expect(text).toMatch(/Pro/);
+    expect(text).toMatch(/Business/);
+    expect(text).toMatch(/mise à niveau|disponibles dès maintenant/);
+  });
+
+  it("SubscriptionChangedEmail (downgrade)", async () => {
+    const { text } = await rendered(
+      SubscriptionChangedEmail({
+        businessName: "Plomberie Durand",
+        previousPlan: "business",
+        newPlan: "pro",
+      })
+    );
+    expect(text).toMatch(/ne sont plus accessibles/);
+  });
+
+  it("SubscriptionCanceledEmail", async () => {
+    const { raw, text } = await rendered(
+      SubscriptionCanceledEmail({ businessName: "Plomberie Durand" })
+    );
+    expectShell(raw, text);
+    expect(text).toContain("Plomberie Durand");
+    expect(text).toMatch(/plan Free/);
+  });
+
+  it("QuotaWarningEmail", async () => {
+    const { raw, text } = await rendered(
+      QuotaWarningEmail({
+        businessName: "Plomberie Durand",
+        quotaLabel: "SMS",
+        used: 80,
+        limit: 100,
+      })
+    );
+    expectShell(raw, text);
+    expect(text).toContain("80");
+    expect(text).toContain("100");
+    expect(text).toMatch(/SMS/);
   });
 
   it("InvoiceEmail without a PDF link", async () => {

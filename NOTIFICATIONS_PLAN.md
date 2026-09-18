@@ -9,8 +9,9 @@
 |---|---|
 | **0 — Fondations** (schéma + `createNotification` + types + tests) | ✅ commit `f7d7f09` · migration 0010 appliquée en base |
 | **Câblage événements existants** (leads site/IA, paiement échoué) | ✅ commit `b8ffe1c` |
-| 1 — Centre in-app artisan (cloche + page + préférences) | ✅ migration 0012 (`notification_prefs`) — voir détail ci-dessous |
-| 2→9 | à faire |
+| 1 — Centre in-app artisan (cloche + page + préférences) | ✅ migration 0012 (`notification_prefs`) — appliquée en base |
+| 2 — Emails abonnement manquants | ✅ voir détail ci-dessous |
+| 3→9 | à faire |
 
 ### Décisions prises par défaut (à confirmer)
 
@@ -150,15 +151,46 @@ Le **client final n'a pas de compte** → email + SMS/WhatsApp uniquement. L'op�
 - `src/app/dashboard/notifications/page.tsx` — liste paginée (20/page) + filtres par catégorie. Fait.
 - Actions : `markReadAction`, `markAllReadAction` (`src/app/dashboard/notifications/actions.ts`) + `revalidatePath`. Rafraîchissement `router.refresh()` toutes les 60 s (pas de websocket à cette échelle). Fait.
 - `src/app/dashboard/settings` — onglet « Notifications » : matrice de toggles (email / in-app / push par catégorie), `src/app/dashboard/settings/notification-prefs-form.tsx` + `setNotificationPref`. Fait — **note** : le toggle push n'appelle pas encore la permission navigateur (`Notification.requestPermission` + sauvegarde `push_subscriptions`) car le web push arrive en Phase 5 ; pour l'instant il n'enregistre qu'une préférence inerte.
-- Migration 0012 (`notification_prefs` : `tenant_id`, `user_id`, `category`, `email`/`in_app`/`push`/`sms` bool, pk `(user_id, category)`, RLS `authenticated` sur `tenant_id`) — **générée, pas encore appliquée** (pas de `DATABASE_URL_UNPOOLED` dans cet environnement). Lancer `pnpm db:migrate` avant déploiement.
+- Migration 0012 (`notification_prefs` : `tenant_id`, `user_id`, `category`, `email`/`in_app`/`push`/`sms` bool, pk `(user_id, category)`, RLS `authenticated` sur `tenant_id`) — générée et appliquée en base.
 - `createNotification` consulte désormais les préférences (`src/lib/notifications/prefs.ts`) et saute l'écriture in-app pour un type non transactionnel si le destinataire a coupé `in_app` sur sa catégorie.
 
-### Phase 2 — Emails abonnement manquants (~0,5 j)
+### Phase 2 — Emails abonnement manquants (~0,5 j) ✅
 
-- White-label `EmailLayout` → prop `brand` ; `artisanBrandFromProfile(profile)`.
-- Nouveaux templates : `subscription-started`, `subscription-changed`, `subscription-canceled`, `quota-warning`.
-- Câbler dans `src/app/api/webhooks/stripe/route.ts` : `checkout.session.completed` → started ; `customer.subscription.updated` (changement de prix) → changed ; `customer.subscription.deleted` → canceled.
-- Tests dans `tests/lib/email/templates.test.ts` (harnais existant).
+- Nouveaux templates (`src/lib/email/templates/`) : `subscription-started-email`,
+  `subscription-changed-email`, `subscription-canceled-email`,
+  `quota-warning-email`. Coquille Traballo standard (pas de marque
+  artisan — ces mails vont à l'artisan, pas à son client).
+- **Écart volontaire par rapport au plan initial** : plutôt que de
+  mapper un type d'e-mail par type d'événement Stripe
+  (`checkout.session.completed` → started, `subscription.updated` →
+  changed, `subscription.deleted` → canceled), `syncSubscriptionToTenant`
+  (`src/lib/stripe/billing.ts`) retourne désormais `{previousPlan,
+  newPlan}` et un helper `notifyPlanTransition`
+  (`src/app/api/webhooks/stripe/route.ts`) réagit à la **transition
+  réelle** de plan, peu importe l'événement qui l'a déclenchée :
+  free→payant = started, payant→payant différent = changed,
+  payant→free = canceled, plan inchangé = rien. `customer.subscription.updated`
+  se déclenche pour beaucoup de changements sans rapport avec le plan
+  (fin d'essai, métadonnées, proration) — le mapper directement aurait
+  spammé l'artisan. Bénéfice secondaire : Checkout envoie
+  `checkout.session.completed` *et* `customer.subscription.created` pour
+  un même abonnement — avec le diff, le deuxième événement ne renvoie
+  rien puisque la transition est déjà persistée par le premier
+  (idempotent sans registre supplémentaire).
+- Câblé sur les 3 event handlers qui appellent déjà
+  `syncSubscriptionToTenant` : `checkout.session.completed`,
+  `customer.subscription.{created,updated,deleted}`, `invoice.paid`.
+- `billing.subscription_started` / `_changed` / `_canceled` : notif
+  in-app en plus de l'e-mail (déjà déclarées dans `NOTIFICATION_TYPES`
+  côté Phase 0).
+- `quota_warning` : template construit (la matrice email/in-app/push le
+  couvre déjà côté préférences) mais **pas câblé** — aucun quota mesuré
+  n'existe encore côté produit (les SMS de la Phase 6 sont le premier
+  cas d'usage réel).
+- Tests : `tests/lib/email/templates.test.ts` (5 nouveaux cas),
+  `tests/lib/stripe/billing.test.ts` (retour `{previousPlan, newPlan}`),
+  `tests/integration/api/stripe-webhook.test.ts` (nouveau — les 4
+  transitions via le handler complet).
 
 ### Phase 3 — Relances de factures / cron (~1,5 j) — TRB-056→060
 
