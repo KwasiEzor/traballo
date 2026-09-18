@@ -88,8 +88,15 @@ describe("updateTenantSlug", () => {
   });
 
   it("returns a friendly error on a race-condition unique violation", async () => {
-    updateWhere.mockRejectedValueOnce(new Error("duplicate key value"));
+    const err = Object.assign(new Error("duplicate key value"), { code: "23505" });
+    updateWhere.mockRejectedValueOnce(err);
     const res = await updateTenantSlug({}, form("greendan"));
     expect(res).toEqual({ error: "Cette adresse est déjà utilisée." });
+  });
+
+  it("returns a generic error (not the misleading 'already taken' one) on any other write failure", async () => {
+    updateWhere.mockRejectedValueOnce(new Error("connection reset"));
+    const res = await updateTenantSlug({}, form("greendan"));
+    expect(res).toEqual({ error: "L'enregistrement a échoué. Réessayez." });
   });
 });

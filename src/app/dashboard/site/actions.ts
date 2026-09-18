@@ -90,8 +90,15 @@ export async function updateTenantSlug(
         .set({ slug: nextSlug, updatedAt: new Date() })
         .where(eq(tenants.id, tenantId))
     );
-  } catch {
-    return { error: "Cette adresse est déjà utilisée." };
+  } catch (error) {
+    // Postgres unique_violation — the pre-check above raced with a concurrent
+    // write. Anything else (permissions, connectivity, …) is a real failure
+    // that "adresse déjà utilisée" would misreport, so log it and say so.
+    if ((error as { code?: string }).code === "23505") {
+      return { error: "Cette adresse est déjà utilisée." };
+    }
+    console.error("updateTenantSlug failed:", error);
+    return { error: "L'enregistrement a échoué. Réessayez." };
   }
 
   revalidatePath("/dashboard/site");
