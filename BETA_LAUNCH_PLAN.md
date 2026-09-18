@@ -58,6 +58,19 @@ projet (variables d'env injectées automatiquement). Câblage applicatif fait :
   rendu React non rattrapées), `next.config.ts` enveloppé par
   `withSentryConfig` (upload des source maps au build via `SENTRY_AUTH_TOKEN`).
   N'émet rien si `NEXT_PUBLIC_SENTRY_DSN` est absent (safe en dev local).
+  **Fix critique** : `Sentry.captureRequestError` planifie son flush via
+  `vercelWaitUntil()` (`@sentry/core`), qui ne fait rien hors runtime Edge
+  (`if (typeof EdgeRuntime !== "string") return;`) — sur le runtime Node.js
+  (toutes les routes de cette app), la requête HTTP vers l'ingest Sentry
+  n'avait donc aucune garantie de se terminer avant que la lambda ne gèle
+  juste après la réponse, et l'événement pouvait être perdu ou très en
+  retard (constaté : 33 min sur un test). `src/instrumentation.ts` enveloppe
+  désormais `onRequestError` pour forcer `Sentry.flush()` via `after()`
+  (`next/server`, fonctionne sur les deux runtimes). Root cause confirmée
+  en lisant le SDK installé + confirmée empiriquement qu'un événement
+  déclenché finit par apparaître dans Sentry (33 min de retard sans le
+  fix, via une route de diagnostic temporaire) ; la livraison rapide et
+  fiable *après* fix reste à confirmer sur un prochain événement réel.
 - **PostHog** — `src/components/posthog-provider.tsx` (client component),
   monté dans `src/app/layout.tsx`. Pageviews automatiques sur navigation
   App Router (`capture_pageview: "history_change"`), `person_profiles:
