@@ -10,6 +10,7 @@ import { db } from "@/lib/db";
 import { artisanProfiles, sites } from "@/db/schema";
 import { TRADES } from "@/lib/artisan/trades";
 import { geocodeAddress } from "@/lib/geo/geocode";
+import { revalidatePublicSite } from "@/lib/artisan/site-data";
 
 const schema = z.object({
   ownerName: z.string().trim().min(2, "Indiquez votre nom.").max(120),
@@ -106,5 +107,6 @@ export async function completeOnboarding(
   });
 
   revalidatePath("/dashboard", "layout");
+  await revalidatePublicSite(tenantId);
   redirect("/dashboard?welcome=1");
 }
