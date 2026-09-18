@@ -19,6 +19,31 @@ d'authentification, et préparation de l'instrumentation observabilité
    mergée dans `main` (commit `e6cb52d`), déployée en production sur
    Vercel (`traballo.pro`, `www.traballo.pro`, `app.traballo.pro`).
 
+## À faire — Notifications (plan détaillé existant)
+
+Le plan d'implémentation détaillé du système de notifications
+(**[`NOTIFICATIONS_PLAN.md`](./NOTIFICATIONS_PLAN.md)**, déjà commité sur
+`main`) couvre les phases **0 à 9**. Statut actuel :
+
+| Phase | Contenu | État |
+|---|---|---|
+| 0 | Fondations (schéma, `createNotification`, câblage événements existants) | ✅ fait |
+| 1 | Centre in-app artisan (cloche + page + préférences) | à faire |
+| 2 | Emails abonnement manquants (activé/changé/annulé, quota) | à faire |
+| 3 | Relances de factures + cron (TRB-056→060) | à faire |
+| 4 | Notifications RDV + cron (TRB-087, 094→098) | à faire |
+| 5 | Web push PWA (TRB-115) | à faire |
+| 6 | SMS Business (100/mois) | à faire |
+| 7→9 | WhatsApp, notifs opérateur, annonces système | plus tard |
+
+**Pour la bêta** : le bloc à plus forte valeur (phases 0→3 — centre in-app +
+transactionnel complet + relances factures) est estimé à **~4,5 jours**
+dans le plan détaillé ; c'est le socle recommandé avant l'ouverture d'une
+bêta avec des artisans réels. Les phases 4 (RDV), 5 (push) et au-delà
+peuvent suivre en itération. Décisions encore ouvertes avant de coder :
+plan Vercel (crons), prise de RDV publique, fournisseur SMS — voir §8 de
+`NOTIFICATIONS_PLAN.md`.
+
 ## À faire — Observabilité bêta (Sentry + PostHog)
 
 ### Sentry (erreurs + performance)
