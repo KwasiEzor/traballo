@@ -30,19 +30,21 @@ Le plan d'implémentation détaillé du système de notifications
 | 0 | Fondations (schéma, `createNotification`, câblage événements existants) | ✅ fait |
 | 1 | Centre in-app artisan (cloche + page + préférences) | ✅ fait — migration 0012 appliquée |
 | 2 | Emails abonnement manquants (activé/changé/annulé, quota) | ✅ fait |
-| 3 | Relances de factures + cron (TRB-056→060) | à faire |
+| 3 | Relances de factures + cron (TRB-056→060) | ✅ fait — migration 0013 à appliquer, `CRON_SECRET` à définir |
 | 4 | Notifications RDV + cron (TRB-087, 094→098) | à faire |
 | 5 | Web push PWA (TRB-115) | à faire |
 | 6 | SMS Business (100/mois) | à faire |
 | 7→9 | WhatsApp, notifs opérateur, annonces système | plus tard |
 
 **Pour la bêta** : le bloc à plus forte valeur (phases 0→3 — centre in-app +
-transactionnel complet + relances factures) est estimé à **~4,5 jours**
-dans le plan détaillé ; c'est le socle recommandé avant l'ouverture d'une
-bêta avec des artisans réels. Les phases 4 (RDV), 5 (push) et au-delà
-peuvent suivre en itération. Décisions encore ouvertes avant de coder :
-plan Vercel (crons), prise de RDV publique, fournisseur SMS — voir §8 de
-`NOTIFICATIONS_PLAN.md`.
+transactionnel complet + relances factures), estimé à ~4,5 jours dans le
+plan détaillé et identifié comme le socle recommandé avant l'ouverture
+d'une bêta avec des artisans réels, **est fait**. Reste à appliquer la
+migration 0013 (`pnpm db:migrate`) et définir `CRON_SECRET` en prod avant
+déploiement. Les phases 4 (RDV), 5 (push) et au-delà peuvent suivre en
+itération. Décisions encore ouvertes avant de coder la suite : plan Vercel
+(cron horaire pour la Phase 4 — Hobby ne suffit plus), prise de RDV
+publique, fournisseur SMS — voir §8 de `NOTIFICATIONS_PLAN.md`.
 
 ## À faire — Observabilité bêta (Sentry + PostHog)
 

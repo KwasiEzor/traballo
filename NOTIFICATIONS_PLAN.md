@@ -11,7 +11,8 @@
 | **Câblage événements existants** (leads site/IA, paiement échoué) | ✅ commit `b8ffe1c` |
 | 1 — Centre in-app artisan (cloche + page + préférences) | ✅ migration 0012 (`notification_prefs`) — appliquée en base |
 | 2 — Emails abonnement manquants | ✅ voir détail ci-dessous |
-| 3→9 | à faire |
+| 3 — Relances de factures + cron | ✅ voir détail ci-dessous — migration 0013 à appliquer |
+| 4→9 | à faire |
 
 ### Décisions prises par défaut (à confirmer)
 
@@ -192,15 +193,51 @@ Le **client final n'a pas de compte** → email + SMS/WhatsApp uniquement. L'op�
   `tests/integration/api/stripe-webhook.test.ts` (nouveau — les 4
   transitions via le handler complet).
 
-### Phase 3 — Relances de factures / cron (~1,5 j) — TRB-056→060
+### Phase 3 — Relances de factures / cron (~1,5 j) — TRB-056→060 ✅
 
-- Migration : settings tenant `invoice_reminder_enabled` (défaut on) + `invoice_reminder_template` ; `invoices` `reminder_override` (`default|off`).
+- Migration 0013 : `artisan_profiles.invoice_reminder_enabled` (bool, défaut
+  `true`) + `artisan_profiles.invoice_reminder_template` (text nullable —
+  `null` = modèle FR par défaut) ; `invoices.reminder_override`
+  (`default|off`). Pas de nouvelle table de settings dédiée — deux colonnes
+  ne justifiaient pas d'en créer une, `artisan_profiles` est déjà le
+  "settings métier" par tenant.
 - `vercel.json` : `crons: [{ path: "/api/cron/invoice-reminders", schedule: "0 7 * * *" }]`.
-- `src/app/api/cron/invoice-reminders/route.ts` — garde `CRON_SECRET` ; factures statut ∈ (`sent`,`viewed`,`overdue`), `due_date < today` ; fonction pure `dueReminders(invoice, today, ledger)` → jalons J+7 / J+30 non déjà envoyés → `InvoiceReminderEmail` (marque artisan, reply-to artisan) au client + `createNotification` artisan ; passe statut `overdue` ; écrit le registre.
-- Relance manuelle : bouton dans la liste des factures → action `sendInvoiceReminder(invoiceId)` (`kind='manual'`, ignore les jalons).
-- Template éditable : placeholders `{{client}} {{number}} {{amount}} {{days}} {{link}}` ; défaut FR.
-- On/off : toggle tenant dans settings + case par facture dans le formulaire.
-- Tests : `dueReminders` (pur), route mince.
+  Un cron quotidien tient dans les limites du plan Hobby (contrairement à un
+  cron horaire, cf. Phase 4) — la décision "plan Vercel" du §8 ne bloquait
+  donc pas cette phase.
+- `src/lib/invoices/reminders.ts` — pur, testé isolément :
+  `dueReminders(invoice, today, alreadySentKinds)` (jalons J+7/J+30 dus,
+  respecte `reminderOverride` + statut), `shouldMarkOverdue`,
+  `renderReminderTemplate` (placeholders `{{client}} {{number}} {{amount}}
+  {{days}} {{link}}`), `DEFAULT_REMINDER_TEMPLATE`.
+- `src/app/api/cron/invoice-reminders/route.ts` — `GET`, garde
+  `Authorization: Bearer $CRON_SECRET` ; requête cross-tenant (connexion
+  `db` propriétaire, comme le webhook Stripe — pas de `withTenant`, il n'y
+  a pas de tenant de la requête ici) sur les factures `sent|viewed|overdue`
+  en retard. Bascule `overdue` pour **tous les plans** (hygiène de statut,
+  pas une "relance") ; envoie les rappels e-mail **Pro+ uniquement**
+  (`isPremiumPlan`), idempotent via `notification_deliveries`
+  (`entityType='invoice', kind='j7'|'j30', channel='email'`,
+  `onConflictDoNothing`).
+- Relance manuelle : bouton « Relancer » sur la fiche facture (Pro+,
+  statuts `sent|viewed|overdue`, client avec e-mail) → action
+  `sendInvoiceReminder(invoiceId)` (`src/app/dashboard/invoices/actions/send-reminder.ts`).
+  N'écrit pas dans le registre — c'est un envoi volontaire, pas une relance
+  planifiée à dédupliquer.
+- Toggle par facture : `InvoiceReminderToggle` sur la fiche facture →
+  `updateInvoiceReminderOverride`. Toggle + modèle éditable au niveau
+  tenant : onglet « Factures » dans les paramètres (verrouillé Free avec
+  upsell `UpgradeButton`, comme l'onglet Agent IA) →
+  `saveInvoiceReminderSettings`.
+- `InvoiceReminderEmail` (`src/lib/email/templates/`) — même schéma de
+  branding léger que `InvoiceEmail` (`signature`/`footnote`, pas de
+  variante `brand` dédiée sur `EmailLayout` — inutile pour ce qui existe
+  aujourd'hui).
+- Tests : `tests/lib/invoices/reminders.test.ts` (16, pur),
+  `tests/integration/api/cron-invoice-reminders.test.ts` (7),
+  `tests/integration/actions/send-reminder.test.ts` (5),
+  `tests/integration/actions/invoice-reminder-settings.test.ts` (6),
+  + 1 cas dans `templates.test.ts`.
 
 ### Phase 4 — Notifications RDV / cron (~2 j) — TRB-087, 094→098
 
@@ -301,7 +338,10 @@ Ordre conseillé : **0 → 1 → 2 → 3 → 5 → 4b → 8 → 6 → 7 → 9**.
 
 ## 8. Décisions nécessaires avant de coder
 
-1. **Plan Vercel ?** (Hobby = 2 crons/jour seulement → Phases 3/4 impossibles telles quelles ; Pro requis).
+1. **Plan Vercel ?** — non bloquant pour la Phase 3 : un cron quotidien
+   (`invoice-reminders`) passe sur Hobby. Reste bloquant pour la **Phase 4**
+   (rappels RDV horaires) — Hobby limite à une fréquence quotidienne, Pro
+   requis pour du horaire/minute.
 2. **Prise de RDV publique** : la construire (débloque toute la suite RDV) ou limiter les notifs RDV aux rendez-vous créés dans le dashboard ?
 3. **Fournisseur SMS** : EU/FR (Brevo, OVH — meilleur RGPD, sender ID) vs Twilio (plus simple, global) ?
 4. **Reçus de paiement** : e-mails brandés maison, ou déléguer aux reçus Stripe natifs ?

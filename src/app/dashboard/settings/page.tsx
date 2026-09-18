@@ -9,14 +9,17 @@ import { artisanProfiles, tenants } from "@/db/schema";
 import { PLANS } from "@/lib/marketing/plans";
 import { stripeBillingEnabled } from "@/lib/stripe/plans";
 import { getNotificationPrefs } from "@/lib/notifications/prefs";
+import { isPremiumPlan } from "@/lib/artisan/templates";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { UpgradeButton } from "@/components/dashboard/upgrade-cta";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProfileForm } from "./profile-form";
 import { PlanPicker } from "./plan-picker";
 import { NotificationPrefsForm } from "./notification-prefs-form";
+import { InvoiceReminderForm } from "./invoice-reminder-form";
 import { openBillingPortal } from "./actions/billing";
 import { CheckoutToast } from "./checkout-toast";
 
@@ -50,7 +53,7 @@ export default async function SettingsPage({
   const marketingUrl = `https://www.${rootDomain}`;
   const stripeOn = stripeBillingEnabled();
   const hasCustomer = Boolean(tenantRow[0]?.customerId);
-  const validTabs = ["profil", "abonnement", "notifications", "equipe"];
+  const validTabs = ["profil", "factures", "abonnement", "notifications", "equipe"];
   const activeTab = validTabs.includes(tab ?? "") ? tab! : "profil";
 
   return (
@@ -64,6 +67,7 @@ export default async function SettingsPage({
       <Tabs defaultValue={activeTab}>
         <TabsList>
           <TabsTrigger value="profil">Profil</TabsTrigger>
+          <TabsTrigger value="factures">Factures</TabsTrigger>
           <TabsTrigger value="abonnement">Abonnement</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="equipe">Équipe</TabsTrigger>
@@ -80,6 +84,37 @@ export default async function SettingsPage({
             </CardHeader>
             <CardContent>
               <ProfileForm profile={profile ?? undefined} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="factures">
+          <Card className="max-w-3xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Relances de factures
+                {!isPremiumPlan(plan) && <Badge variant="neutral">Pro</Badge>}
+              </CardTitle>
+              <CardDescription>
+                Rappels automatiques envoyés à vos clients pour les factures
+                impayées.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isPremiumPlan(plan) ? (
+                <InvoiceReminderForm
+                  enabled={profile?.invoiceReminderEnabled ?? true}
+                  template={profile?.invoiceReminderTemplate ?? null}
+                />
+              ) : (
+                <div className="flex flex-col items-start gap-3 rounded-lg border border-dashed border-border p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-muted-foreground">
+                    Les relances automatiques (J+7, J+30) sont réservées aux
+                    plans Pro et Business.
+                  </p>
+                  <UpgradeButton plan={plan} />
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

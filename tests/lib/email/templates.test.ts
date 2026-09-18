@@ -7,6 +7,7 @@ import { LeadEmail } from "@/lib/email/templates/lead-email";
 import { MarketingLeadEmail } from "@/lib/email/templates/marketing-lead-email";
 import { UpgradeRequestEmail } from "@/lib/email/templates/upgrade-request-email";
 import { InvoiceEmail } from "@/lib/email/templates/invoice-email";
+import { InvoiceReminderEmail } from "@/lib/email/templates/invoice-reminder-email";
 import { PaymentFailedEmail } from "@/lib/email/templates/payment-failed-email";
 import { SubscriptionStartedEmail } from "@/lib/email/templates/subscription-started-email";
 import { SubscriptionChangedEmail } from "@/lib/email/templates/subscription-changed-email";
@@ -277,6 +278,27 @@ describe("email templates — branded shell + content", () => {
     expect(text).toContain("80");
     expect(text).toContain("100");
     expect(text).toMatch(/SMS/);
+  });
+
+  it("InvoiceReminderEmail", async () => {
+    const { raw, text } = await rendered(
+      InvoiceReminderEmail({
+        invoiceNumber: "2026-0042",
+        clientName: "Cabinet Léon",
+        total: "1 240,00",
+        dueDate: "2026-03-15",
+        artisanBusinessName: "Menuiserie Bois & Cie",
+        body: "Bonjour Cabinet Léon,\n\nVotre facture 2026-0042 est en retard de 7 jours.",
+        pdfUrl: "https://blob.example.com/invoice.pdf",
+      })
+    );
+    expectShell(raw, text);
+    expect(text).toContain("2026-0042");
+    expect(text).toContain("en retard de 7 jours");
+    expect(text).toContain("Menuiserie Bois & Cie");
+    expect(raw).toContain("https://blob.example.com/invoice.pdf");
+    expect(text).not.toMatch(/L['’]équipe Traballo/);
+    expect(raw).not.toContain("/mascot/removed/");
   });
 
   it("InvoiceEmail without a PDF link", async () => {

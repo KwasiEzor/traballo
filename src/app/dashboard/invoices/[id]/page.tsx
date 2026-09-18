@@ -6,12 +6,14 @@ import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
 import { invoices as invoicesTable } from "@/db/schema";
 import { formatEUR, formatDate } from "@/lib/utils";
+import { isPremiumPlan } from "@/lib/artisan/templates";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { InvoiceStatusBadge } from "@/components/dashboard/status-badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { InvoiceActions } from "../invoice-actions";
+import { InvoiceReminderToggle } from "../invoice-reminder-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +23,7 @@ export default async function InvoiceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { tenantId } = await requireAuth();
+  const { tenantId, plan } = await requireAuth();
 
   const invoice = await withTenant(tenantId, (tx) =>
     tx.query.invoices.findFirst({
@@ -47,6 +49,7 @@ export default async function InvoiceDetailPage({
               status: invoice.status,
               client: { name: invoice.client.name, email: invoice.client.email },
             }}
+            canRemind={isPremiumPlan(plan)}
           />
         }
       />
@@ -167,6 +170,16 @@ export default async function InvoiceDetailPage({
                 Voir la fiche
               </Link>
             </div>
+            {isPremiumPlan(plan) &&
+              ["sent", "viewed", "overdue"].includes(invoice.status) && (
+                <>
+                  <Separator />
+                  <InvoiceReminderToggle
+                    invoiceId={invoice.id}
+                    enabled={invoice.reminderOverride !== "off"}
+                  />
+                </>
+              )}
           </CardContent>
         </Card>
       </div>
