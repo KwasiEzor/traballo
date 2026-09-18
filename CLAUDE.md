@@ -73,6 +73,12 @@ RESEND_API_KEY
 ADMIN_EMAILS                  # allowlist admin.traballo.pro (séparés par virgule)
 NEXT_PUBLIC_APP_URL           # ex: https://app.traballo.pro
 NEXT_PUBLIC_ROOT_DOMAIN       # traballo.pro
+NEXT_PUBLIC_SENTRY_DSN        # optionnel — désactive Sentry si absent
+SENTRY_ORG                    # optionnel — upload des source maps au build
+SENTRY_PROJECT                # optionnel
+SENTRY_AUTH_TOKEN             # optionnel, serveur/CI uniquement
+NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN  # optionnel — désactive PostHog si absent
+NEXT_PUBLIC_POSTHOG_HOST      # optionnel
 ```
 
 ## Conventions de code

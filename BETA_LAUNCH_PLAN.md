@@ -47,7 +47,25 @@ itération. Décisions encore ouvertes avant de coder la suite : plan Vercel
 (cron horaire pour la Phase 4 — Hobby ne suffit plus), prise de RDV
 publique, fournisseur SMS — voir §8 de `NOTIFICATIONS_PLAN.md`.
 
-## À faire — Observabilité bêta (Sentry + PostHog)
+## Fait — Observabilité bêta (Sentry + PostHog)
+
+Les deux intégrations Vercel Marketplace sont installées et connectées au
+projet (variables d'env injectées automatiquement). Câblage applicatif fait :
+
+- **Sentry** — `sentry.server.config.ts`, `sentry.edge.config.ts`,
+  `src/instrumentation.ts` (+ `onRequestError`), `src/instrumentation-client.ts`
+  (+ capture des transitions de route), `src/app/global-error.tsx` (erreurs de
+  rendu React non rattrapées), `next.config.ts` enveloppé par
+  `withSentryConfig` (upload des source maps au build via `SENTRY_AUTH_TOKEN`).
+  N'émet rien si `NEXT_PUBLIC_SENTRY_DSN` est absent (safe en dev local).
+- **PostHog** — `src/components/posthog-provider.tsx` (client component),
+  monté dans `src/app/layout.tsx`. Pageviews automatiques sur navigation
+  App Router (`capture_pageview: "history_change"`), `person_profiles:
+  "identified_only"`. N'initialise rien si `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`
+  est absent.
+
+Aucun événement produit custom câblé pour l'instant (funnels signup/facture
+envoyée/etc.) — à faire au fil de l'eau selon les besoins d'analyse.
 
 ### Sentry (erreurs + performance)
 
