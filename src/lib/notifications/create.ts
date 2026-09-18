@@ -2,10 +2,12 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { notifications, tenants } from "@/db/schema";
 import {
+  notificationMeta,
   planAllows,
   type NotificationType,
   type PlanGate,
 } from "./types";
+import { disabledChannels, getNotificationPrefs } from "./prefs";
 
 export type CreateNotificationInput = {
   tenantId: string;
@@ -44,6 +46,13 @@ export async function createNotification(
         .limit(1);
       if (!tenant) return null;
       if (!planAllows(input.type, tenant.plan as PlanGate)) return null;
+    }
+
+    const meta = notificationMeta(input.type);
+    if (input.userId && !meta.transactional) {
+      const prefs = await getNotificationPrefs(input.tenantId, input.userId);
+      const off = disabledChannels(prefs, meta.category);
+      if (off.includes("in_app")) return null;
     }
 
     const [row] = await db

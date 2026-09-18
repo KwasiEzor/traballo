@@ -32,3 +32,26 @@ export function formatDate(
   }
   return new Intl.DateTimeFormat("fr-FR", opts).format(d);
 }
+
+const RELATIVE_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ["year", 365 * 24 * 60 * 60],
+  ["month", 30 * 24 * 60 * 60],
+  ["week", 7 * 24 * 60 * 60],
+  ["day", 24 * 60 * 60],
+  ["hour", 60 * 60],
+  ["minute", 60],
+];
+
+/** "il y a 3 h" / "à l'instant" style relative time, fr-FR. */
+export function formatRelativeTime(value: string | Date, now: Date = new Date()) {
+  const d = typeof value === "string" ? new Date(value) : value;
+  const seconds = Math.round((d.getTime() - now.getTime()) / 1000);
+  const rtf = new Intl.RelativeTimeFormat("fr-FR", { numeric: "auto" });
+
+  for (const [unit, unitSeconds] of RELATIVE_UNITS) {
+    if (Math.abs(seconds) >= unitSeconds) {
+      return rtf.format(Math.round(seconds / unitSeconds), unit);
+    }
+  }
+  return rtf.format(seconds, "second");
+}

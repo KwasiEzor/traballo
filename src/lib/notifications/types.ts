@@ -20,6 +20,16 @@ export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 
 export type NotificationChannel = "in_app" | "email" | "push" | "sms";
 
+/** French display label for each category — settings tab, notifications page filter. */
+export const CATEGORY_LABELS: Record<NotificationCategory, string> = {
+  account: "Compte",
+  billing: "Abonnement",
+  invoices: "Factures",
+  appointments: "Rendez-vous",
+  leads: "Demandes",
+  operator: "Plateforme",
+};
+
 export type PlanGate = "free" | "pro" | "business";
 
 export type NotificationMeta = {
@@ -148,6 +158,13 @@ export type NotificationType = keyof typeof NOTIFICATION_TYPES;
 
 export function notificationMeta(type: NotificationType): NotificationMeta {
   return NOTIFICATION_TYPES[type] as NotificationMeta;
+}
+
+const ALL_TYPES = Object.keys(NOTIFICATION_TYPES) as NotificationType[];
+
+/** Every notification type that belongs to a given category. */
+export function typesForCategory(category: NotificationCategory): NotificationType[] {
+  return ALL_TYPES.filter((t) => notificationMeta(t).category === category);
 }
 
 const PLAN_RANK: Record<PlanGate, number> = { free: 0, pro: 1, business: 2 };

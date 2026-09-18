@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { artisanProfiles, tenants } from "@/db/schema";
 import { PLANS } from "@/lib/marketing/plans";
 import { stripeBillingEnabled } from "@/lib/stripe/plans";
+import { getNotificationPrefs } from "@/lib/notifications/prefs";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ProfileForm } from "./profile-form";
 import { PlanPicker } from "./plan-picker";
+import { NotificationPrefsForm } from "./notification-prefs-form";
 import { openBillingPortal } from "./actions/billing";
 import { CheckoutToast } from "./checkout-toast";
 
@@ -26,9 +28,9 @@ export default async function SettingsPage({
 }: {
   searchParams: Promise<{ tab?: string; checkout?: string }>;
 }) {
-  const { tenantId, plan, email } = await requireAuth();
+  const { tenantId, userId, plan, email } = await requireAuth();
   const { tab, checkout } = await searchParams;
-  const [profile, user, tenantRow] = await Promise.all([
+  const [profile, user, tenantRow, notificationPrefs] = await Promise.all([
     withTenant(tenantId, (tx) =>
       tx.query.artisanProfiles.findFirst({
         where: eq(artisanProfiles.tenantId, tenantId),
@@ -40,6 +42,7 @@ export default async function SettingsPage({
       .from(tenants)
       .where(eq(tenants.id, tenantId))
       .limit(1),
+    getNotificationPrefs(tenantId, userId),
   ]);
 
   const currentPlan = PLANS.find((p) => p.id === plan) ?? PLANS[0];
@@ -47,7 +50,8 @@ export default async function SettingsPage({
   const marketingUrl = `https://www.${rootDomain}`;
   const stripeOn = stripeBillingEnabled();
   const hasCustomer = Boolean(tenantRow[0]?.customerId);
-  const onAbo = tab === "abonnement";
+  const validTabs = ["profil", "abonnement", "notifications", "equipe"];
+  const activeTab = validTabs.includes(tab ?? "") ? tab! : "profil";
 
   return (
     <>
@@ -57,10 +61,11 @@ export default async function SettingsPage({
         description="Profil professionnel, facturation et abonnement."
       />
 
-      <Tabs defaultValue={onAbo ? "abonnement" : "profil"}>
+      <Tabs defaultValue={activeTab}>
         <TabsList>
           <TabsTrigger value="profil">Profil</TabsTrigger>
           <TabsTrigger value="abonnement">Abonnement</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="equipe">Équipe</TabsTrigger>
         </TabsList>
 
@@ -128,6 +133,22 @@ export default async function SettingsPage({
                   aide@traballo.pro
                 </a>
               </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <Card className="max-w-3xl">
+            <CardHeader>
+              <CardTitle>Notifications</CardTitle>
+              <CardDescription>
+                Choisissez comment être prévenu selon le type d&apos;événement.
+                Les alertes de compte et de facturation restent toujours
+                actives.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <NotificationPrefsForm prefs={notificationPrefs} />
             </CardContent>
           </Card>
         </TabsContent>

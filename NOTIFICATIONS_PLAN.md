@@ -9,7 +9,7 @@
 |---|---|
 | **0 — Fondations** (schéma + `createNotification` + types + tests) | ✅ commit `f7d7f09` · migration 0010 appliquée en base |
 | **Câblage événements existants** (leads site/IA, paiement échoué) | ✅ commit `b8ffe1c` |
-| 1 — Centre in-app artisan (cloche + page + préférences) | à faire — reprise mardi |
+| 1 — Centre in-app artisan (cloche + page + préférences) | ✅ migration 0012 (`notification_prefs`) — voir détail ci-dessous |
 | 2→9 | à faire |
 
 ### Décisions prises par défaut (à confirmer)
@@ -144,12 +144,14 @@ Le **client final n'a pas de compte** → email + SMS/WhatsApp uniquement. L'op�
 - Câbler les événements **déjà en place** vers `createNotification` (in-app) : nouveau lead site, nouveau lead IA, paiement échoué.
 - Env : `CRON_SECRET`.
 
-### Phase 1 — Centre in-app artisan (~1 j)
+### Phase 1 — Centre in-app artisan (~1 j) ✅
 
-- `<NotificationBell>` dans `src/components/dashboard/topbar.tsx` (cluster `ml-auto`) — compteur non-lus, dropdown 10 derniers, « tout marquer lu », lien page complète.
-- `src/app/dashboard/notifications/page.tsx` — liste paginée + filtres.
-- Actions : `markRead`, `markAllRead` + `revalidatePath`. Rafraîchissement `router.refresh()` toutes les 60 s (pas de websocket à cette échelle).
-- `src/app/dashboard/settings` — onglet « Notifications » : matrice de toggles (email / in-app / push par catégorie). Le toggle push déclenche la permission navigateur + sauvegarde subscription.
+- `<NotificationBell>` dans `src/components/dashboard/topbar.tsx` — compteur non-lus, dropdown 10 derniers, « tout marquer lu », lien page complète. Fait.
+- `src/app/dashboard/notifications/page.tsx` — liste paginée (20/page) + filtres par catégorie. Fait.
+- Actions : `markReadAction`, `markAllReadAction` (`src/app/dashboard/notifications/actions.ts`) + `revalidatePath`. Rafraîchissement `router.refresh()` toutes les 60 s (pas de websocket à cette échelle). Fait.
+- `src/app/dashboard/settings` — onglet « Notifications » : matrice de toggles (email / in-app / push par catégorie), `src/app/dashboard/settings/notification-prefs-form.tsx` + `setNotificationPref`. Fait — **note** : le toggle push n'appelle pas encore la permission navigateur (`Notification.requestPermission` + sauvegarde `push_subscriptions`) car le web push arrive en Phase 5 ; pour l'instant il n'enregistre qu'une préférence inerte.
+- Migration 0012 (`notification_prefs` : `tenant_id`, `user_id`, `category`, `email`/`in_app`/`push`/`sms` bool, pk `(user_id, category)`, RLS `authenticated` sur `tenant_id`) — **générée, pas encore appliquée** (pas de `DATABASE_URL_UNPOOLED` dans cet environnement). Lancer `pnpm db:migrate` avant déploiement.
+- `createNotification` consulte désormais les préférences (`src/lib/notifications/prefs.ts`) et saute l'écriture in-app pour un type non transactionnel si le destinataire a coupé `in_app` sur sa catégorie.
 
 ### Phase 2 — Emails abonnement manquants (~0,5 j)
 
