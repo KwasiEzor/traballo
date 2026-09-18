@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Check, Loader2, Lock } from "lucide-react";
+import { Check, Loader2, Lock, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,10 +14,82 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Alert, AlertContent, AlertDescription } from "@/components/ui/alert";
 import { SITE_SAVED_EVENT } from "@/components/dashboard/site-preview-frame";
 import { BRAND_COLORS } from "@/lib/artisan/trades";
-import { saveSite, type SiteState } from "./actions";
+import { saveSite, updateTenantSlug, type SiteState, type SlugState } from "./actions";
 import type { Site } from "@/db/schema";
 
 const initial: SiteState = {};
+const slugInitial: SlugState = {};
+
+function SlugEditor({ slug, rootDomain }: { slug: string; rootDomain: string }) {
+  const router = useRouter();
+  const [editing, setEditing] = React.useState(false);
+  const [value, setValue] = React.useState(slug);
+  const [state, action, pending] = useActionState(updateTenantSlug, slugInitial);
+
+  React.useEffect(() => {
+    if (state.ok && state.slug) {
+      toast.success("Adresse mise à jour.");
+      setEditing(false);
+      router.refresh();
+    }
+    if (state.error) toast.error(state.error);
+  }, [state, router]);
+
+  if (!editing) {
+    return (
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 p-3 text-sm">
+        <div>
+          <span className="text-muted-foreground">Adresse incluse : </span>
+          <span className="font-medium text-foreground">
+            {slug}.{rootDomain}
+          </span>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setValue(slug);
+            setEditing(true);
+          }}
+        >
+          <Pencil className="size-3.5" />
+          Personnaliser
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <form action={action} className="space-y-1.5 rounded-lg border border-border bg-muted/40 p-3">
+      <Label htmlFor="slug">Adresse incluse</Label>
+      <div className="flex items-center gap-1.5">
+        <Input
+          id="slug"
+          name="slug"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="max-w-56"
+          autoFocus
+        />
+        <span className="text-sm text-muted-foreground">.{rootDomain}</span>
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button type="submit" size="sm" disabled={pending}>
+          {pending && <Loader2 className="size-4 animate-spin" />}
+          Enregistrer
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)}>
+          Annuler
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Lettres minuscules, chiffres et tirets uniquement. Les liens et QR codes déjà
+        partagés avec l&apos;ancienne adresse cesseront de fonctionner.
+      </p>
+    </form>
+  );
+}
 
 export function SiteEditor({
   site,
@@ -120,12 +193,7 @@ export function SiteEditor({
           <CardTitle>Nom de domaine</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
-            <span className="text-muted-foreground">Adresse incluse : </span>
-            <span className="font-medium text-foreground">
-              {slug}.{rootDomain}
-            </span>
-          </div>
+          <SlugEditor slug={slug} rootDomain={rootDomain} />
           <div className="space-y-1.5">
             <Label htmlFor="customDomain" className="flex items-center gap-2">
               Domaine personnalisé
