@@ -61,7 +61,13 @@ function SlugEditor({ slug, rootDomain }: { slug: string; rootDomain: string }) 
   }
 
   return (
-    <form action={action} className="space-y-1.5 rounded-lg border border-border bg-muted/40 p-3">
+    // A plain <div>, not a <form>: this sits inside SiteEditor's own <form>
+    // (the "Enregistrer les réglages" one below), and HTML doesn't allow
+    // nested forms — the browser would silently drop this inner <form> tag
+    // while parsing the server-rendered HTML, leaving its submit button
+    // bound to the outer form instead. Dispatch the action straight from
+    // the click handler instead of relying on form submission.
+    <div className="space-y-1.5 rounded-lg border border-border bg-muted/40 p-3">
       <Label htmlFor="slug">Adresse incluse</Label>
       <div className="flex items-center gap-1.5">
         <Input
@@ -75,7 +81,16 @@ function SlugEditor({ slug, rootDomain }: { slug: string; rootDomain: string }) 
         <span className="text-sm text-muted-foreground">.{rootDomain}</span>
       </div>
       <div className="flex gap-2 pt-1">
-        <Button type="submit" size="sm" disabled={pending}>
+        <Button
+          type="button"
+          size="sm"
+          disabled={pending}
+          onClick={() => {
+            const formData = new FormData();
+            formData.set("slug", value);
+            action(formData);
+          }}
+        >
           {pending && <Loader2 className="size-4 animate-spin" />}
           Enregistrer
         </Button>
@@ -87,7 +102,7 @@ function SlugEditor({ slug, rootDomain }: { slug: string; rootDomain: string }) 
         Lettres minuscules, chiffres et tirets uniquement. Les liens et QR codes déjà
         partagés avec l&apos;ancienne adresse cesseront de fonctionner.
       </p>
-    </form>
+    </div>
   );
 }
 
