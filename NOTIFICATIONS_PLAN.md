@@ -9,8 +9,12 @@
 |---|---|
 | **0 — Fondations** (schéma + `createNotification` + types + tests) | ✅ commit `f7d7f09` · migration 0010 appliquée en base |
 | **Câblage événements existants** (leads site/IA, paiement échoué) | ✅ commit `b8ffe1c` |
-| 1 — Centre in-app artisan (cloche + page + préférences) | à faire — reprise mardi |
-| 2→9 | à faire |
+| 1 — Centre in-app artisan (cloche + page + préférences) | ✅ migration 0012 (`notification_prefs`) — appliquée en base |
+| 2 — Emails abonnement manquants | ✅ voir détail ci-dessous |
+| 3 — Relances de factures + cron | ✅ voir détail ci-dessous — migration 0013 à appliquer |
+| 5 — Web push PWA | ✅ voir détail ci-dessous — migration 0014 à appliquer, clés VAPID générées, à définir sur Vercel |
+| 4b — Rappels RDV (créés dashboard) + TRB-071 | ✅ voir détail ci-dessous — migration inutile, cron quotidien (pas horaire) |
+| 4a, 6→9 | à faire |
 
 ### Décisions prises par défaut (à confirmer)
 
@@ -144,49 +148,196 @@ Le **client final n'a pas de compte** → email + SMS/WhatsApp uniquement. L'op�
 - Câbler les événements **déjà en place** vers `createNotification` (in-app) : nouveau lead site, nouveau lead IA, paiement échoué.
 - Env : `CRON_SECRET`.
 
-### Phase 1 — Centre in-app artisan (~1 j)
+### Phase 1 — Centre in-app artisan (~1 j) ✅
 
-- `<NotificationBell>` dans `src/components/dashboard/topbar.tsx` (cluster `ml-auto`) — compteur non-lus, dropdown 10 derniers, « tout marquer lu », lien page complète.
-- `src/app/dashboard/notifications/page.tsx` — liste paginée + filtres.
-- Actions : `markRead`, `markAllRead` + `revalidatePath`. Rafraîchissement `router.refresh()` toutes les 60 s (pas de websocket à cette échelle).
-- `src/app/dashboard/settings` — onglet « Notifications » : matrice de toggles (email / in-app / push par catégorie). Le toggle push déclenche la permission navigateur + sauvegarde subscription.
+- `<NotificationBell>` dans `src/components/dashboard/topbar.tsx` — compteur non-lus, dropdown 10 derniers, « tout marquer lu », lien page complète. Fait.
+- `src/app/dashboard/notifications/page.tsx` — liste paginée (20/page) + filtres par catégorie. Fait.
+- Actions : `markReadAction`, `markAllReadAction` (`src/app/dashboard/notifications/actions.ts`) + `revalidatePath`. Rafraîchissement `router.refresh()` toutes les 60 s (pas de websocket à cette échelle). Fait.
+- `src/app/dashboard/settings` — onglet « Notifications » : matrice de toggles (email / in-app / push par catégorie), `src/app/dashboard/settings/notification-prefs-form.tsx` + `setNotificationPref`. Fait — **note** : le toggle push n'appelle pas encore la permission navigateur (`Notification.requestPermission` + sauvegarde `push_subscriptions`) car le web push arrive en Phase 5 ; pour l'instant il n'enregistre qu'une préférence inerte.
+- Migration 0012 (`notification_prefs` : `tenant_id`, `user_id`, `category`, `email`/`in_app`/`push`/`sms` bool, pk `(user_id, category)`, RLS `authenticated` sur `tenant_id`) — générée et appliquée en base.
+- `createNotification` consulte désormais les préférences (`src/lib/notifications/prefs.ts`) et saute l'écriture in-app pour un type non transactionnel si le destinataire a coupé `in_app` sur sa catégorie.
 
-### Phase 2 — Emails abonnement manquants (~0,5 j)
+### Phase 2 — Emails abonnement manquants (~0,5 j) ✅
 
-- White-label `EmailLayout` → prop `brand` ; `artisanBrandFromProfile(profile)`.
-- Nouveaux templates : `subscription-started`, `subscription-changed`, `subscription-canceled`, `quota-warning`.
-- Câbler dans `src/app/api/webhooks/stripe/route.ts` : `checkout.session.completed` → started ; `customer.subscription.updated` (changement de prix) → changed ; `customer.subscription.deleted` → canceled.
-- Tests dans `tests/lib/email/templates.test.ts` (harnais existant).
+- Nouveaux templates (`src/lib/email/templates/`) : `subscription-started-email`,
+  `subscription-changed-email`, `subscription-canceled-email`,
+  `quota-warning-email`. Coquille Traballo standard (pas de marque
+  artisan — ces mails vont à l'artisan, pas à son client).
+- **Écart volontaire par rapport au plan initial** : plutôt que de
+  mapper un type d'e-mail par type d'événement Stripe
+  (`checkout.session.completed` → started, `subscription.updated` →
+  changed, `subscription.deleted` → canceled), `syncSubscriptionToTenant`
+  (`src/lib/stripe/billing.ts`) retourne désormais `{previousPlan,
+  newPlan}` et un helper `notifyPlanTransition`
+  (`src/app/api/webhooks/stripe/route.ts`) réagit à la **transition
+  réelle** de plan, peu importe l'événement qui l'a déclenchée :
+  free→payant = started, payant→payant différent = changed,
+  payant→free = canceled, plan inchangé = rien. `customer.subscription.updated`
+  se déclenche pour beaucoup de changements sans rapport avec le plan
+  (fin d'essai, métadonnées, proration) — le mapper directement aurait
+  spammé l'artisan. Bénéfice secondaire : Checkout envoie
+  `checkout.session.completed` *et* `customer.subscription.created` pour
+  un même abonnement — avec le diff, le deuxième événement ne renvoie
+  rien puisque la transition est déjà persistée par le premier
+  (idempotent sans registre supplémentaire).
+- Câblé sur les 3 event handlers qui appellent déjà
+  `syncSubscriptionToTenant` : `checkout.session.completed`,
+  `customer.subscription.{created,updated,deleted}`, `invoice.paid`.
+- `billing.subscription_started` / `_changed` / `_canceled` : notif
+  in-app en plus de l'e-mail (déjà déclarées dans `NOTIFICATION_TYPES`
+  côté Phase 0).
+- `quota_warning` : template construit (la matrice email/in-app/push le
+  couvre déjà côté préférences) mais **pas câblé** — aucun quota mesuré
+  n'existe encore côté produit (les SMS de la Phase 6 sont le premier
+  cas d'usage réel).
+- Tests : `tests/lib/email/templates.test.ts` (5 nouveaux cas),
+  `tests/lib/stripe/billing.test.ts` (retour `{previousPlan, newPlan}`),
+  `tests/integration/api/stripe-webhook.test.ts` (nouveau — les 4
+  transitions via le handler complet).
 
-### Phase 3 — Relances de factures / cron (~1,5 j) — TRB-056→060
+### Phase 3 — Relances de factures / cron (~1,5 j) — TRB-056→060 ✅
 
-- Migration : settings tenant `invoice_reminder_enabled` (défaut on) + `invoice_reminder_template` ; `invoices` `reminder_override` (`default|off`).
+- Migration 0013 : `artisan_profiles.invoice_reminder_enabled` (bool, défaut
+  `true`) + `artisan_profiles.invoice_reminder_template` (text nullable —
+  `null` = modèle FR par défaut) ; `invoices.reminder_override`
+  (`default|off`). Pas de nouvelle table de settings dédiée — deux colonnes
+  ne justifiaient pas d'en créer une, `artisan_profiles` est déjà le
+  "settings métier" par tenant.
 - `vercel.json` : `crons: [{ path: "/api/cron/invoice-reminders", schedule: "0 7 * * *" }]`.
-- `src/app/api/cron/invoice-reminders/route.ts` — garde `CRON_SECRET` ; factures statut ∈ (`sent`,`viewed`,`overdue`), `due_date < today` ; fonction pure `dueReminders(invoice, today, ledger)` → jalons J+7 / J+30 non déjà envoyés → `InvoiceReminderEmail` (marque artisan, reply-to artisan) au client + `createNotification` artisan ; passe statut `overdue` ; écrit le registre.
-- Relance manuelle : bouton dans la liste des factures → action `sendInvoiceReminder(invoiceId)` (`kind='manual'`, ignore les jalons).
-- Template éditable : placeholders `{{client}} {{number}} {{amount}} {{days}} {{link}}` ; défaut FR.
-- On/off : toggle tenant dans settings + case par facture dans le formulaire.
-- Tests : `dueReminders` (pur), route mince.
+  Un cron quotidien tient dans les limites du plan Hobby (contrairement à un
+  cron horaire, cf. Phase 4) — la décision "plan Vercel" du §8 ne bloquait
+  donc pas cette phase.
+- `src/lib/invoices/reminders.ts` — pur, testé isolément :
+  `dueReminders(invoice, today, alreadySentKinds)` (jalons J+7/J+30 dus,
+  respecte `reminderOverride` + statut), `shouldMarkOverdue`,
+  `renderReminderTemplate` (placeholders `{{client}} {{number}} {{amount}}
+  {{days}} {{link}}`), `DEFAULT_REMINDER_TEMPLATE`.
+- `src/app/api/cron/invoice-reminders/route.ts` — `GET`, garde
+  `Authorization: Bearer $CRON_SECRET` ; requête cross-tenant (connexion
+  `db` propriétaire, comme le webhook Stripe — pas de `withTenant`, il n'y
+  a pas de tenant de la requête ici) sur les factures `sent|viewed|overdue`
+  en retard. Bascule `overdue` pour **tous les plans** (hygiène de statut,
+  pas une "relance") ; envoie les rappels e-mail **Pro+ uniquement**
+  (`isPremiumPlan`), idempotent via `notification_deliveries`
+  (`entityType='invoice', kind='j7'|'j30', channel='email'`,
+  `onConflictDoNothing`).
+- Relance manuelle : bouton « Relancer » sur la fiche facture (Pro+,
+  statuts `sent|viewed|overdue`, client avec e-mail) → action
+  `sendInvoiceReminder(invoiceId)` (`src/app/dashboard/invoices/actions/send-reminder.ts`).
+  N'écrit pas dans le registre — c'est un envoi volontaire, pas une relance
+  planifiée à dédupliquer.
+- Toggle par facture : `InvoiceReminderToggle` sur la fiche facture →
+  `updateInvoiceReminderOverride`. Toggle + modèle éditable au niveau
+  tenant : onglet « Factures » dans les paramètres (verrouillé Free avec
+  upsell `UpgradeButton`, comme l'onglet Agent IA) →
+  `saveInvoiceReminderSettings`.
+- `InvoiceReminderEmail` (`src/lib/email/templates/`) — même schéma de
+  branding léger que `InvoiceEmail` (`signature`/`footnote`, pas de
+  variante `brand` dédiée sur `EmailLayout` — inutile pour ce qui existe
+  aujourd'hui).
+- Tests : `tests/lib/invoices/reminders.test.ts` (16, pur),
+  `tests/integration/api/cron-invoice-reminders.test.ts` (7),
+  `tests/integration/actions/send-reminder.test.ts` (5),
+  `tests/integration/actions/invoice-reminder-settings.test.ts` (6),
+  + 1 cas dans `templates.test.ts`.
 
-### Phase 4 — Notifications RDV / cron (~2 j) — TRB-087, 094→098
+### Phase 4b — Rappels RDV créés dans le dashboard (~1 j réalisé) — TRB-087, 094→098 ✅
 
-- **Dépendance** : pas de prise de RDV publique. Deux options :
-  - **(a)** construire d'abord la prise de RDV publique (débloque toute la suite),
-  - **(b)** limiter aux RDV créés par l'artisan : rappel client si `client.email`/`phone` connu + rappel artisan.
-  - **Recommandation : (b) maintenant, (a) comme feature séparée.**
-- Migration : `appointments` `reminder_offset_minutes` (défaut 1440) ; registre réutilisé.
-- `vercel.json` : `{ path: "/api/cron/appointment-reminders", schedule: "0 * * * *" }` (horaire).
-- Route : RDV statut ∈ (`pending`,`confirmed`) ; `start_time` dans [maintenant+offset ±30 min] → rappel client (brandé artisan) ; dans [maintenant+45–75 min] → rappel artisan (in-app + push + email) ; registre.
-- `create-appointment` → confirmation client si joignable. `update-status` → `confirmed`/`cancelled` → notif client (annulation = excuse + CTA reprise de contact).
-- Templates : `AppointmentConfirmationEmail`, `AppointmentReminderEmail`, `AppointmentCancelledEmail` — brandés artisan.
-- Câbler aussi TRB-071 : `src/app/api/agent/route.ts` à la 1ʳᵉ création de conversation → `createNotification` artisan (debounce 1/visiteur/h, digestable).
+Option **(b)** retenue comme prévu (pas de prise de RDV publique — 4a reste
+une feature séparée, non commencée).
 
-### Phase 5 — Web push PWA (~1,5 j) — TRB-115
+- **Écart par rapport au plan initial : cron quotidien, pas horaire.**
+  L'utilisateur a confirmé être sur un plan Vercel qui ne garantit pas de
+  cron plus fréquent que quotidien (Hobby). Un rappel « 1h avant » précis
+  est donc irréalisable ; remplacé par un rappel une fois par jour pour
+  tout RDV dans une fenêtre glissante de 36h (`REMINDER_WINDOW_HOURS`,
+  `src/lib/appointments/reminders.ts`) — couvre le cas d'usage réel
+  (« rappel la veille », proche de TRB-095 variante 24h) sans dépendre
+  d'une fréquence de cron indisponible sur ce plan. Pas de rappel
+  artisan « 1h avant » séparé (également irréalisable en quotidien) —
+  l'artisan voit son planning du jour dans `/dashboard/appointments`.
+- **Pas de migration** : pas de colonne `reminder_offset_minutes` (elle
+  n'aurait rien à configurer tant que la précision horaire n'existe pas) —
+  le registre `notification_deliveries` existant (Phase 0) suffit pour
+  l'idempotence (`entityType='appointment', kind='reminder', channel='email'`).
+- `vercel.json` : `{ path: "/api/cron/appointment-reminders", schedule: "0 17 * * *" }`
+  (quotidien, 2ᵉ cron du projet — tient dans la limite Hobby de 2 crons/jour).
+- `src/app/api/cron/appointment-reminders/route.ts` — cross-tenant (connexion
+  `db` propriétaire), RDV `pending|confirmed` dans la fenêtre, **Pro+
+  uniquement** (`isPremiumPlan`, même décision que les relances de
+  factures), idempotent via le registre.
+- `create-appointment` → e-mail de confirmation au client si joignable
+  (tous plans — au même titre que l'envoi de facture, ce n'est pas une
+  fonctionnalité premium). `update-status` → `cancelled` uniquement
+  → e-mail client (excuse + CTA `mailto:` vers l'artisan) ; `confirmed`/
+  `completed` ne notifient personne (action de l'artisan sur son propre
+  planning, rien de nouveau à apprendre au client ou à lui-même). Les
+  deux best-effort : un échec d'envoi ne bloque jamais la création/mise à
+  jour du RDV.
+- Templates (`src/lib/email/templates/`) : `appointment-confirmation-email`,
+  `appointment-reminder-email`, `appointment-cancelled-email` — brandés
+  artisan (même schéma `signature`/`footnote` que les factures), logique
+  de mise en forme commune dans `appointment-shared.tsx`.
+- TRB-071 câblé : `src/lib/ai/conversation-notify.ts`
+  (`notifyNewConversation`), appelé depuis `src/app/api/agent/route.ts` à
+  la création d'une nouvelle conversation → `createNotification` artisan
+  (`leads.ai_conversation`, minPlan business déjà dans le catalogue),
+  debounce 1/visiteur/h via une requête sur `ai_conversations` (pas de
+  digest — toujours temps réel immédiat comme décidé en Phase 0).
+- Tests : `tests/lib/appointments/reminders.test.ts` (5, pur),
+  `tests/integration/api/cron-appointment-reminders.test.ts` (6),
+  `tests/integration/actions/create-appointment.test.ts` (5),
+  `tests/integration/actions/update-appointment-status.test.ts` (5),
+  `tests/lib/ai/conversation-notify.test.ts` (3), + 3 cas dans
+  `templates.test.ts`.
 
-- `pnpm add web-push` ; env `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`.
-- `public/sw.js` — handlers `push` → `showNotification`, `notificationclick` → focus/ouvre `action_url`. Enregistrement dans un composant client.
-- `push_subscriptions` (Phase 0). Sauvegarde à l'octroi de permission. Purge sur `410`.
-- `src/lib/notifications/push.ts` — `sendPush(userId, {title, body, url})`. Branché dans le dispatch de `createNotification`.
+### Phase 4a — Prise de RDV publique (non commencée)
+
+Débloquerait un vrai rappel « 1h avant » côté client si le plan Vercel
+passe à Pro, plus les notifications `appointments.created`/`cancelled`
+déjà déclarées dans le catalogue (Phase 0) pour un RDV initié par le
+client plutôt que par l'artisan. Hors périmètre pour l'instant.
+
+### Phase 5 — Web push PWA (~1,5 j) — TRB-115 ✅
+
+- `pnpm add web-push` ; env `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` /
+  `VAPID_SUBJECT`. Pas de variante `NEXT_PUBLIC_` : la clé publique est lue
+  côté serveur (`process.env.VAPID_PUBLIC_KEY` dans
+  `settings/page.tsx`) et passée en prop au composant client — elle n'est
+  pas secrète, mais ça évite une deuxième variable d'env à synchroniser.
+- Migration 0014 : table `push_subscriptions` (`tenant_id`, `user_id`,
+  `endpoint` unique, `p256dh`, `auth`), RLS `authenticated` sur
+  `tenant_id` (select/insert/delete), comme `notification_prefs`.
+- `public/sw.js` — handlers `push` → `showNotification`, `notificationclick`
+  → focus/ouvre l'URL de la notif (fenêtre existante sinon
+  `clients.openWindow`). Pas de cache offline — ce service worker n'existe
+  que pour le push.
+- `src/lib/notifications/push-client.ts` — `subscribeToPush(vapidPublicKey)`
+  côté navigateur : enregistre `/sw.js`, demande la permission, réutilise
+  un abonnement existant ou en crée un. Jamais appelé au chargement — un
+  clic sur le toggle push (Phase 1, jusqu'ici inerte) dans la matrice
+  Paramètres → Notifications déclenche l'abonnement, puis
+  `savePushSubscription` (`src/app/dashboard/settings/actions/push-subscription.ts`,
+  `withTenant`) le persiste. Désactiver un toggle ne désabonne pas
+  l'appareil (d'autres catégories peuvent encore vouloir du push) — géré
+  plus tard si besoin.
+- `src/lib/notifications/push.ts` — `sendPush(userId, {title, body, url})` :
+  best-effort (ne lève jamais), envoie à tous les abonnements de
+  l'utilisateur, purge un abonnement sur `404`/`410`. No-op silencieux si
+  les clés VAPID ne sont pas configurées.
+- Branché dans le dispatch de `createNotification` : après l'écriture
+  in-app, si `resolveChannels(type, disabled)` inclut `"push"`, appel
+  fire-and-forget à `sendPush`. Les canaux et le `minPlan` par type
+  viennent de `NOTIFICATION_TYPES` (Phase 0) — **note** : la décision par
+  défaut du plan (« push = Pro+ ») n'est pas reflétée dans les données
+  actuelles (`appointments.created`, `leads.site_enquiry`, `leads.ai_lead`
+  ont `minPlan: "free"` avec le canal `push`) ; non modifié ici pour rester
+  dans le périmètre de cette phase — à trancher si le gating exact compte
+  avant la bêta.
+- Tests : `tests/lib/notifications/push.test.ts` (6),
+  `tests/lib/notifications/push-client.test.ts` (7),
+  `tests/components/notification-prefs-form.test.tsx` (3, nouveau —
+  premier test de composant pour ce formulaire).
 
 ### Phase 6 — SMS Business (~2 j) — PRD 100/mois
 
@@ -267,8 +418,13 @@ Ordre conseillé : **0 → 1 → 2 → 3 → 5 → 4b → 8 → 6 → 7 → 9**.
 
 ## 8. Décisions nécessaires avant de coder
 
-1. **Plan Vercel ?** (Hobby = 2 crons/jour seulement → Phases 3/4 impossibles telles quelles ; Pro requis).
-2. **Prise de RDV publique** : la construire (débloque toute la suite RDV) ou limiter les notifs RDV aux rendez-vous créés dans le dashboard ?
+1. **Plan Vercel ?** — tranché pour l'instant : Hobby confirmé (ou en tout
+   cas pas garanti Pro). Les Phases 3 et 4b tiennent sur un cron quotidien.
+   Un cron horaire (rappels RDV précis « 1h avant », Phase 4a) reste
+   bloqué tant que ce n'est pas Pro — à revisiter si le plan change.
+2. **Prise de RDV publique** : tranché pour l'instant — (b) limité aux RDV
+   créés dans le dashboard (Phase 4b, fait). (a) reste une feature séparée
+   (Phase 4a, non commencée).
 3. **Fournisseur SMS** : EU/FR (Brevo, OVH — meilleur RGPD, sender ID) vs Twilio (plus simple, global) ?
 4. **Reçus de paiement** : e-mails brandés maison, ou déléguer aux reçus Stripe natifs ?
 5. **Gating exact** : transactionnel = tous · relances/rappels auto = Pro+ · SMS/WhatsApp = Business · **push = Pro+ ou tous ?**

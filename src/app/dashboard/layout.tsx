@@ -5,6 +5,8 @@ import { isAdminEmail } from "@/lib/auth/admin";
 import { adminHome } from "@/lib/admin/nav";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getArtisanProfile, hasCompletedOnboarding } from "@/lib/artisan/profile";
+import { withTenant } from "@/lib/db/tenant";
+import { getRecentNotifications, getUnreadCount } from "@/lib/notifications/query";
 import { Logo } from "@/components/brand/logo";
 import { BetaBadge } from "@/components/shared/beta-badge";
 import { BetaBanner } from "@/components/shared/beta-banner";
@@ -19,7 +21,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const auth = await requireAuth();
-  const { email, plan } = auth;
+  const { email, plan, tenantId, userId } = auth;
 
   // A super-admin who lands here (not impersonating) belongs in the console.
   if (isAdminEmail(email) && !auth.impersonating) {
@@ -50,10 +52,17 @@ export default async function DashboardLayout({
 
   if (!(await hasCompletedOnboarding())) redirect("/onboarding");
 
-  const [user, profile, chrome] = await Promise.all([
+  const [user, profile, chrome, notifications] = await Promise.all([
     getCurrentUser(),
     getArtisanProfile(),
     getDashboardChrome(),
+    withTenant(tenantId, async (tx) => {
+      const [unreadCount, recent] = await Promise.all([
+        getUnreadCount(tx, tenantId, userId),
+        getRecentNotifications(tx, tenantId, userId, 10),
+      ]);
+      return { unreadCount, recent };
+    }),
   ]);
 
   const displayName = profile?.businessName || user?.name || "Mon compte";
@@ -80,6 +89,7 @@ export default async function DashboardLayout({
         <Topbar
           user={{ name: displayName, email, plan }}
           chrome={chrome}
+          notifications={notifications}
         />
         <BetaBanner />
         <main className="flex-1 bg-muted/30 px-4 py-6 sm:px-6 sm:py-8">

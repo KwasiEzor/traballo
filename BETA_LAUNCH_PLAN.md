@@ -28,23 +28,57 @@ Le plan d'implémentation détaillé du système de notifications
 | Phase | Contenu | État |
 |---|---|---|
 | 0 | Fondations (schéma, `createNotification`, câblage événements existants) | ✅ fait |
-| 1 | Centre in-app artisan (cloche + page + préférences) | à faire |
-| 2 | Emails abonnement manquants (activé/changé/annulé, quota) | à faire |
-| 3 | Relances de factures + cron (TRB-056→060) | à faire |
-| 4 | Notifications RDV + cron (TRB-087, 094→098) | à faire |
-| 5 | Web push PWA (TRB-115) | à faire |
+| 1 | Centre in-app artisan (cloche + page + préférences) | ✅ fait — migration 0012 appliquée |
+| 2 | Emails abonnement manquants (activé/changé/annulé, quota) | ✅ fait |
+| 3 | Relances de factures + cron (TRB-056→060) | ✅ fait — migration 0013 à appliquer, `CRON_SECRET` à définir |
+| 4b | Rappels RDV créés dans le dashboard + TRB-071 (TRB-087, 094→098) | ✅ fait — cron quotidien (Hobby confirmé), pas de rappel « 1h avant » précis |
+| 4a | Prise de RDV publique | non commencée |
+| 5 | Web push PWA (TRB-115) | ✅ fait — migration 0014 à appliquer, clés VAPID à générer (`npx web-push generate-vapid-keys`) |
 | 6 | SMS Business (100/mois) | à faire |
 | 7→9 | WhatsApp, notifs opérateur, annonces système | plus tard |
 
 **Pour la bêta** : le bloc à plus forte valeur (phases 0→3 — centre in-app +
-transactionnel complet + relances factures) est estimé à **~4,5 jours**
-dans le plan détaillé ; c'est le socle recommandé avant l'ouverture d'une
-bêta avec des artisans réels. Les phases 4 (RDV), 5 (push) et au-delà
-peuvent suivre en itération. Décisions encore ouvertes avant de coder :
-plan Vercel (crons), prise de RDV publique, fournisseur SMS — voir §8 de
-`NOTIFICATIONS_PLAN.md`.
+transactionnel complet + relances factures), estimé à ~4,5 jours dans le
+plan détaillé et identifié comme le socle recommandé avant l'ouverture
+d'une bêta avec des artisans réels, **est fait**. Reste à appliquer la
+migration 0013 (`pnpm db:migrate`) et définir `CRON_SECRET` en prod avant
+déploiement. Les phases 4 (RDV), 5 (push) et au-delà peuvent suivre en
+itération. Décisions encore ouvertes avant de coder la suite : plan Vercel
+(cron horaire pour la Phase 4 — Hobby ne suffit plus), prise de RDV
+publique, fournisseur SMS — voir §8 de `NOTIFICATIONS_PLAN.md`.
 
-## À faire — Observabilité bêta (Sentry + PostHog)
+## Fait — Observabilité bêta (Sentry + PostHog)
+
+Les deux intégrations Vercel Marketplace sont installées et connectées au
+projet (variables d'env injectées automatiquement). Câblage applicatif fait :
+
+- **Sentry** — `sentry.server.config.ts`, `sentry.edge.config.ts`,
+  `src/instrumentation.ts` (+ `onRequestError`), `src/instrumentation-client.ts`
+  (+ capture des transitions de route), `src/app/global-error.tsx` (erreurs de
+  rendu React non rattrapées), `next.config.ts` enveloppé par
+  `withSentryConfig` (upload des source maps au build via `SENTRY_AUTH_TOKEN`).
+  N'émet rien si `NEXT_PUBLIC_SENTRY_DSN` est absent (safe en dev local).
+  **Fix critique** : `Sentry.captureRequestError` planifie son flush via
+  `vercelWaitUntil()` (`@sentry/core`), qui ne fait rien hors runtime Edge
+  (`if (typeof EdgeRuntime !== "string") return;`) — sur le runtime Node.js
+  (toutes les routes de cette app), la requête HTTP vers l'ingest Sentry
+  n'avait donc aucune garantie de se terminer avant que la lambda ne gèle
+  juste après la réponse, et l'événement pouvait être perdu ou très en
+  retard (constaté : 33 min sur un test). `src/instrumentation.ts` enveloppe
+  désormais `onRequestError` pour forcer `Sentry.flush()` via `after()`
+  (`next/server`, fonctionne sur les deux runtimes). Root cause confirmée
+  en lisant le SDK installé + confirmée empiriquement qu'un événement
+  déclenché finit par apparaître dans Sentry (33 min de retard sans le
+  fix, via une route de diagnostic temporaire) ; la livraison rapide et
+  fiable *après* fix reste à confirmer sur un prochain événement réel.
+- **PostHog** — `src/components/posthog-provider.tsx` (client component),
+  monté dans `src/app/layout.tsx`. Pageviews automatiques sur navigation
+  App Router (`capture_pageview: "history_change"`), `person_profiles:
+  "identified_only"`. N'initialise rien si `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`
+  est absent.
+
+Aucun événement produit custom câblé pour l'instant (funnels signup/facture
+envoyée/etc.) — à faire au fil de l'eau selon les besoins d'analyse.
 
 ### Sentry (erreurs + performance)
 

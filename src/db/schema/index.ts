@@ -21,6 +21,8 @@ export * from "./ai-agent-config";
 export * from "./ai-conversations";
 export * from "./ai-messages";
 export * from "./notifications";
+export * from "./notification-prefs";
+export * from "./push-subscriptions";
 
 /**
  * SCHÉMA RÉSUMÉ (pour référence rapide des agents)

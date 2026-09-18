@@ -10,6 +10,8 @@ import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
 import { appointments } from "@/db/schema";
 import { z } from "zod";
+import { sendEmail } from "@/lib/email/send";
+import { AppointmentConfirmationEmail } from "@/lib/email/templates/appointment-confirmation-email";
 
 const createAppointmentSchema = z.object({
   clientId: z.string().uuid().optional().or(z.literal("")),
@@ -39,7 +41,9 @@ export async function createAppointment(
       return { error: "L'heure de fin doit être après l'heure de début" };
     }
 
-    await withTenant(tenantId, async (tx) => {
+    // Best-effort client confirmation e-mail — a failure here must not
+    // block the appointment from being created.
+    const confirmation = await withTenant(tenantId, async (tx) => {
       await tx.insert(appointments).values({
         tenantId,
         clientId: validated.clientId || null,
@@ -49,7 +53,34 @@ export async function createAppointment(
         notes: validated.notes || null,
         status: "pending",
       });
+
+      if (!validated.clientId) return null;
+      const [client, profile] = await Promise.all([
+        tx.query.clients.findFirst({
+          where: (c, { eq }) => eq(c.id, validated.clientId as string),
+        }),
+        tx.query.artisanProfiles.findFirst({
+          where: (p, { eq }) => eq(p.tenantId, tenantId),
+        }),
+      ]);
+      if (!client?.email || !profile) return null;
+      return { client, profile };
     });
+
+    if (confirmation) {
+      await sendEmail({
+        to: confirmation.client.email!,
+        subject: `Rendez-vous confirmé avec ${confirmation.profile.businessName}`,
+        react: AppointmentConfirmationEmail({
+          clientName: confirmation.client.name,
+          title: validated.title,
+          startTime: startDateTime.toISOString(),
+          endTime: endDateTime.toISOString(),
+          artisanBusinessName: confirmation.profile.businessName,
+        }),
+        replyTo: confirmation.profile.email,
+      }).catch((err) => console.error("Appointment confirmation email failed:", err));
+    }
 
     revalidatePath("/dashboard/appointments");
     redirect("/dashboard/appointments");

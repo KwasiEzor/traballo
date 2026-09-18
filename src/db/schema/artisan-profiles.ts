@@ -5,6 +5,7 @@ import {
   uuid,
   index,
   doublePrecision,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { tenants } from "./tenants";
 
@@ -28,6 +29,12 @@ export const artisanProfiles = pgTable(
     iban: text("iban"),
     logoUrl: text("logo_url"),
     tradeType: text("trade_type"),
+    /** Automatic J+7 / J+30 invoice reminders — TRB-058. Per-invoice override lives on `invoices.reminder_override`. */
+    invoiceReminderEnabled: boolean("invoice_reminder_enabled")
+      .notNull()
+      .default(true),
+    /** Custom reminder copy with `{{client}} {{number}} {{amount}} {{days}} {{link}}` placeholders — null uses the built-in French default. TRB-060. */
+    invoiceReminderTemplate: text("invoice_reminder_template"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { FileDown, Send, CheckCircle2, Loader2 } from "lucide-react";
+import { FileDown, Send, CheckCircle2, Loader2, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +19,7 @@ import { celebrate } from "@/components/shared/celebrate";
 import { generateInvoicePDF } from "./actions/generate-pdf";
 import { sendInvoiceEmail } from "./actions/send-invoice";
 import { updateInvoiceStatus } from "./actions/update-status";
+import { sendInvoiceReminder } from "./actions/send-reminder";
 
 interface Props {
   invoice: {
@@ -27,11 +28,13 @@ interface Props {
     status: string;
     client: { name: string; email: string | null };
   };
+  /** Invoice reminders (relances) are a Pro+ feature. */
+  canRemind?: boolean;
 }
 
-export function InvoiceActions({ invoice }: Props) {
+export function InvoiceActions({ invoice, canRemind = false }: Props) {
   const router = useRouter();
-  const [busy, setBusy] = React.useState<null | "pdf" | "send" | "paid">(null);
+  const [busy, setBusy] = React.useState<null | "pdf" | "send" | "paid" | "remind">(null);
 
   async function onPdf() {
     setBusy("pdf");
@@ -51,6 +54,15 @@ export function InvoiceActions({ invoice }: Props) {
     setBusy(null);
     if ("error" in res && res.error) return toast.error(res.error);
     toast.success(`Facture envoyée à ${invoice.client.name}.`);
+    router.refresh();
+  }
+
+  async function onRemind() {
+    setBusy("remind");
+    const res = await sendInvoiceReminder(invoice.id);
+    setBusy(null);
+    if ("error" in res && res.error) return toast.error(res.error);
+    toast.success(`Relance envoyée à ${invoice.client.name}.`);
     router.refresh();
   }
 
@@ -103,6 +115,19 @@ export function InvoiceActions({ invoice }: Props) {
           </DialogContent>
         </Dialog>
       )}
+
+      {canRemind &&
+        ["sent", "viewed", "overdue"].includes(invoice.status) &&
+        invoice.client.email && (
+          <Button variant="outline" onClick={onRemind} disabled={busy !== null}>
+            {busy === "remind" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <BellRing className="size-4" />
+            )}
+            Relancer
+          </Button>
+        )}
 
       {["sent", "viewed", "overdue"].includes(invoice.status) && (
         <Button variant="success" onClick={onPaid} disabled={busy !== null}>

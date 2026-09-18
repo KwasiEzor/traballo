@@ -28,6 +28,10 @@ export const invoices = pgTable(
     pdfUrl: text("pdf_url"),
     sentAt: timestamp("sent_at"),
     paidAt: timestamp("paid_at"),
+    /** "off" opts this invoice out of the automatic J+7 / J+30 reminder cron — TRB-058. */
+    reminderOverride: text("reminder_override", { enum: ["default", "off"] })
+      .notNull()
+      .default("default"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

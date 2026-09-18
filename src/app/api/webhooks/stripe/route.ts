@@ -9,7 +9,11 @@ import {
 } from "@/lib/stripe/billing";
 import { sendEmail } from "@/lib/email/send";
 import { PaymentFailedEmail } from "@/lib/email/templates/payment-failed-email";
+import { SubscriptionStartedEmail } from "@/lib/email/templates/subscription-started-email";
+import { SubscriptionChangedEmail } from "@/lib/email/templates/subscription-changed-email";
+import { SubscriptionCanceledEmail } from "@/lib/email/templates/subscription-canceled-email";
 import { createNotification } from "@/lib/notifications/create";
+import type { PaidPlan } from "@/lib/stripe/plans";
 
 export const dynamic = "force-dynamic";
 
@@ -70,7 +74,10 @@ async function handle(stripe: Stripe, event: Stripe.Event): Promise<void> {
       const sub = await stripe.subscriptions.retrieve(
         session.subscription as string
       );
-      await syncSubscriptionToTenant(tenantId, sub);
+      await notifyPlanTransition(
+        tenantId,
+        await syncSubscriptionToTenant(tenantId, sub)
+      );
       return;
     }
 
@@ -84,9 +91,12 @@ async function handle(stripe: Stripe, event: Stripe.Event): Promise<void> {
           ? await tenantIdForCustomer(sub.customer)
           : null);
       if (!tenantId) return;
-      await syncSubscriptionToTenant(
+      await notifyPlanTransition(
         tenantId,
-        event.type === "customer.subscription.deleted" ? null : sub
+        await syncSubscriptionToTenant(
+          tenantId,
+          event.type === "customer.subscription.deleted" ? null : sub
+        )
       );
       return;
     }
@@ -102,7 +112,10 @@ async function handle(stripe: Stripe, event: Stripe.Event): Promise<void> {
           : null;
       if (!tenantId) return;
       const sub = await stripe.subscriptions.retrieve(subId);
-      await syncSubscriptionToTenant(tenantId, sub);
+      await notifyPlanTransition(
+        tenantId,
+        await syncSubscriptionToTenant(tenantId, sub)
+      );
       return;
     }
 
@@ -152,4 +165,88 @@ async function handle(stripe: Stripe, event: Stripe.Event): Promise<void> {
       return;
     }
   }
+}
+
+const PLAN_NAME: Record<"free" | PaidPlan, string> = {
+  free: "Free",
+  pro: "Pro",
+  business: "Business",
+};
+
+/**
+ * Reacts to an actual plan transition, not to the Stripe event that caused
+ * it — `customer.subscription.updated` fires for plenty of no-op changes
+ * (trial ending, metadata, proration), and Checkout + the subsequent
+ * `subscription.created` both sync the same transition, so diffing against
+ * what's already persisted keeps this idempotent without extra bookkeeping.
+ */
+async function notifyPlanTransition(
+  tenantId: string,
+  { previousPlan, newPlan }: { previousPlan: "free" | PaidPlan; newPlan: "free" | PaidPlan }
+): Promise<void> {
+  if (previousPlan === newPlan) return;
+
+  const profile = await db.query.artisanProfiles.findFirst({
+    where: eq(artisanProfiles.tenantId, tenantId),
+    columns: { email: true, businessName: true },
+  });
+  if (!profile) return;
+
+  const actionUrl = "/dashboard/settings?tab=abonnement";
+
+  if (previousPlan === "free") {
+    if (profile.email) {
+      await sendEmail({
+        to: profile.email,
+        subject: `Bienvenue sur le plan ${PLAN_NAME[newPlan]}`,
+        react: SubscriptionStartedEmail({
+          businessName: profile.businessName,
+          plan: newPlan as PaidPlan,
+        }),
+      }).catch(() => {});
+    }
+    await createNotification({
+      tenantId,
+      type: "billing.subscription_started",
+      title: `Abonnement ${PLAN_NAME[newPlan]} actif`,
+      actionUrl,
+    });
+    return;
+  }
+
+  if (newPlan === "free") {
+    if (profile.email) {
+      await sendEmail({
+        to: profile.email,
+        subject: "Votre abonnement Traballo est annulé",
+        react: SubscriptionCanceledEmail({ businessName: profile.businessName }),
+      }).catch(() => {});
+    }
+    await createNotification({
+      tenantId,
+      type: "billing.subscription_canceled",
+      title: "Abonnement annulé — retour au plan Free",
+      actionUrl,
+    });
+    return;
+  }
+
+  // Both paid, different plans (Pro ↔ Business).
+  if (profile.email) {
+    await sendEmail({
+      to: profile.email,
+      subject: `Votre abonnement passe au plan ${PLAN_NAME[newPlan]}`,
+      react: SubscriptionChangedEmail({
+        businessName: profile.businessName,
+        previousPlan: previousPlan as PaidPlan,
+        newPlan: newPlan as PaidPlan,
+      }),
+    }).catch(() => {});
+  }
+  await createNotification({
+    tenantId,
+    type: "billing.subscription_changed",
+    title: `Abonnement changé — plan ${PLAN_NAME[newPlan]}`,
+    actionUrl,
+  });
 }

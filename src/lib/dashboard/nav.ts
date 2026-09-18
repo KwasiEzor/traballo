@@ -64,6 +64,7 @@ export function dashboardTitle(pathname: string): string {
     "/dashboard/appointments/availability": "Disponibilités",
     "/dashboard/site": "Mon site",
     "/dashboard/agent": "Agent IA",
+    "/dashboard/notifications": "Notifications",
     "/dashboard/settings": "Paramètres",
   };
   if (map[pathname]) return map[pathname];

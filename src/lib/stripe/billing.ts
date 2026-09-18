@@ -70,21 +70,33 @@ export function planFromSubscription(sub: Stripe.Subscription): PaidPlan | null 
 
 /**
  * Apply a subscription's state to the tenant. Declarative + idempotent —
- * safe to replay from any webhook event.
+ * safe to replay from any webhook event. Returns the plan before and after
+ * so callers can react to an actual transition (started / changed /
+ * canceled) instead of guessing intent from the Stripe event type, which
+ * fires `customer.subscription.updated` for plenty of no-op changes too.
  */
 export async function syncSubscriptionToTenant(
   tenantId: string,
   sub: Stripe.Subscription | null
-): Promise<void> {
+): Promise<{ previousPlan: "free" | PaidPlan; newPlan: "free" | PaidPlan }> {
   const plan = sub ? planFromSubscription(sub) : null;
+  const newPlan = plan ?? "free";
+
+  const [row] = await db
+    .select({ plan: tenants.plan })
+    .from(tenants)
+    .where(eq(tenants.id, tenantId))
+    .limit(1);
+  const previousPlan = row?.plan ?? "free";
 
   await db
     .update(tenants)
     .set({
-      plan: plan ?? "free",
-      stripeSubscriptionId:
-        sub && plan ? sub.id : null,
+      plan: newPlan,
+      stripeSubscriptionId: sub && plan ? sub.id : null,
       updatedAt: new Date(),
     })
     .where(eq(tenants.id, tenantId));
+
+  return { previousPlan, newPlan };
 }
