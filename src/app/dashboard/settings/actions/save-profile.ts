@@ -8,11 +8,12 @@ import { revalidatePath } from "next/cache";
 import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
-import { artisanProfiles } from "@/db/schema";
+import { artisanProfiles, sites } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { geocodeAddress } from "@/lib/geo/geocode";
 import { revalidatePublicSite } from "@/lib/artisan/site-data";
+import type { StoredSiteConfig } from "@/lib/artisan/site-config";
 
 const profileSchema = z.object({
   businessName: z.string().min(1, "Nom d'entreprise requis"),
@@ -70,6 +71,9 @@ export async function saveProfile(
       located = "yes"; // address unchanged, already geocoded
     }
 
+    const nextTradeType = validated.tradeType || null;
+    const tradeChanged = nextTradeType !== (existing?.tradeType ?? null);
+
     await withTenant(tenantId, async (tx) => {
       if (existing) {
         await tx
@@ -81,7 +85,7 @@ export async function saveProfile(
             address: validated.address || null,
             vatNumber: validated.vatNumber || null,
             iban: validated.iban || null,
-            tradeType: validated.tradeType || null,
+            tradeType: nextTradeType,
             ...(geo ?? {}),
             updatedAt: new Date(),
           })
@@ -95,9 +99,35 @@ export async function saveProfile(
           address: validated.address || null,
           vatNumber: validated.vatNumber || null,
           iban: validated.iban || null,
-          tradeType: validated.tradeType || null,
+          tradeType: nextTradeType,
           ...(geo ?? {}),
         });
+      }
+
+      // A hero photo uploaded for the old trade (e.g. an electrician's job
+      // site) almost certainly doesn't fit the new one — and content.image
+      // silently overrides the trade-based default forever (see
+      // HeroSection in components/site/sections.tsx), so switching trade
+      // would otherwise never change the public site's photo. Clear it so
+      // the new trade's default picture takes over immediately; the
+      // artisan can still upload a fitting photo afterward from the
+      // Design tab.
+      if (tradeChanged) {
+        const site = await tx.query.sites.findFirst({
+          where: eq(sites.tenantId, tenantId),
+          columns: { id: true, sections: true },
+        });
+        const cfg = site?.sections as StoredSiteConfig | null;
+        if (site && cfg?.content?.hero?.image) {
+          const { image: _image, ...heroRest } = cfg.content.hero;
+          await tx
+            .update(sites)
+            .set({
+              sections: { ...cfg, content: { ...cfg.content, hero: heroRest } },
+              updatedAt: new Date(),
+            })
+            .where(eq(sites.id, site.id));
+        }
       }
     });
 
