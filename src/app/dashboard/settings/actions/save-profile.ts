@@ -12,6 +12,7 @@ import { artisanProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { geocodeAddress } from "@/lib/geo/geocode";
+import { revalidatePublicSite } from "@/lib/artisan/site-data";
 
 const profileSchema = z.object({
   businessName: z.string().min(1, "Nom d'entreprise requis"),
@@ -101,6 +102,7 @@ export async function saveProfile(
     });
 
     revalidatePath("/dashboard/settings");
+    await revalidatePublicSite(tenantId);
     return { success: true, located };
   } catch (error) {
     unstable_rethrow(error);
