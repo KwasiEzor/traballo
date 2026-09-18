@@ -1,11 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { eq, and, ne } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
-import { sites, artisanProfiles } from "@/db/schema";
+import { db } from "@/lib/db";
+import { sites, artisanProfiles, tenants } from "@/db/schema";
 import { siteConfigSchema } from "@/lib/artisan/site-config";
 import { revalidatePublicSite } from "@/lib/artisan/site-data";
 
@@ -17,6 +18,87 @@ const schema = z.object({
 });
 
 export type SiteState = { error?: string; ok?: boolean };
+
+/**
+ * Subdomains the middleware routes specially (app/admin) or that would be
+ * confusing/misleading as an artisan's public address.
+ */
+const RESERVED_SLUGS = new Set([
+  "www", "app", "admin", "api", "sites", "site", "dashboard", "auth",
+  "onboarding", "static", "assets", "cdn", "blog", "docs", "help",
+  "support", "status", "traballo", "dev", "staging", "test", "localhost",
+  "root", "null", "undefined", "ns1", "ns2", "autoconfig", "autodiscover",
+  "smtp", "pop", "imap", "mail", "ftp",
+]);
+
+const slugSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, "3 caractères minimum.")
+  .max(63, "63 caractères maximum.")
+  .regex(
+    /^[a-z0-9]+(-[a-z0-9]+)*$/,
+    "Lettres minuscules, chiffres et tirets uniquement (pas de tiret en début ou en fin)."
+  )
+  .refine((v) => !RESERVED_SLUGS.has(v), { message: "Cette adresse est réservée." });
+
+export type SlugState = { error?: string; ok?: boolean; slug?: string };
+
+/**
+ * Let a tenant personalise the free `<slug>.traballo.pro` subdomain, which
+ * is otherwise locked forever to whatever ensureTenantForUser derived from
+ * the owner's personal name at signup (see src/lib/tenant/provision.ts) —
+ * before the real business name was known.
+ */
+export async function updateTenantSlug(
+  _prev: SlugState,
+  formData: FormData
+): Promise<SlugState> {
+  const { tenantId } = await requireAuth();
+
+  const parsed = slugSchema.safeParse(formData.get("slug"));
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Adresse invalide." };
+  }
+  const nextSlug = parsed.data;
+
+  const current = await withTenant(tenantId, (tx) =>
+    tx.query.tenants.findFirst({
+      where: eq(tenants.id, tenantId),
+      columns: { slug: true },
+    })
+  );
+  if (!current) return { error: "Compte introuvable." };
+  if (current.slug === nextSlug) return { ok: true, slug: nextSlug };
+
+  // Slug uniqueness is global, so checking it necessarily requires reading
+  // across tenants — RLS restricts SELECT on `tenants` to your own row, so
+  // this one existence check goes through the bypass connection, same as
+  // buildUniqueTenantSlug() in src/lib/tenant/provision.ts. The write below
+  // stays tenant-scoped through withTenant/RLS.
+  const taken = await db.query.tenants.findFirst({
+    where: and(eq(tenants.slug, nextSlug), ne(tenants.id, tenantId)),
+    columns: { id: true },
+  });
+  if (taken) return { error: "Cette adresse est déjà utilisée." };
+
+  try {
+    await withTenant(tenantId, (tx) =>
+      tx
+        .update(tenants)
+        .set({ slug: nextSlug, updatedAt: new Date() })
+        .where(eq(tenants.id, tenantId))
+    );
+  } catch {
+    return { error: "Cette adresse est déjà utilisée." };
+  }
+
+  revalidatePath("/dashboard/site");
+  revalidatePath(`/sites/${current.slug}`);
+  revalidatePath(`/sites/${nextSlug}`);
+  return { ok: true, slug: nextSlug };
+}
 
 /**
  * Publish / unpublish the public site. Deliberately its own action so the
