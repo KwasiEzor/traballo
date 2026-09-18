@@ -12,7 +12,8 @@
 | 1 — Centre in-app artisan (cloche + page + préférences) | ✅ migration 0012 (`notification_prefs`) — appliquée en base |
 | 2 — Emails abonnement manquants | ✅ voir détail ci-dessous |
 | 3 — Relances de factures + cron | ✅ voir détail ci-dessous — migration 0013 à appliquer |
-| 4→9 | à faire |
+| 5 — Web push PWA | ✅ voir détail ci-dessous — migration 0014 à appliquer, clés VAPID à générer |
+| 4, 6→9 | à faire |
 
 ### Décisions prises par défaut (à confirmer)
 
@@ -252,12 +253,46 @@ Le **client final n'a pas de compte** → email + SMS/WhatsApp uniquement. L'op�
 - Templates : `AppointmentConfirmationEmail`, `AppointmentReminderEmail`, `AppointmentCancelledEmail` — brandés artisan.
 - Câbler aussi TRB-071 : `src/app/api/agent/route.ts` à la 1ʳᵉ création de conversation → `createNotification` artisan (debounce 1/visiteur/h, digestable).
 
-### Phase 5 — Web push PWA (~1,5 j) — TRB-115
+### Phase 5 — Web push PWA (~1,5 j) — TRB-115 ✅
 
-- `pnpm add web-push` ; env `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT`.
-- `public/sw.js` — handlers `push` → `showNotification`, `notificationclick` → focus/ouvre `action_url`. Enregistrement dans un composant client.
-- `push_subscriptions` (Phase 0). Sauvegarde à l'octroi de permission. Purge sur `410`.
-- `src/lib/notifications/push.ts` — `sendPush(userId, {title, body, url})`. Branché dans le dispatch de `createNotification`.
+- `pnpm add web-push` ; env `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` /
+  `VAPID_SUBJECT`. Pas de variante `NEXT_PUBLIC_` : la clé publique est lue
+  côté serveur (`process.env.VAPID_PUBLIC_KEY` dans
+  `settings/page.tsx`) et passée en prop au composant client — elle n'est
+  pas secrète, mais ça évite une deuxième variable d'env à synchroniser.
+- Migration 0014 : table `push_subscriptions` (`tenant_id`, `user_id`,
+  `endpoint` unique, `p256dh`, `auth`), RLS `authenticated` sur
+  `tenant_id` (select/insert/delete), comme `notification_prefs`.
+- `public/sw.js` — handlers `push` → `showNotification`, `notificationclick`
+  → focus/ouvre l'URL de la notif (fenêtre existante sinon
+  `clients.openWindow`). Pas de cache offline — ce service worker n'existe
+  que pour le push.
+- `src/lib/notifications/push-client.ts` — `subscribeToPush(vapidPublicKey)`
+  côté navigateur : enregistre `/sw.js`, demande la permission, réutilise
+  un abonnement existant ou en crée un. Jamais appelé au chargement — un
+  clic sur le toggle push (Phase 1, jusqu'ici inerte) dans la matrice
+  Paramètres → Notifications déclenche l'abonnement, puis
+  `savePushSubscription` (`src/app/dashboard/settings/actions/push-subscription.ts`,
+  `withTenant`) le persiste. Désactiver un toggle ne désabonne pas
+  l'appareil (d'autres catégories peuvent encore vouloir du push) — géré
+  plus tard si besoin.
+- `src/lib/notifications/push.ts` — `sendPush(userId, {title, body, url})` :
+  best-effort (ne lève jamais), envoie à tous les abonnements de
+  l'utilisateur, purge un abonnement sur `404`/`410`. No-op silencieux si
+  les clés VAPID ne sont pas configurées.
+- Branché dans le dispatch de `createNotification` : après l'écriture
+  in-app, si `resolveChannels(type, disabled)` inclut `"push"`, appel
+  fire-and-forget à `sendPush`. Les canaux et le `minPlan` par type
+  viennent de `NOTIFICATION_TYPES` (Phase 0) — **note** : la décision par
+  défaut du plan (« push = Pro+ ») n'est pas reflétée dans les données
+  actuelles (`appointments.created`, `leads.site_enquiry`, `leads.ai_lead`
+  ont `minPlan: "free"` avec le canal `push`) ; non modifié ici pour rester
+  dans le périmètre de cette phase — à trancher si le gating exact compte
+  avant la bêta.
+- Tests : `tests/lib/notifications/push.test.ts` (6),
+  `tests/lib/notifications/push-client.test.ts` (7),
+  `tests/components/notification-prefs-form.test.tsx` (3, nouveau —
+  premier test de composant pour ce formulaire).
 
 ### Phase 6 — SMS Business (~2 j) — PRD 100/mois
 

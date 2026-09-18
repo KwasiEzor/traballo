@@ -32,7 +32,7 @@ Le plan d'implémentation détaillé du système de notifications
 | 2 | Emails abonnement manquants (activé/changé/annulé, quota) | ✅ fait |
 | 3 | Relances de factures + cron (TRB-056→060) | ✅ fait — migration 0013 à appliquer, `CRON_SECRET` à définir |
 | 4 | Notifications RDV + cron (TRB-087, 094→098) | à faire |
-| 5 | Web push PWA (TRB-115) | à faire |
+| 5 | Web push PWA (TRB-115) | ✅ fait — migration 0014 à appliquer, clés VAPID à générer (`npx web-push generate-vapid-keys`) |
 | 6 | SMS Business (100/mois) | à faire |
 | 7→9 | WhatsApp, notifs opérateur, annonces système | plus tard |
 

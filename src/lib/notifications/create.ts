@@ -4,10 +4,13 @@ import { notifications, tenants } from "@/db/schema";
 import {
   notificationMeta,
   planAllows,
+  resolveChannels,
+  type NotificationChannel,
   type NotificationType,
   type PlanGate,
 } from "./types";
 import { disabledChannels, getNotificationPrefs } from "./prefs";
+import { sendPush } from "./push";
 
 export type CreateNotificationInput = {
   tenantId: string;
@@ -49,10 +52,11 @@ export async function createNotification(
     }
 
     const meta = notificationMeta(input.type);
+    let disabled: NotificationChannel[] = [];
     if (input.userId && !meta.transactional) {
       const prefs = await getNotificationPrefs(input.tenantId, input.userId);
-      const off = disabledChannels(prefs, meta.category);
-      if (off.includes("in_app")) return null;
+      disabled = disabledChannels(prefs, meta.category);
+      if (disabled.includes("in_app")) return null;
     }
 
     const [row] = await db
@@ -67,6 +71,14 @@ export async function createNotification(
         actionUrl: input.actionUrl ?? null,
       })
       .returning({ id: notifications.id });
+
+    if (input.userId && resolveChannels(input.type, disabled).includes("push")) {
+      void sendPush(input.userId, {
+        title: input.title,
+        body: input.body,
+        url: input.actionUrl,
+      });
+    }
 
     return row ?? null;
   } catch (err) {

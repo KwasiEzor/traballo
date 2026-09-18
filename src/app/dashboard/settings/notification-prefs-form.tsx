@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { CATEGORY_LABELS, type NotificationCategory } from "@/lib/notifications/types";
 import type { NotificationPrefsMap } from "@/lib/notifications/prefs";
+import { subscribeToPush } from "@/lib/notifications/push-client";
 import { toggleNotificationPrefAction } from "./actions/save-notification-prefs";
+import { savePushSubscription } from "./actions/push-subscription";
 
 const CATEGORIES: NotificationCategory[] = [
   "leads",
@@ -20,7 +22,14 @@ const CHANNELS = [
   { key: "push", label: "Push" },
 ] as const;
 
-export function NotificationPrefsForm({ prefs }: { prefs: NotificationPrefsMap }) {
+export function NotificationPrefsForm({
+  prefs,
+  vapidPublicKey,
+}: {
+  prefs: NotificationPrefsMap;
+  /** Absent when push isn't configured server-side — the push column then always fails cleanly. */
+  vapidPublicKey?: string;
+}) {
   const [state, setState] = React.useState(prefs);
   const [pending, setPending] = React.useState<string | null>(null);
 
@@ -31,6 +40,19 @@ export function NotificationPrefsForm({ prefs }: { prefs: NotificationPrefsMap }
   ) {
     const key = `${category}:${channel}`;
     setPending(key);
+
+    if (channel === "push" && enabled) {
+      try {
+        const subscription = await subscribeToPush(vapidPublicKey ?? "");
+        const saved = await savePushSubscription(subscription);
+        if (saved.error) throw new Error(saved.error);
+      } catch (err) {
+        setPending(null);
+        toast.error(err instanceof Error ? err.message : "Échec de l'activation du push.");
+        return;
+      }
+    }
+
     setState((prev) => ({
       ...prev,
       [category]: { ...prev[category], [channel]: enabled },

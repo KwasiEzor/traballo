@@ -183,7 +183,10 @@ export default async function SettingsPage({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <NotificationPrefsForm prefs={notificationPrefs} />
+              <NotificationPrefsForm
+                prefs={notificationPrefs}
+                vapidPublicKey={process.env.VAPID_PUBLIC_KEY}
+              />
             </CardContent>
           </Card>
         </TabsContent>
