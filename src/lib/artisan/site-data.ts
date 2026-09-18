@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { eq } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { tenants, sites, artisanProfiles, aiAgentConfig } from "@/db/schema";
 import { tradeLabel } from "@/lib/artisan/trades";
@@ -106,6 +107,22 @@ const DEFAULT_SERVICES = [
 
 export function servicesFor(trade: string | null) {
   return (trade && TRADE_SERVICES[trade]) || DEFAULT_SERVICES;
+}
+
+/**
+ * Bust the public site's page cache for a tenant. `/sites/[slug]` has no
+ * `dynamic`/`revalidate` export, so without this call Next.js keeps serving
+ * the HTML rendered on the first visit after deploy — profile, trade type,
+ * hero image, publish status, etc. never update on the live site until the
+ * next deployment. Call from every action that writes to `sites` or
+ * `artisan_profiles`.
+ */
+export async function revalidatePublicSite(tenantId: string): Promise<void> {
+  const tenant = await db.query.tenants.findFirst({
+    where: eq(tenants.id, tenantId),
+    columns: { slug: true },
+  });
+  if (tenant?.slug) revalidatePath(`/sites/${tenant.slug}`);
 }
 
 /** Trades with a dedicated hero photo in /public/templates/trades. */

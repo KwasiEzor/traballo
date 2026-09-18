@@ -7,6 +7,7 @@ import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
 import { sites, artisanProfiles } from "@/db/schema";
 import { siteConfigSchema } from "@/lib/artisan/site-config";
+import { revalidatePublicSite } from "@/lib/artisan/site-data";
 
 const schema = z.object({
   primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Couleur invalide."),
@@ -66,6 +67,7 @@ export async function setSitePublished(published: boolean): Promise<SiteState> {
   }
 
   revalidatePath("/dashboard/site");
+  await revalidatePublicSite(tenantId);
   return { ok: true };
 }
 
@@ -105,6 +107,7 @@ export async function saveSite(
   }
 
   revalidatePath("/dashboard/site");
+  await revalidatePublicSite(tenantId);
   return { ok: true };
 }
 
@@ -155,5 +158,6 @@ export async function saveSiteConfig(
   }
 
   revalidatePath("/dashboard/site");
+  await revalidatePublicSite(tenantId);
   return { ok: true };
 }
