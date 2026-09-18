@@ -6,6 +6,7 @@ import { aiConversations, aiMessages } from "@/db/schema";
 import { getAnthropic } from "@/lib/ai/anthropic";
 import { loadAgentContext } from "@/lib/ai/context";
 import { rateLimit, clientIp } from "@/lib/security/rate-limit";
+import { notifyNewConversation } from "@/lib/ai/conversation-notify";
 import {
   AGENT_MODEL,
   AGENT_MAX_TOKENS,
@@ -110,6 +111,7 @@ export async function POST(request: Request): Promise<Response> {
       .values({ tenantId: ctx.tenantId, visitorId, channel: "web" })
       .returning({ id: aiConversations.id });
     convId = row!.id;
+    void notifyNewConversation({ tenantId: ctx.tenantId, conversationId: convId, visitorId });
   }
 
   // Light anti-abuse: cap turns per conversation per minute.

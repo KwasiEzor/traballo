@@ -12,8 +12,9 @@
 | 1 — Centre in-app artisan (cloche + page + préférences) | ✅ migration 0012 (`notification_prefs`) — appliquée en base |
 | 2 — Emails abonnement manquants | ✅ voir détail ci-dessous |
 | 3 — Relances de factures + cron | ✅ voir détail ci-dessous — migration 0013 à appliquer |
-| 5 — Web push PWA | ✅ voir détail ci-dessous — migration 0014 à appliquer, clés VAPID à générer |
-| 4, 6→9 | à faire |
+| 5 — Web push PWA | ✅ voir détail ci-dessous — migration 0014 à appliquer, clés VAPID générées, à définir sur Vercel |
+| 4b — Rappels RDV (créés dashboard) + TRB-071 | ✅ voir détail ci-dessous — migration inutile, cron quotidien (pas horaire) |
+| 4a, 6→9 | à faire |
 
 ### Décisions prises par défaut (à confirmer)
 
@@ -240,18 +241,62 @@ Le **client final n'a pas de compte** → email + SMS/WhatsApp uniquement. L'op�
   `tests/integration/actions/invoice-reminder-settings.test.ts` (6),
   + 1 cas dans `templates.test.ts`.
 
-### Phase 4 — Notifications RDV / cron (~2 j) — TRB-087, 094→098
+### Phase 4b — Rappels RDV créés dans le dashboard (~1 j réalisé) — TRB-087, 094→098 ✅
 
-- **Dépendance** : pas de prise de RDV publique. Deux options :
-  - **(a)** construire d'abord la prise de RDV publique (débloque toute la suite),
-  - **(b)** limiter aux RDV créés par l'artisan : rappel client si `client.email`/`phone` connu + rappel artisan.
-  - **Recommandation : (b) maintenant, (a) comme feature séparée.**
-- Migration : `appointments` `reminder_offset_minutes` (défaut 1440) ; registre réutilisé.
-- `vercel.json` : `{ path: "/api/cron/appointment-reminders", schedule: "0 * * * *" }` (horaire).
-- Route : RDV statut ∈ (`pending`,`confirmed`) ; `start_time` dans [maintenant+offset ±30 min] → rappel client (brandé artisan) ; dans [maintenant+45–75 min] → rappel artisan (in-app + push + email) ; registre.
-- `create-appointment` → confirmation client si joignable. `update-status` → `confirmed`/`cancelled` → notif client (annulation = excuse + CTA reprise de contact).
-- Templates : `AppointmentConfirmationEmail`, `AppointmentReminderEmail`, `AppointmentCancelledEmail` — brandés artisan.
-- Câbler aussi TRB-071 : `src/app/api/agent/route.ts` à la 1ʳᵉ création de conversation → `createNotification` artisan (debounce 1/visiteur/h, digestable).
+Option **(b)** retenue comme prévu (pas de prise de RDV publique — 4a reste
+une feature séparée, non commencée).
+
+- **Écart par rapport au plan initial : cron quotidien, pas horaire.**
+  L'utilisateur a confirmé être sur un plan Vercel qui ne garantit pas de
+  cron plus fréquent que quotidien (Hobby). Un rappel « 1h avant » précis
+  est donc irréalisable ; remplacé par un rappel une fois par jour pour
+  tout RDV dans une fenêtre glissante de 36h (`REMINDER_WINDOW_HOURS`,
+  `src/lib/appointments/reminders.ts`) — couvre le cas d'usage réel
+  (« rappel la veille », proche de TRB-095 variante 24h) sans dépendre
+  d'une fréquence de cron indisponible sur ce plan. Pas de rappel
+  artisan « 1h avant » séparé (également irréalisable en quotidien) —
+  l'artisan voit son planning du jour dans `/dashboard/appointments`.
+- **Pas de migration** : pas de colonne `reminder_offset_minutes` (elle
+  n'aurait rien à configurer tant que la précision horaire n'existe pas) —
+  le registre `notification_deliveries` existant (Phase 0) suffit pour
+  l'idempotence (`entityType='appointment', kind='reminder', channel='email'`).
+- `vercel.json` : `{ path: "/api/cron/appointment-reminders", schedule: "0 17 * * *" }`
+  (quotidien, 2ᵉ cron du projet — tient dans la limite Hobby de 2 crons/jour).
+- `src/app/api/cron/appointment-reminders/route.ts` — cross-tenant (connexion
+  `db` propriétaire), RDV `pending|confirmed` dans la fenêtre, **Pro+
+  uniquement** (`isPremiumPlan`, même décision que les relances de
+  factures), idempotent via le registre.
+- `create-appointment` → e-mail de confirmation au client si joignable
+  (tous plans — au même titre que l'envoi de facture, ce n'est pas une
+  fonctionnalité premium). `update-status` → `cancelled` uniquement
+  → e-mail client (excuse + CTA `mailto:` vers l'artisan) ; `confirmed`/
+  `completed` ne notifient personne (action de l'artisan sur son propre
+  planning, rien de nouveau à apprendre au client ou à lui-même). Les
+  deux best-effort : un échec d'envoi ne bloque jamais la création/mise à
+  jour du RDV.
+- Templates (`src/lib/email/templates/`) : `appointment-confirmation-email`,
+  `appointment-reminder-email`, `appointment-cancelled-email` — brandés
+  artisan (même schéma `signature`/`footnote` que les factures), logique
+  de mise en forme commune dans `appointment-shared.tsx`.
+- TRB-071 câblé : `src/lib/ai/conversation-notify.ts`
+  (`notifyNewConversation`), appelé depuis `src/app/api/agent/route.ts` à
+  la création d'une nouvelle conversation → `createNotification` artisan
+  (`leads.ai_conversation`, minPlan business déjà dans le catalogue),
+  debounce 1/visiteur/h via une requête sur `ai_conversations` (pas de
+  digest — toujours temps réel immédiat comme décidé en Phase 0).
+- Tests : `tests/lib/appointments/reminders.test.ts` (5, pur),
+  `tests/integration/api/cron-appointment-reminders.test.ts` (6),
+  `tests/integration/actions/create-appointment.test.ts` (5),
+  `tests/integration/actions/update-appointment-status.test.ts` (5),
+  `tests/lib/ai/conversation-notify.test.ts` (3), + 3 cas dans
+  `templates.test.ts`.
+
+### Phase 4a — Prise de RDV publique (non commencée)
+
+Débloquerait un vrai rappel « 1h avant » côté client si le plan Vercel
+passe à Pro, plus les notifications `appointments.created`/`cancelled`
+déjà déclarées dans le catalogue (Phase 0) pour un RDV initié par le
+client plutôt que par l'artisan. Hors périmètre pour l'instant.
 
 ### Phase 5 — Web push PWA (~1,5 j) — TRB-115 ✅
 
@@ -373,11 +418,13 @@ Ordre conseillé : **0 → 1 → 2 → 3 → 5 → 4b → 8 → 6 → 7 → 9**.
 
 ## 8. Décisions nécessaires avant de coder
 
-1. **Plan Vercel ?** — non bloquant pour la Phase 3 : un cron quotidien
-   (`invoice-reminders`) passe sur Hobby. Reste bloquant pour la **Phase 4**
-   (rappels RDV horaires) — Hobby limite à une fréquence quotidienne, Pro
-   requis pour du horaire/minute.
-2. **Prise de RDV publique** : la construire (débloque toute la suite RDV) ou limiter les notifs RDV aux rendez-vous créés dans le dashboard ?
+1. **Plan Vercel ?** — tranché pour l'instant : Hobby confirmé (ou en tout
+   cas pas garanti Pro). Les Phases 3 et 4b tiennent sur un cron quotidien.
+   Un cron horaire (rappels RDV précis « 1h avant », Phase 4a) reste
+   bloqué tant que ce n'est pas Pro — à revisiter si le plan change.
+2. **Prise de RDV publique** : tranché pour l'instant — (b) limité aux RDV
+   créés dans le dashboard (Phase 4b, fait). (a) reste une feature séparée
+   (Phase 4a, non commencée).
 3. **Fournisseur SMS** : EU/FR (Brevo, OVH — meilleur RGPD, sender ID) vs Twilio (plus simple, global) ?
 4. **Reçus de paiement** : e-mails brandés maison, ou déléguer aux reçus Stripe natifs ?
 5. **Gating exact** : transactionnel = tous · relances/rappels auto = Pro+ · SMS/WhatsApp = Business · **push = Pro+ ou tous ?**

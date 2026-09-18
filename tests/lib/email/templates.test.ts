@@ -8,6 +8,9 @@ import { MarketingLeadEmail } from "@/lib/email/templates/marketing-lead-email";
 import { UpgradeRequestEmail } from "@/lib/email/templates/upgrade-request-email";
 import { InvoiceEmail } from "@/lib/email/templates/invoice-email";
 import { InvoiceReminderEmail } from "@/lib/email/templates/invoice-reminder-email";
+import { AppointmentConfirmationEmail } from "@/lib/email/templates/appointment-confirmation-email";
+import { AppointmentReminderEmail } from "@/lib/email/templates/appointment-reminder-email";
+import { AppointmentCancelledEmail } from "@/lib/email/templates/appointment-cancelled-email";
 import { PaymentFailedEmail } from "@/lib/email/templates/payment-failed-email";
 import { SubscriptionStartedEmail } from "@/lib/email/templates/subscription-started-email";
 import { SubscriptionChangedEmail } from "@/lib/email/templates/subscription-changed-email";
@@ -299,6 +302,56 @@ describe("email templates — branded shell + content", () => {
     expect(raw).toContain("https://blob.example.com/invoice.pdf");
     expect(text).not.toMatch(/L['’]équipe Traballo/);
     expect(raw).not.toContain("/mascot/removed/");
+  });
+
+  it("AppointmentConfirmationEmail", async () => {
+    const { raw, text } = await rendered(
+      AppointmentConfirmationEmail({
+        clientName: "Cabinet Léon",
+        title: "Diagnostic chauffage",
+        startTime: "2026-04-20T09:00:00Z",
+        endTime: "2026-04-20T10:30:00Z",
+        artisanBusinessName: "Menuiserie Bois & Cie",
+      })
+    );
+    expectShell(raw, text);
+    expect(text).toContain("Cabinet Léon");
+    expect(text).toContain("Diagnostic chauffage");
+    expect(text).toContain("Menuiserie Bois & Cie");
+    expect(text).not.toMatch(/L['’]équipe Traballo/);
+    expect(raw).not.toContain("/mascot/removed/");
+  });
+
+  it("AppointmentReminderEmail", async () => {
+    const { raw, text } = await rendered(
+      AppointmentReminderEmail({
+        clientName: "Cabinet Léon",
+        title: "Diagnostic chauffage",
+        startTime: "2026-04-20T09:00:00Z",
+        endTime: "2026-04-20T10:30:00Z",
+        artisanBusinessName: "Menuiserie Bois & Cie",
+      })
+    );
+    expectShell(raw, text);
+    expect(text).toMatch(/Petit rappel/);
+    expect(text).toContain("Menuiserie Bois & Cie");
+  });
+
+  it("AppointmentCancelledEmail", async () => {
+    const { raw, text } = await rendered(
+      AppointmentCancelledEmail({
+        clientName: "Cabinet Léon",
+        title: "Diagnostic chauffage",
+        startTime: "2026-04-20T09:00:00Z",
+        endTime: "2026-04-20T10:30:00Z",
+        artisanBusinessName: "Menuiserie Bois & Cie",
+        artisanEmail: "artisan@example.com",
+      })
+    );
+    expectShell(raw, text);
+    expect(text).toMatch(/annulé/i);
+    expect(raw).toContain("mailto:artisan@example.com");
+    expect(text).toMatch(/Reprendre contact/);
   });
 
   it("InvoiceEmail without a PDF link", async () => {
