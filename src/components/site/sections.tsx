@@ -472,7 +472,7 @@ export function CtaSection({
   return (
     <section className="relative isolate overflow-hidden">
       <Image
-        src="/templates/trades/_cta.webp"
+        src={heroImageFor(site.tradeType)}
         alt=""
         fill
         sizes="100vw"

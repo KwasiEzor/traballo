@@ -141,7 +141,11 @@ const TRADES_WITH_PHOTO = new Set([
   "reparation",
 ]);
 
-/** Default hero image for a trade — professional stock photo (Pexels). */
+/**
+ * Default photo for a trade — professional stock photo (Pexels). Used as
+ * the hero background and reused for the CTA banner so every photo section
+ * on the public site follows the artisan's métier.
+ */
 export function heroImageFor(trade: string | null) {
   const key = trade && TRADES_WITH_PHOTO.has(trade) ? trade : "autre";
   return `/templates/trades/${key}.webp`;
