@@ -37,7 +37,7 @@ Les notifs `leads.*` n'ont pas d'`actionUrl` : il n'existe pas encore de page «
 - **Numérotation des factures** : lecture puis incrément (race), aucun `UNIQUE(tenant_id, invoice_number)`, pas de séquence légale sans trou (`create-invoice.ts`, `schema/invoices.ts`).
 - **PDF en base64 dans la DB** : `generate-pdf.ts` écrit un data URL dans `invoices.pdf_url`. Migrer vers Vercel Blob.
 - **Domaine custom** : `src/middleware.ts` ne résout pas `sites.custom_domain` (aucune référence trouvée), alors que `CLAUDE.md` l'annonce.
-- **CI active** : `.github/workflows/ci.yml` lance `pnpm check` sur PR et push `main`. Premier run vert le 2026-09-25 (run `36191750104`, 43 s). Restent : protection de branche `main` (check requis, non activée) ; `test:security` (isolation RLS) n'y tourne pas, il exige une DB ; actions en Node 20 dépréciées (forcées en Node 24, sans effet pour l'instant).
+- **CI active** : `.github/workflows/ci.yml` lance `pnpm check` sur PR et push `main`. Premier run vert le 2026-09-25 (run `36191750104`, 43 s). **`main` protégée** le 2026-09-25 : PR obligatoire, check CI requis, s'applique aussi aux admins, force-push et suppression interdits (push direct testé : refusé). Restent : `test:security` (isolation RLS) n'y tourne pas, il exige une DB ; actions en Node 20 dépréciées (forcées en Node 24, sans effet pour l'instant).
 - **Couverture de tests** ~11 % constatée à l'audit du 2026-09-03 (seuil 80 %). Non remesurée.
 
 ## Ouvert — infra / actions manuelles (non revérifié depuis le 2026-09-07)

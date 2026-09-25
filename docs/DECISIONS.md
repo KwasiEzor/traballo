@@ -39,6 +39,12 @@ HMAC (`BETTER_AUTH_SECRET`), 60 min, cookie httpOnly `traballo_imp`. `requireAut
 
 Turnstile + rate limit en mémoire (par instance, best effort) + honeypot + **plafond dur par tenant/jour** (`SITE_LEAD_DAILY_CAP`, défaut 30, les leads au-delà sont écartés silencieusement). **Pourquoi** : borner le pire cas même si les autres couches sont contournées. Détail : `docs/SECURITY_FORMS.md`.
 
+## 2026-09-25 — `main` protégée, CI requise, sans approbation
+
+- **Pourquoi** : du code arrive par plusieurs canaux (sessions locales, sessions Claude web). La CI n'a de valeur que si elle bloque. `enforce_admins` activé, sinon les pushes faits avec le compte admin la contourneraient.
+- **Sans approbation** (0 review) : développeur solo, une review obligatoire bloquerait sans rien apporter.
+- **Non strict** (branche pas forcément à jour avec `main`) : moins de friction ; à durcir si des merges verts cassent `main`.
+
 ## 2026-09-25 — Mémoire projet : état dans le repo, pas dans `memory/`
 
 - **Pourquoi** : les mémoires « état du projet » périment (contradictions constatées le 2026-09-25 : migration 0010 à la fois « non appliquée » et « appliquée »).
