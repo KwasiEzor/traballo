@@ -33,7 +33,7 @@ Les notifs `leads.*` n'ont pas d'`actionUrl` : il n'existe pas encore de page «
 - **Numérotation des factures** : lecture puis incrément (race), aucun `UNIQUE(tenant_id, invoice_number)`, pas de séquence légale sans trou (`create-invoice.ts`, `schema/invoices.ts`).
 - **PDF en base64 dans la DB** : `generate-pdf.ts` écrit un data URL dans `invoices.pdf_url`. Migrer vers Vercel Blob.
 - **Domaine custom** : `src/middleware.ts` ne résout pas `sites.custom_domain` (aucune référence trouvée), alors que `CLAUDE.md` l'annonce.
-- **Pas de CI** : aucun `.github/workflows`. Cible : `pnpm check` sur chaque PR.
+- **CI écrite, jamais exécutée sur GitHub** : `.github/workflows/ci.yml` lance `pnpm check` (migrations, typecheck, lint, vitest) sur PR et push `main`. Simulée dans un clone propre sans `.env.local` : verte. Reste à pousser, vérifier le premier run, puis activer la protection de branche `main` (check requis). `test:security` (isolation RLS) n'y tourne pas : il exige une DB.
 - **Couverture de tests** ~11 % constatée à l'audit du 2026-09-03 (seuil 80 %). Non remesurée.
 
 ## Ouvert — infra / actions manuelles (non revérifié depuis le 2026-09-07)
