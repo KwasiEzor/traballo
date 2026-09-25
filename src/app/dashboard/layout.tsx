@@ -12,6 +12,7 @@ import { SidebarContent } from "@/components/dashboard/sidebar-content";
 import { Topbar } from "@/components/dashboard/topbar";
 import { ImpersonationBanner } from "@/components/dashboard/impersonation-banner";
 import { getDashboardChrome } from "@/lib/dashboard/chrome";
+import { getNotificationSummary } from "@/lib/notifications/feed";
 
 export default async function DashboardLayout({
   children,
@@ -50,10 +51,15 @@ export default async function DashboardLayout({
 
   if (!(await hasCompletedOnboarding())) redirect("/onboarding");
 
-  const [user, profile, chrome] = await Promise.all([
+  const [user, profile, chrome, notifications] = await Promise.all([
     getCurrentUser(),
     getArtisanProfile(),
     getDashboardChrome(),
+    // The bell must never take the dashboard down.
+    getNotificationSummary(auth.tenantId, auth.userId).catch((e) => {
+      console.error("getNotificationSummary failed", e);
+      return { unread: 0, items: [] };
+    }),
   ]);
 
   const displayName = profile?.businessName || user?.name || "Mon compte";
@@ -80,6 +86,7 @@ export default async function DashboardLayout({
         <Topbar
           user={{ name: displayName, email, plan }}
           chrome={chrome}
+          notifications={notifications}
         />
         <BetaBanner />
         <main className="flex-1 bg-muted/30 px-4 py-6 sm:px-6 sm:py-8">

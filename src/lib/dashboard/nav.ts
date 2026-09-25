@@ -65,6 +65,7 @@ export function dashboardTitle(pathname: string): string {
     "/dashboard/site": "Mon site",
     "/dashboard/agent": "Agent IA",
     "/dashboard/settings": "Paramètres",
+    "/dashboard/notifications": "Notifications",
   };
   if (map[pathname]) return map[pathname];
   const match = DASHBOARD_NAV.filter((n) => !n.exact).find((n) =>

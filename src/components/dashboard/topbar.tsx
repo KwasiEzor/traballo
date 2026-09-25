@@ -11,15 +11,19 @@ import { Logo } from "@/components/brand/logo";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { SidebarContent } from "@/components/dashboard/sidebar-content";
 import { UserMenu } from "@/components/dashboard/user-menu";
+import { NotificationBell } from "@/components/dashboard/notification-bell";
 import { dashboardTitle } from "@/lib/dashboard/nav";
 import type { DashboardChrome } from "@/lib/dashboard/chrome";
+import type { FeedItem } from "@/lib/notifications/feed";
 
 export function Topbar({
   user,
   chrome,
+  notifications,
 }: {
   user: { name: string; email: string; plan: string };
   chrome: DashboardChrome;
+  notifications: { unread: number; items: FeedItem[] };
 }) {
   const pathname = usePathname();
   const [open, setOpen] = React.useState(false);
@@ -49,6 +53,10 @@ export function Topbar({
             className="hidden sm:inline-flex"
           />
         )}
+        <NotificationBell
+          unread={notifications.unread}
+          items={notifications.items}
+        />
         <ThemeToggle />
         <UserMenu name={user.name} email={user.email} plan={user.plan} />
       </div>
