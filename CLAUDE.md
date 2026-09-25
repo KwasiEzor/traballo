@@ -25,6 +25,16 @@ pnpm typecheck     # tsc --noEmit
 
 ## Workflow Git — RÈGLE ABSOLUE
 
+**`main` est protégée** (depuis le 2026-09-25) : aucun push direct, y compris admin. Tout passe par une branche + PR, mergeable seulement quand le check CI `check (migrations, typecheck, lint, test)` est vert. Pas d'approbation requise.
+
+```bash
+git switch -c <type>/<sujet>        # feat/, fix/, chore/, docs/
+# ... commits ...
+git push -u origin <type>/<sujet>
+gh pr create --fill
+gh pr merge --squash --delete-branch   # une fois la CI verte
+```
+
 **COMMIT APRÈS CHAQUE ÉTAPE SIGNIFICATIVE**
 
 Après toute étape significative (feature ajoutée, bug fixé, migration appliquée), créer un commit :

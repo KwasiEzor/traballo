@@ -21,7 +21,7 @@ Objectif : laisser le repo dans un état que `resume` peut relire sans ambiguït
    - pièges découverts : les ajouter à `.claude/rules/` si réutilisables.
 4. **Décisions** : toute décision non évidente prise pendant la session (choix technique, arbitrage produit, compromis) → une entrée datée dans `docs/DECISIONS.md` avec le pourquoi.
 5. **Mémoire (`memory/`)** : uniquement une préférence de travail de l'utilisateur, ou un pointeur externe durable. Jamais d'état projet.
-6. **Committer** `STATE.md` / `DECISIONS.md` / `rules` dans un commit séparé du code produit. Ne pas pousser sans demande.
+6. **Committer** `STATE.md` / `DECISIONS.md` / `rules` dans un commit séparé du code produit, **sur une branche** (`main` est protégée : pas de push direct). Ne pas pousser ni ouvrir de PR sans demande.
 7. **Annoncer** en 3 lignes : ce qui est fait, ce qui est rouge ou non vérifié, la prochaine action.
 
 ## Règles
