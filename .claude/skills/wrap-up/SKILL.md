@@ -9,7 +9,7 @@ Objectif : laisser le repo dans un état que `resume` peut relire sans ambiguït
 
 ## Étapes
 
-1. **Vérifier** : `pgrep -fl "next dev"` (si le serveur tourne, ne pas lancer typecheck/build), puis `pnpm check`. Noter le résultat exact.
+1. **Vérifier** : `git fetch origin && git status -sb` (s'aligner sur `origin/main` avant de committer l'état), puis `pgrep -fl "next dev"` (si le serveur tourne, ne pas lancer typecheck/build), puis `pnpm check`. Noter le résultat exact.
 2. **Trier le travail** (`git status`) :
    - terminé et vert → committer (message court en français, détail, ligne `Co-Authored-By` de `CLAUDE.md`) ;
    - incomplet ou rouge → **ne pas committer** (règle du projet : pas de WIP qui ne compile pas). Le décrire dans `STATE.md`, section « En cours ».

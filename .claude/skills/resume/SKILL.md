@@ -11,6 +11,7 @@ Objectif : partir de l'état **réel**, pas de l'état supposé. `docs/STATE.md`
 
 1. **Lire** `docs/STATE.md`, puis le plan lié à l'objectif en cours (ex. `NOTIFICATIONS_PLAN.md`) et `docs/DECISIONS.md` si une décision est en jeu.
 2. **Mesurer la réalité** (en parallèle) :
+   - `git fetch origin` puis `git status -sb` : **en retard sur `origin/main` ?** Des sessions Claude web mergent des PR directement sur GitHub. Si en retard, le signaler en premier écart et proposer de s'aligner avant toute autre vérification.
    - `git status --short` et `git log --oneline -15`
    - `git log -1 --format=%cd` : comparer avec la date « Dernière vérification » de `STATE.md`
    - `pnpm db:audit:migrations` (hors ligne), et `pnpm db:audit:live` (lecture seule) si `STATE.md` parle de migrations

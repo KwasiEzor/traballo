@@ -3,13 +3,17 @@
 > Mis à jour à chaque fin de session. Toute affirmation ici est **à revérifier** avant d'agir
 > (git, `pnpm db:audit:live`, tests). En cas d'écart avec la réalité, la réalité gagne : corriger ce fichier.
 
-**Dernière vérification : 2026-09-25** (HEAD `da23c2a`, working tree propre)
+**Dernière vérification : 2026-09-25** (base `origin/main` = `b9e7256` + socle agent ; `pnpm check` vert, 159 tests)
+
+Du travail arrive aussi par des sessions Claude web (PR mergées sur GitHub) : **`git fetch` avant toute vérification**, la copie locale peut être en retard.
 
 ## Objectif en cours
 
-Système de notifications — voir `NOTIFICATIONS_PLAN.md`.
+Système de notifications — voir `NOTIFICATIONS_PLAN.md`. Priorités bêta : `BETA_LAUNCH_PLAN.md` (phases 0→3 notifications ≈ 4,5 j avant ouverture à des artisans réels, puis observabilité Sentry + PostHog, tiers gratuits).
 
 ## Fait
+
+- 2026-09-16 → 18 (PR #2 à #14) : mascotte + design system motion (`docs/design/MOTION_PRINCIPLES.md`), refonte pricing et section « Le constat », prestations par défaut par métier, sous-domaine `<slug>.traballo.pro` personnalisable, revalidation du cache du site public, photo hero et bannière CTA qui suivent le métier, lien « retour à l'accueil » des pages d'auth corrigé.
 
 - Phase 0 : schéma `notifications` + `notification_deliveries`, `createNotification`, catalogue de types (commit `f7d7f09`).
 - Événements câblés : `leads.site_enquiry`, `leads.ai_lead`, `billing.payment_failed` (commit `b8ffe1c`). Les lignes s'écrivent, rien ne les affiche encore.
