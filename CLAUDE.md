@@ -16,6 +16,13 @@ pnpm lint          # eslint + prettier check
 pnpm typecheck     # tsc --noEmit
 ```
 
+## Reprise de session
+
+- **Début** : skill `resume` — lit `docs/STATE.md`, vérifie l'état réel (git, migrations, tests), signale les écarts, propose la prochaine action.
+- **Fin** : skill `wrap-up` — vérifie, committe, met à jour `docs/STATE.md` et `docs/DECISIONS.md`.
+- L'état du projet vit dans `docs/STATE.md` (versionné), **pas** dans la mémoire. Tout ce qu'il affirme est à revérifier.
+- Pièges techniques : `.claude/rules/` (`db.md`, `dev-workflow.md`, `client-server.md`, `tdd.md`, `security.md`).
+
 ## Workflow Git — RÈGLE ABSOLUE
 
 **COMMIT APRÈS CHAQUE ÉTAPE SIGNIFICATIVE**
