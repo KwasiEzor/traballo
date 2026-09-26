@@ -32,7 +32,7 @@ git switch -c <type>/<sujet>        # feat/, fix/, chore/, docs/
 # ... commits ...
 git push -u origin <type>/<sujet>
 gh pr create --fill
-gh pr merge --squash --delete-branch   # une fois la CI verte
+gh pr merge --auto --squash --delete-branch   # merge dès que la CI est verte (fait par l'utilisateur)
 ```
 
 **COMMIT APRÈS CHAQUE ÉTAPE SIGNIFICATIVE**
