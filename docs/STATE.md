@@ -3,7 +3,7 @@
 > Mis à jour à chaque fin de session. Toute affirmation ici est **à revérifier** avant d'agir
 > (git, `pnpm db:audit:live`, tests). En cas d'écart avec la réalité, la réalité gagne : corriger ce fichier.
 
-**Dernière vérification : 2026-09-26** (`origin/main` = `9c32f59` ; `pnpm check` vert, 294 tests ; `app.traballo.pro` servi par le déploiement Production de `9c32f59`)
+**Dernière vérification : 2026-09-26** (`origin/main` = `aebac65` ; `pnpm check` vert (code de sortie 0), 327 tests ; `app.traballo.pro` servi par le déploiement Production de `aebac65`)
 
 Du travail arrive aussi par des sessions Claude web (PR mergées sur GitHub) : **`git fetch` avant toute vérification**, la copie locale peut être en retard.
 
@@ -17,6 +17,7 @@ Système de notifications — voir `NOTIFICATIONS_PLAN.md`. Priorités bêta : `
 
 - Phase 0 : schéma `notifications` + `notification_deliveries`, `createNotification`, catalogue de types (commit `f7d7f09`).
 - Événements câblés : `leads.site_enquiry`, `leads.ai_lead`, `billing.payment_failed` (commit `b8ffe1c`).
+- Phase 3b **en production** le 2026-09-26 (PR #22, `aebac65`) : bouton « Relancer » (tous plans, 1 / jour, sans changer le statut), IBAN + référence dans les e-mails, suspension des relances par facture, PDF réellement joint à l'envoi initial. Migration 0014 appliquée avant le merge. La CI de la #22 avait d'abord échoué sur une erreur non gérée que le `grep` local masquait (voir `.claude/rules/tdd.md`).
 - Phase 3a **en production** le 2026-09-26 (PR #21, `9c32f59`) : cron quotidien `/api/cron/invoice-reminders` (enregistré chez Vercel), statut `overdue` + notif artisan (in-app / e-mail selon préférences), relances client J+7 / J+30 white-label avec PDF joint (Pro+), interrupteur dans Paramètres. Migration 0013 appliquée avant le merge. Job vérifié sur la vraie base avec le tenant QA.
 - Phase 2a **en production** le 2026-09-26 (PR #20, `197b6b1`) : e-mails + in-app abonnement activé / changé / annulé. Déclencheur = transition d'état lue sous verrou (`syncSubscriptionToTenant`) : vérifié sur la vraie base, 2 synchros simultanées → une seule transition. Phase 2b sans objet (voir `DECISIONS.md`).
 - Phase 1b **en production** le 2026-09-26 (PR #18, `e0baf23`) : préférences in-app / e-mail par catégorie (onglet Paramètres → Notifications), e-mail des demandes de contact verrouillé, `createNotification` respecte les préférences, lien « Notifications » + compteur dans la sidebar. Migration 0012 (`notification_prefs`) appliquée avant le merge ; `db:audit:live` 13/13 ; `test:security` 8/8 ; parcours vérifié à l'écran avec le compte QA.
@@ -29,8 +30,9 @@ Système de notifications — voir `NOTIFICATIONS_PLAN.md`. Priorités bêta : `
 
 ## Prochaine action exacte
 
-1. **Phase 3b** — branche `feat/invoice-reminders-manual` (tests d'abord), cadrage dans `docs/DECISIONS.md`. **Migration 0014** (`invoices.reminders_paused`) : `db:audit:live` avant / après, confirmation de l'utilisateur, appliquée **avant** le merge.
-2. Phase 4 — notifications de rendez-vous, voir `NOTIFICATIONS_PLAN.md`.
+1. **Phase 4** — rendez-vous, branche `feat/appointment-notifications` (tests d'abord), cadrage dans `docs/DECISIONS.md`. Pas de migration. Second cron quotidien (`/api/cron/appointment-reminders`).
+2. Phase 4b — TRB-071 (nouvelle conversation IA → artisan).
+3. Phase 5 — web push, voir `NOTIFICATIONS_PLAN.md`.
 
 Les notifs `leads.*` n'ont pas d'`actionUrl` : il n'existe pas encore de page « boîte de leads ».
 

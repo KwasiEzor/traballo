@@ -14,8 +14,10 @@
 | 2a — E-mails abonnement (activé / changé / annulé) + in-app | ✅ en production 2026-09-26 (PR #20, `197b6b1`) |
 | 2b — Alerte quota agent IA (80 %) | ❌ sans objet (aucun quota réel, voir `docs/DECISIONS.md`) |
 | 3a — Relances automatiques J+7 / J+30, statut en retard, white-label | ✅ en production 2026-09-26 (PR #21, `9c32f59`) · migration 0013 · cron enregistré, **`CRON_SECRET` absent en prod** |
-| 3b — Relance manuelle, IBAN dans les relances, suspension par facture, PDF joint à l'envoi | en cours (`feat/invoice-reminders-manual`) |
-| 4→9 | à faire |
+| 3b — Relance manuelle, IBAN dans les relances, suspension par facture, PDF joint à l'envoi | ✅ en production 2026-09-26 (PR #22, `aebac65`) · migration 0014 |
+| 4 — Rendez-vous : fuseau Paris, confirmation / annulation + .ics, rappel J-1, récap artisan | en cours (`feat/appointment-notifications`) |
+| 4b — TRB-071 nouvelle conversation IA → artisan | à faire |
+| 5→9 | à faire |
 
 ### Décisions prises par défaut (à confirmer)
 
@@ -192,6 +194,10 @@ Plan initial :
 - Tests : `dueReminders` (pur), route mince.
 
 ### Phase 4 — Notifications RDV / cron (~2 j) — TRB-087, 094→098
+
+Cadrage du 2026-09-26 (voir `docs/DECISIONS.md`) : option (b) ; **4.0** heure des RDV à Europe/Paris ; confirmation (case cochée par défaut, tous plans, `.ics`) et annulation au client ; cron **quotidien** J-1 (rappel client Pro+ + récap « demain » à l'artisan) au lieu d'horaire ; pas de migration ; TRB-071 en 4b.
+
+Plan initial :
 
 - **Dépendance** : pas de prise de RDV publique. Deux options :
   - **(a)** construire d'abord la prise de RDV publique (débloque toute la suite),
