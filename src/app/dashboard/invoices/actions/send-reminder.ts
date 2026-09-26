@@ -62,7 +62,7 @@ export async function sendInvoiceReminderAction(
     if (!(await loadInvoicePdf(id, tenantId))) await generateInvoicePDF(id);
 
     if (!(await sendInvoiceReminder(invoice, "manual", today))) {
-      await releaseReminder(id, kind);
+      await releaseReminder(tenantId, id, kind);
       return err({
         code: "EXTERNAL_API_ERROR",
         message: "L'envoi a échoué. Réessayez plus tard.",

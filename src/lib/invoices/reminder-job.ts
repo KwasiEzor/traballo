@@ -74,7 +74,7 @@ export async function runInvoiceReminders(
         });
       } else {
         summary.remindersFailed++;
-        await releaseReminder(c.invoiceId, kind);
+        await releaseReminder(c.tenantId, c.invoiceId, kind);
       }
     } catch (err) {
       console.error(`[invoice-reminders] ${c.invoiceId} failed`, err);

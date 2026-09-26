@@ -2,6 +2,11 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import tsconfigPaths from "vite-tsconfig-paths";
 
+// Run tests in the servers' timezone (Vercel and CI are UTC), not the
+// developer's: date code that only works in Paris must fail here too.
+// Forked workers inherit it.
+process.env.TZ = "UTC";
+
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   test: {

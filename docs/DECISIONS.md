@@ -99,3 +99,12 @@ Turnstile + rate limit en mémoire (par instance, best effort) + honeypot + **pl
 - **Template éditable abandonné** : peu de valeur face au texte par défaut, pour un éditeur, un aperçu et une surface d'injection. L'IBAN apporte davantage.
 - **Suspension par facture** (`invoices.reminders_paused`, migration 0014) : cas d'un échéancier convenu avec le client.
 - **PDF réellement joint** à l'envoi initial (`sendInvoiceEmail`) : le dialogue le promettait, l'e-mail portait un lien data URL que les clients mail bloquent.
+
+## 2026-09-26 — Phase 4 (rendez-vous) : cadrage
+
+- **Heure des RDV à Europe/Paris** (prérequis) : `createAppointment` faisait `new Date("YYYY-MM-DDTHH:MM")` côté serveur, donc 9 h saisi = 9 h UTC en prod (11 h à Paris) et 7 h UTC en local. La saisie est désormais interprétée à Paris et convertie en instant UTC réel ; l'affichage se fait à Paris. FR / BE / LU partagent CET/CEST : un seul fuseau. 0 RDV en base : aucune reprise.
+- **Option (b)** : RDV créés dans le dashboard seulement ; la prise de RDV publique sera une feature séparée.
+- **Cron quotidien J-1** au lieu d'horaire : l'horaire exige le plan Pro de Vercel (non vérifiable ici), le Hobby permet 2 crons quotidiens (factures + RDV). Rappel client la veille (Pro+, promesse « rappels e-mail »), récapitulatif « vos RDV de demain » à l'artisan (in-app + e-mail selon préférences). Pas de rappel « 1 h avant » (horaire ou push, Phase 5).
+- **Confirmation** au client à la création (case cochée par défaut ; tous plans ; le RDV passe `confirmed`) ou au passage `pending → confirmed` ; **annulation** au passage `cancelled`. Fichier `.ics` joint (METHOD:CANCEL pour l'annulation). Chaque e-mail une fois par RDV (registre).
+- **Pas de migration** : rappel fixe à J-1, pas de `reminder_offset_minutes`.
+- **TRB-071** (nouvelle conversation IA → artisan) sorti en 4b : Business seulement, sans rapport avec les RDV.

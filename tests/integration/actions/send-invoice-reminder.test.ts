@@ -94,7 +94,7 @@ describe("sendInvoiceReminderAction", () => {
     const res = await sendInvoiceReminderAction(ID);
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error.code).toBe("EXTERNAL_API_ERROR");
-    expect(releaseReminder).toHaveBeenCalledWith(ID, "manual:2026-09-26");
+    expect(releaseReminder).toHaveBeenCalledWith("t_1", ID, "manual:2026-09-26");
   });
 
   it.each([
