@@ -3,8 +3,9 @@
  * product can emit is declared here once, with its category, the plan a
  * tenant needs to receive it, and the channels that are on by default.
  *
- * `channels` here is the *default* — per-user preferences (Phase 1) can
- * narrow it. Transactional types stay on for everyone regardless of plan.
+ * `channels` here is the *default* — per-user preferences (Phase 1b,
+ * `prefs.ts`) can narrow it. Transactional types stay on for everyone
+ * regardless of plan.
  */
 
 export const NOTIFICATION_CATEGORIES = [
@@ -20,6 +21,26 @@ export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
 
 export type NotificationChannel = "in_app" | "email" | "push" | "sms";
 
+/** Categories the artisan can tune in Settings → Notifications. */
+export const CONFIGURABLE_CATEGORIES = [
+  "leads",
+  "invoices",
+  "appointments",
+] as const;
+
+export type ConfigurableCategory = (typeof CONFIGURABLE_CATEGORIES)[number];
+
+/** Channels exposed in the preferences screen (push arrives in Phase 5). */
+export const CONFIGURABLE_CHANNELS = ["in_app", "email"] as const;
+
+export type ConfigurableChannel = (typeof CONFIGURABLE_CHANNELS)[number];
+
+export function isConfigurableCategory(
+  category: string
+): category is ConfigurableCategory {
+  return (CONFIGURABLE_CATEGORIES as readonly string[]).includes(category);
+}
+
 export type PlanGate = "free" | "pro" | "business";
 
 export type NotificationMeta = {
@@ -30,6 +51,8 @@ export type NotificationMeta = {
   channels: readonly NotificationChannel[];
   /** Transactional types cannot be disabled and ignore the plan gate. */
   transactional?: boolean;
+  /** Channels the recipient cannot turn off (product decision, not legal). */
+  alwaysOn?: readonly NotificationChannel[];
   /** Low-priority types that a daily digest may batch instead of sending now. */
   digestable?: boolean;
 };
@@ -109,15 +132,18 @@ export const NOTIFICATION_TYPES = {
   },
 
   // ── leads ───────────────────────────────────────────────────────────
+  // A missed enquiry is a lost client: the lead email cannot be turned off.
   "leads.site_enquiry": {
     category: "leads",
     minPlan: "free",
     channels: ["in_app", "email", "push"],
+    alwaysOn: ["email"],
   },
   "leads.ai_lead": {
     category: "leads",
     minPlan: "free",
     channels: ["in_app", "email", "push"],
+    alwaysOn: ["email"],
   },
   "leads.ai_conversation": {
     category: "leads",
@@ -162,7 +188,7 @@ export function planAllows(type: NotificationType, plan: PlanGate): boolean {
 /**
  * Channels to actually use for a delivery: the type's defaults, minus any
  * the recipient turned off. `in_app` for a transactional type is always
- * kept so the feed stays complete.
+ * kept so the feed stays complete, and so are `alwaysOn` channels.
  */
 export function resolveChannels(
   type: NotificationType,
@@ -172,6 +198,29 @@ export function resolveChannels(
   const off = new Set(disabled);
   return meta.channels.filter((c) => {
     if (c === "in_app" && meta.transactional) return true;
+    if (meta.alwaysOn?.includes(c)) return true;
     return !off.has(c);
+  });
+}
+
+/**
+ * Channels worth showing for a category in the preferences screen: those at
+ * least one type of the category delivers on this plan. A channel is
+ * `locked` when every such type keeps it `alwaysOn`.
+ */
+export function categoryChannels(
+  category: ConfigurableCategory,
+  plan: PlanGate
+): { channel: ConfigurableChannel; locked: boolean }[] {
+  const metas = (Object.keys(NOTIFICATION_TYPES) as NotificationType[])
+    .filter((t) => planAllows(t, plan))
+    .map(notificationMeta)
+    .filter((m) => m.category === category);
+
+  return CONFIGURABLE_CHANNELS.flatMap((channel) => {
+    const using = metas.filter((m) => m.channels.includes(channel));
+    if (using.length === 0) return [];
+    const locked = using.every((m) => m.alwaysOn?.includes(channel));
+    return [{ channel, locked }];
   });
 }

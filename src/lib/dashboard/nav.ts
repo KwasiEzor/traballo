@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
+  Bell,
   ReceiptText,
   Users,
   CalendarDays,
@@ -14,6 +15,8 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   exact?: boolean;
+  /** Show the unread notification count next to the label. */
+  showUnread?: boolean;
 }
 
 export interface NavGroup {
@@ -26,6 +29,7 @@ export const DASHBOARD_NAV_GROUPS: NavGroup[] = [
     label: "Activité",
     items: [
       { label: "Tableau de bord", href: "/dashboard", icon: LayoutDashboard, exact: true },
+      { label: "Notifications", href: "/dashboard/notifications", icon: Bell, showUnread: true },
       { label: "Factures", href: "/dashboard/invoices", icon: ReceiptText },
       { label: "Clients", href: "/dashboard/clients", icon: Users },
       { label: "Rendez-vous", href: "/dashboard/appointments", icon: CalendarDays },

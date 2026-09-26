@@ -21,6 +21,7 @@ export * from "./ai-agent-config";
 export * from "./ai-conversations";
 export * from "./ai-messages";
 export * from "./notifications";
+export * from "./notification-prefs";
 
 /**
  * SCHÉMA RÉSUMÉ (pour référence rapide des agents)
@@ -63,6 +64,12 @@ export * from "./notifications";
  *
  * ai_messages          — messages d'une conversation
  *   conversation_id, role (user|assistant), content
+ *
+ * notifications        — fil in-app (une ligne par destinataire, user_id null = tout le tenant)
+ *   tenant_id, user_id, type, title, body, data, action_url, read_at
+ *
+ * notification_prefs   — préférences par utilisateur et catégorie (pas de ligne = défauts)
+ *   tenant_id, user_id, category, in_app, email   pk (user_id, category)
  *
  * RÈGLE RLS : toutes les tables ont une policy tenant_isolation
  * RÈGLE INDEX : toutes les tables ont un index sur tenant_id

@@ -74,6 +74,7 @@ export function Topbar({
               name={user.name}
               plan={user.plan}
               chrome={chrome}
+              unread={notifications.unread}
               onNavigate={() => setOpen(false)}
             />
           </div>

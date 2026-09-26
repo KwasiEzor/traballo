@@ -4,9 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { DASHBOARD_NAV_GROUPS } from "@/lib/dashboard/nav";
+import { badgeLabel } from "@/lib/notifications/present";
 
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+export function SidebarNav({
+  onNavigate,
+  unread = 0,
+}: {
+  onNavigate?: () => void;
+  unread?: number;
+}) {
   const pathname = usePathname();
+  const unreadBadge = badgeLabel(unread);
 
   return (
     <nav className="flex flex-col gap-5">
@@ -48,6 +56,12 @@ export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
                   )}
                 />
                 {item.label}
+                {item.showUnread && unreadBadge && (
+                  <span className="ml-auto rounded-full bg-sidebar-primary px-1.5 py-0.5 text-[11px] font-semibold leading-none text-sidebar-primary-foreground tabular-nums">
+                    {unreadBadge}
+                    <span className="sr-only"> non lues</span>
+                  </span>
+                )}
               </Link>
             );
           })}

@@ -184,6 +184,62 @@ describeSecurity("@integration Isolation multi-tenant RLS", () => {
     });
   });
 
+  it("tenant A cannot read, overwrite or plant notification prefs of tenant B", async () => {
+    await withSeededFixtures(async (tx, fixtures) => {
+      const ownerA = await seedOwner(tx, fixtures.tenantA.id);
+      const ownerB = await seedOwner(tx, fixtures.tenantB.id);
+      await tx`
+        insert into public.notification_prefs (tenant_id, user_id, category, in_app, email)
+        values (${fixtures.tenantB.id}, ${ownerB}, 'leads', true, true)
+      `;
+
+      await asAuthenticatedTenant(tx, fixtures.tenantA.id, async () => {
+        const visible = await tx<{ user_id: string }[]>`
+          select user_id
+          from public.notification_prefs
+          where tenant_id = ${fixtures.tenantB.id}
+        `;
+
+        const updated = await tx<{ user_id: string }[]>`
+          update public.notification_prefs
+          set in_app = false
+          where user_id = ${ownerB}
+          returning user_id
+        `;
+
+        // Its own row: the dashboard upsert goes through.
+        const own = await tx<{ user_id: string }[]>`
+          insert into public.notification_prefs (tenant_id, user_id, category, in_app, email)
+          values (${fixtures.tenantA.id}, ${ownerA}, 'leads', false, true)
+          on conflict (user_id, category)
+          do update set in_app = excluded.in_app
+          returning user_id
+        `;
+
+        expect(visible).toHaveLength(0);
+        expect(updated).toHaveLength(0);
+        expect(own).toHaveLength(1);
+
+        await expect(
+          tx.savepoint(
+            (sp) => sp`
+              insert into public.notification_prefs (tenant_id, user_id, category, in_app, email)
+              values (${fixtures.tenantB.id}, ${ownerB}, 'invoices', false, false)
+            `
+          )
+        ).rejects.toThrow(/row-level security/);
+      });
+
+      const [persisted] = await tx<{ in_app: boolean }[]>`
+        select in_app
+        from public.notification_prefs
+        where user_id = ${ownerB} and category = 'leads'
+      `;
+
+      expect(persisted.in_app).toBe(true);
+    });
+  });
+
   it("service_role can still read cross-tenant data for backend jobs", async () => {
     await withSeededFixtures(async (tx, fixtures) => {
       await asServiceRole(tx, async () => {
@@ -229,6 +285,22 @@ async function withSeededFixtures(
       throw error;
     }
   }
+}
+
+async function seedOwner(tx: DbTransaction, tenantId: string): Promise<string> {
+  const id = `security-owner-${randomUUID()}`;
+  const email = `${id}@example.test`;
+
+  await tx`
+    insert into public."user" (id, name, email)
+    values (${id}, 'Security owner', ${email})
+  `;
+  await tx`
+    insert into public.users (id, tenant_id, email, role)
+    values (${id}, ${tenantId}, ${email}, 'owner')
+  `;
+
+  return id;
 }
 
 async function asAuthenticatedTenant(
