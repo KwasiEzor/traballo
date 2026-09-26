@@ -3,7 +3,7 @@
 > Mis à jour à chaque fin de session. Toute affirmation ici est **à revérifier** avant d'agir
 > (git, `pnpm db:audit:live`, tests). En cas d'écart avec la réalité, la réalité gagne : corriger ce fichier.
 
-**Dernière vérification : 2026-09-26** (`origin/main` = `0783f32` ; `pnpm check` vert, 180 tests ; prod Vercel construite depuis `0783f32`)
+**Dernière vérification : 2026-09-26** (`origin/main` = `740f238` ; `pnpm check` vert, 215 tests ; `app.traballo.pro` servi par le déploiement Production de `740f238`)
 
 Du travail arrive aussi par des sessions Claude web (PR mergées sur GitHub) : **`git fetch` avant toute vérification**, la copie locale peut être en retard.
 
@@ -17,19 +17,19 @@ Système de notifications — voir `NOTIFICATIONS_PLAN.md`. Priorités bêta : `
 
 - Phase 0 : schéma `notifications` + `notification_deliveries`, `createNotification`, catalogue de types (commit `f7d7f09`).
 - Événements câblés : `leads.site_enquiry`, `leads.ai_lead`, `billing.payment_failed` (commit `b8ffe1c`).
+- Phase 1b **en production** le 2026-09-26 (PR #18, `e0baf23`) : préférences in-app / e-mail par catégorie (onglet Paramètres → Notifications), e-mail des demandes de contact verrouillé, `createNotification` respecte les préférences, lien « Notifications » + compteur dans la sidebar. Migration 0012 (`notification_prefs`) appliquée avant le merge ; `db:audit:live` 13/13 ; `test:security` 8/8 ; parcours vérifié à l'écran avec le compte QA.
+- Compte QA `qa-claude@traballo.test` (PR #19) : voir `.claude/rules/dev-workflow.md`, section Compte QA.
 - Phase 1a **en production** le 2026-09-26 (PR #16, commit `0783f32`) : cloche dans la topbar, page `/dashboard/notifications` (filtre, pagination), marquer lu / tout marquer lu. Requêtes vérifiées contre Postgres sous RLS dans une transaction annulée, isolation inter-tenant incluse ; cloche vue à l'écran par l'utilisateur sur `app.traballo.pro`. Au 2026-09-26 matin, la base ne contenait **aucune** notification.
 - Socle agent (2026-09-25) : `docs/STATE.md`, `docs/DECISIONS.md`, `.claude/rules/`, skills `resume` / `wrap-up`, hooks (`.claude/hooks/`), CI GitHub Actions, protection de `main`.
-- Migrations 0000 → 0011 **toutes enregistrées en base** (vérifié le 2026-09-25 via `pnpm db:audit:live`), dont 0010 (notifications) et 0011 (lat/long profils).
+- Migrations 0000 → 0012 **toutes enregistrées en base** (vérifié le 2026-09-26 via `pnpm db:audit:live`), dont 0010 (notifications), 0011 (lat/long profils) et 0012 (`notification_prefs`).
 - Anti-abus formulaires publics : Turnstile, rate limit, honeypot, plafond de leads par tenant/jour (voir `docs/SECURITY_FORMS.md`).
 - Signal bêta (`NEXT_PUBLIC_SITE_PHASE`).
 
 ## Prochaine action exacte
 
-1. **Décisions à obtenir de l'utilisateur avant de coder la Phase 1b** (proposées, non tranchées) :
-   - canaux réglables : in-app + email, par catégorie (`leads`, `invoices`, `appointments`) ; `billing` verrouillée (transactionnel) ; push reporté en Phase 5 ;
-   - l'email « nouvelle demande de contact » reste **toujours actif** (recommandé : le couper ferait rater des clients).
-2. Phase 1b — préférences, sur une branche `feat/notifications-prefs` (tests d'abord) : migration `notification_prefs` (RLS + policies comme 0010), `src/lib/notifications/prefs.ts` (lecture + merge des défauts, `db.select()` core), onglet Notifications dans `/dashboard/settings`, prise en compte dans `createNotification` via `resolveChannels`. **La migration touche la base partagée dev/prod : `pnpm db:audit:live` avant et après, confirmation de l'utilisateur.**
-3. Puis Phase 2 (emails abonnement) et Phase 3 (relances factures + cron), voir `NOTIFICATIONS_PLAN.md`.
+1. **Phase 2a** — e-mails + in-app abonnement activé / changé / annulé, branche `feat/notifications-billing-emails` (tests d'abord). Cadrage dans `NOTIFICATIONS_PLAN.md` (Phase 2) et `docs/DECISIONS.md` : déclencheur = transition d'état sous verrou dans `syncSubscriptionToTenant`, pas l'événement Stripe. Pas de migration.
+2. Phase 2b — alerte quota agent IA à 80 % (ouverte au Free), une fois par mois via `notification_deliveries`.
+3. Puis Phase 3 (white-label `EmailLayout`, relances factures + cron), voir `NOTIFICATIONS_PLAN.md`.
 
 Les notifs `leads.*` n'ont pas d'`actionUrl` : il n'existe pas encore de page « boîte de leads ».
 
