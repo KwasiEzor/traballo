@@ -9,7 +9,8 @@
 |---|---|
 | **0 — Fondations** (schéma + `createNotification` + types + tests) | ✅ commit `f7d7f09` · migration 0010 appliquée en base |
 | **Câblage événements existants** (leads site/IA, paiement échoué) | ✅ commit `b8ffe1c` |
-| 1 — Centre in-app artisan (cloche + page + préférences) | à faire — reprise mardi |
+| 1a — Centre in-app (cloche + page + marquer lu) | ✅ commit `634f4eb` (PR à merger) |
+| 1b — Préférences (migration `notification_prefs` + onglet réglages) | à faire |
 | 2→9 | à faire |
 
 ### Décisions prises par défaut (à confirmer)

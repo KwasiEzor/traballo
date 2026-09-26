@@ -3,7 +3,7 @@
 > Mis à jour à chaque fin de session. Toute affirmation ici est **à revérifier** avant d'agir
 > (git, `pnpm db:audit:live`, tests). En cas d'écart avec la réalité, la réalité gagne : corriger ce fichier.
 
-**Dernière vérification : 2026-09-25** (base `origin/main` = `b9e7256` + socle agent ; `pnpm check` vert, 159 tests)
+**Dernière vérification : 2026-09-26** (branche `feat/notifications-phase-1` sur `origin/main` `360aadf` ; `pnpm check` vert, 180 tests ; `pnpm build` vert)
 
 Du travail arrive aussi par des sessions Claude web (PR mergées sur GitHub) : **`git fetch` avant toute vérification**, la copie locale peut être en retard.
 
@@ -16,19 +16,17 @@ Système de notifications — voir `NOTIFICATIONS_PLAN.md`. Priorités bêta : `
 - 2026-09-16 → 18 (PR #2 à #14) : mascotte + design system motion (`docs/design/MOTION_PRINCIPLES.md`), refonte pricing et section « Le constat », prestations par défaut par métier, sous-domaine `<slug>.traballo.pro` personnalisable, revalidation du cache du site public, photo hero et bannière CTA qui suivent le métier, lien « retour à l'accueil » des pages d'auth corrigé.
 
 - Phase 0 : schéma `notifications` + `notification_deliveries`, `createNotification`, catalogue de types (commit `f7d7f09`).
-- Événements câblés : `leads.site_enquiry`, `leads.ai_lead`, `billing.payment_failed` (commit `b8ffe1c`). Les lignes s'écrivent, rien ne les affiche encore.
+- Événements câblés : `leads.site_enquiry`, `leads.ai_lead`, `billing.payment_failed` (commit `b8ffe1c`).
+- Phase 1a (commit `634f4eb`, branche `feat/notifications-phase-1`) : cloche dans la topbar, page `/dashboard/notifications` (filtre, pagination), marquer lu / tout marquer lu. Requêtes vérifiées contre Postgres sous RLS dans une transaction annulée, isolation inter-tenant incluse. **Interface non vérifiée visuellement** (pas de session de test locale sur la base partagée) : à contrôler sur la preview Vercel de la PR. Au 2026-09-26, la base ne contient **aucune** notification.
 - Migrations 0000 → 0011 **toutes enregistrées en base** (vérifié le 2026-09-25 via `pnpm db:audit:live`), dont 0010 (notifications) et 0011 (lat/long profils).
 - Anti-abus formulaires publics : Turnstile, rate limit, honeypot, plafond de leads par tenant/jour (voir `docs/SECURITY_FORMS.md`).
 - Signal bêta (`NEXT_PUBLIC_SITE_PHASE`).
 
 ## Prochaine action exacte
 
-Notifications Phase 1 (écrire les tests d'abord, RED) :
-
-1. Cloche dans `src/components/dashboard/topbar.tsx` (cluster `ml-auto`, à côté de UpgradeButton / ThemeToggle / UserMenu).
-2. Page `/dashboard/notifications`.
-3. `markRead` / `markAllRead` via `withTenant` (RLS).
-4. Onglet Notifications dans `/dashboard/settings` (matrice email / in-app / push par catégorie).
+1. Merger la PR de la Phase 1a après contrôle visuel sur la preview Vercel.
+2. Phase 1b — préférences (tests d'abord) : migration `notification_prefs` (RLS + `REVOKE` comme 0010), lecture/merge des défauts dans `src/lib/notifications/prefs.ts` (`db.select()` core), onglet Notifications dans `/dashboard/settings` (matrice email / in-app par catégorie), prise en compte dans `createNotification` via `resolveChannels`. Le toggle push attend la Phase 5.
+3. Puis Phase 2 (emails abonnement) et Phase 3 (relances factures + cron), voir `NOTIFICATIONS_PLAN.md`.
 
 Les notifs `leads.*` n'ont pas d'`actionUrl` : il n'existe pas encore de page « boîte de leads ».
 
