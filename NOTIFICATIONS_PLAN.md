@@ -15,7 +15,7 @@
 | 2b — Alerte quota agent IA (80 %) | ❌ sans objet (aucun quota réel, voir `docs/DECISIONS.md`) |
 | 3a — Relances automatiques J+7 / J+30, statut en retard, white-label | ✅ en production 2026-09-26 (PR #21, `9c32f59`) · migration 0013 · cron enregistré, **`CRON_SECRET` absent en prod** |
 | 3b — Relance manuelle, IBAN dans les relances, suspension par facture, PDF joint à l'envoi | ✅ en production 2026-09-26 (PR #22, `aebac65`) · migration 0014 |
-| 4 — Rendez-vous : fuseau Paris, confirmation / annulation + .ics, rappel J-1, récap artisan | en cours (`feat/appointment-notifications`) |
+| 4 — Rendez-vous : fuseau Paris, confirmation / annulation + .ics, rappel J-1, récap artisan | ✅ en production 2026-09-26 (PR #23, `4797f2e`) · sans migration · cron 16:00 UTC enregistré |
 | 4b — TRB-071 nouvelle conversation IA → artisan | à faire |
 | 5→9 | à faire |
 

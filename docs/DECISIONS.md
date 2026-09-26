@@ -108,3 +108,10 @@ Turnstile + rate limit en mémoire (par instance, best effort) + honeypot + **pl
 - **Confirmation** au client à la création (case cochée par défaut ; tous plans ; le RDV passe `confirmed`) ou au passage `pending → confirmed` ; **annulation** au passage `cancelled`. Fichier `.ics` joint (METHOD:CANCEL pour l'annulation). Chaque e-mail une fois par RDV (registre).
 - **Pas de migration** : rappel fixe à J-1, pas de `reminder_offset_minutes`.
 - **TRB-071** (nouvelle conversation IA → artisan) sorti en 4b : Business seulement, sans rapport avec les RDV.
+
+## 2026-09-26 — Phase 4 : choix d'implémentation
+
+- **Registre générique** `src/lib/notifications/ledger.ts` (claim / release / déjà envoyés) : un seul mécanisme d'idempotence pour les relances de factures, les e-mails de RDV et le récap quotidien (entité `tenant`, kind `agenda:<jour>`).
+- **Le client n'est prévenu que pour un RDV à venir** : confirmer ou annuler un RDV passé ne déclenche aucun e-mail.
+- **`.ics` sur la confirmation et l'annulation seulement** (METHOD:PUBLISH / CANCEL, même UID `<id>@traballo.pro`) ; le rappel J-1 n'en a pas besoin. Lieu = adresse du client (l'artisan se déplace).
+- **Vitest en `TZ=UTC`** : les tests reproduisent le fuseau des serveurs ; le bug d'heure des RDV passait inaperçu sur un poste à Paris.
