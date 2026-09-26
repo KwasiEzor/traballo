@@ -7,6 +7,7 @@
  * business day, whatever the server's timezone.
  */
 import { planAllows, type PlanGate } from "@/lib/notifications/types";
+import { parisDate } from "@/lib/time";
 
 export const REMINDER_MILESTONES = [
   { days: 7, kind: "reminder_j7" },
@@ -15,16 +16,9 @@ export const REMINDER_MILESTONES = [
 
 export type ReminderKind = (typeof REMINDER_MILESTONES)[number]["kind"];
 
-const PARIS_DATE = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Europe/Paris",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
 /** Today's date in Paris, `YYYY-MM-DD`. */
 export function parisToday(now: Date = new Date()): string {
-  return PARIS_DATE.format(now);
+  return parisDate(now);
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;

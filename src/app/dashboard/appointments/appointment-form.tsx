@@ -17,8 +17,7 @@ import {
 import { Alert, AlertContent, AlertDescription } from "@/components/ui/alert";
 import { createAppointment } from "./actions/create-appointment";
 import type { Client } from "@/db/schema";
-
-const isoDate = (d: Date) => d.toISOString().split("T")[0];
+import { parisDate } from "@/lib/time";
 
 export function AppointmentForm({
   clients,
@@ -91,7 +90,7 @@ export function AppointmentForm({
             name="startDate"
             type="date"
             required
-            defaultValue={isoDate(new Date())}
+            defaultValue={parisDate()}
           />
         </div>
         <div className="space-y-1.5">

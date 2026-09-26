@@ -9,6 +9,7 @@ import { redirect, unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
 import { appointments } from "@/db/schema";
+import { parisWallTime } from "@/lib/time";
 import { z } from "zod";
 
 const createAppointmentSchema = z.object({
@@ -28,11 +29,9 @@ export async function createAppointment(
 
     const validated = createAppointmentSchema.parse(input);
 
-    // Combine date and time
-    const startDateTime = new Date(
-      `${validated.startDate}T${validated.startTime}`
-    );
-    const endDateTime = new Date(`${validated.startDate}T${validated.endTime}`);
+    // The artisan types Paris time; the server runs in UTC.
+    const startDateTime = parisWallTime(validated.startDate, validated.startTime);
+    const endDateTime = parisWallTime(validated.startDate, validated.endTime);
 
     // Validate end > start
     if (endDateTime <= startDateTime) {
