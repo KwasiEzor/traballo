@@ -28,10 +28,10 @@ Le plan d'implémentation détaillé du système de notifications
 | Phase | Contenu | État |
 |---|---|---|
 | 0 | Fondations (schéma, `createNotification`, câblage événements existants) | ✅ fait |
-| 1 | Centre in-app artisan (cloche + page + préférences) | à faire |
-| 2 | Emails abonnement manquants (activé/changé/annulé, quota) | à faire |
-| 3 | Relances de factures + cron (TRB-056→060) | à faire |
-| 4 | Notifications RDV + cron (TRB-087, 094→098) | à faire |
+| 1 | Centre in-app artisan (cloche + page + préférences) | ✅ en production (PR #16, #18) |
+| 2 | Emails abonnement manquants (activé/changé/annulé ; quota sans objet) | ✅ en production (PR #20) |
+| 3 | Relances de factures + cron (TRB-056→060) | ✅ en production (PR #21, #22) |
+| 4 | Notifications RDV + cron (TRB-087, 094→098) | ✅ en production (PR #23) |
 | 5 | Web push PWA (TRB-115) | à faire |
 | 6 | SMS Business (100/mois) | à faire |
 | 7→9 | WhatsApp, notifs opérateur, annonces système | plus tard |
@@ -40,7 +40,9 @@ Le plan d'implémentation détaillé du système de notifications
 transactionnel complet + relances factures) est estimé à **~4,5 jours**
 dans le plan détaillé ; c'est le socle recommandé avant l'ouverture d'une
 bêta avec des artisans réels. Les phases 4 (RDV), 5 (push) et au-delà
-peuvent suivre en itération. Décisions encore ouvertes avant de coder :
+peuvent suivre en itération. **Au 2026-09-26 : phases 0→4 en production** ;
+avant d'ouvrir la bêta, restent `CRON_SECRET` en prod, le domaine Resend
+vérifié et l'observabilité ci-dessous. Décisions encore ouvertes avant de coder :
 plan Vercel (crons), prise de RDV publique, fournisseur SMS — voir §8 de
 `NOTIFICATIONS_PLAN.md`.
 

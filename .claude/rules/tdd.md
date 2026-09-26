@@ -13,3 +13,5 @@ Le test s'écrit **avant** le code.
 - Rendu HTML des emails (react SSR) : le helper de test retire les marqueurs `<!-- -->` et décode `&`.
 - **Juger `pnpm check` à son code de sortie, pas à sa sortie filtrée** : vitest peut afficher « 327 passed » et sortir en 1 sur une erreur non gérée (« Unhandled Errors », ex. une promesse après la fin d'un test). Constaté le 2026-09-26 : la CI de la PR #22 a échoué alors qu'un `grep` sur la sortie locale semblait vert.
 - Le mock global `next/navigation` (`tests/setup.ts`) fournit `push`, `replace`, `prefetch`, `back`, `refresh`. Un composant qui appelle une autre méthode du routeur doit l'y ajouter.
+- **Vitest tourne en `TZ=UTC`** (`vitest.config.ts`), comme la CI et Vercel : un test de date qui passe sur un Mac à l'heure de Paris peut masquer un bug de fuseau (cas du 2026-09-26 : `createAppointment`).
+- `tests/setup.ts` fournit aussi un stub `ResizeObserver` (Radix Switch / Checkbox en ont besoin sous jsdom) : ne pas le redéclarer dans les tests.
