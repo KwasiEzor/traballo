@@ -12,7 +12,7 @@ import {
   Section,
   Text,
 } from "@react-email/components";
-import { EMAIL_BRAND as B } from "./brand";
+import { EMAIL_BRAND as B, type EmailBrand } from "./brand";
 import { EmailMascot, type EmailMascotPose } from "./mascot";
 
 /* ------------------------------------------------------------------ */
@@ -26,6 +26,7 @@ export function EmailLayout({
   children,
   footnote,
   signature,
+  brand,
 }: {
   preview: string;
   heading?: string;
@@ -37,9 +38,18 @@ export function EmailLayout({
   footnote?: string;
   /** Overrides the default "L'équipe Traballo" sign-off (e.g. for invoices). */
   signature?: { name: string; tagline?: string };
+  /**
+   * White-label: mail sent on the artisan's behalf to their own client. The
+   * header and sign-off carry the artisan's identity; the footer drops
+   * Traballo's links and keeps a discreet "via Traballo".
+   */
+  brand?: EmailBrand;
 }) {
   const year = new Date().getFullYear();
-  const sig = signature ?? { name: "L'équipe Traballo", tagline: `${B.tagline} · ${B.regions}` };
+  const sig = brand
+    ? { name: brand.name }
+    : signature ?? { name: "L'équipe Traballo", tagline: `${B.tagline} · ${B.regions}` };
+  const logo = brand ? brand.logoUrl : B.logoUrl;
 
   return (
     <Html lang="fr">
@@ -52,17 +62,21 @@ export function EmailLayout({
             <table role="presentation" cellPadding={0} cellSpacing={0}>
               <tbody>
                 <tr>
-                  <td style={{ verticalAlign: "middle", paddingRight: 10 }}>
-                    <Img
-                      src={B.logoUrl}
-                      width="34"
-                      height="34"
-                      alt="Traballo"
-                      style={{ borderRadius: 8, display: "block" }}
-                    />
-                  </td>
+                  {logo ? (
+                    <td style={{ verticalAlign: "middle", paddingRight: 10 }}>
+                      <Img
+                        src={logo}
+                        width="34"
+                        height="34"
+                        alt={brand ? brand.name : "Traballo"}
+                        style={{ borderRadius: 8, display: "block" }}
+                      />
+                    </td>
+                  ) : null}
                   <td style={{ verticalAlign: "middle" }}>
-                    <span style={s.wordmark}>Traballo</span>
+                    <span style={brand ? { ...s.wordmark, color: brand.color } : s.wordmark}>
+                      {brand ? brand.name : "Traballo"}
+                    </span>
                   </td>
                 </tr>
               </tbody>
@@ -80,23 +94,27 @@ export function EmailLayout({
           <Section style={s.footer}>
             <Text style={s.sigName}>{sig.name}</Text>
             {sig.tagline ? <Text style={s.sigTag}>{sig.tagline}</Text> : null}
-            <Text style={s.links}>
-              <Link href={B.site} style={s.link}>
-                traballo.pro
-              </Link>
-              {"  ·  "}
-              <Link href={`${B.app}/dashboard`} style={s.link}>
-                Tableau de bord
-              </Link>
-              {"  ·  "}
-              <Link href={`mailto:${B.supportEmail}`} style={s.link}>
-                Aide
-              </Link>
-            </Text>
+            {brand ? null : (
+              <Text style={s.links}>
+                <Link href={B.site} style={s.link}>
+                  traballo.pro
+                </Link>
+                {"  ·  "}
+                <Link href={`${B.app}/dashboard`} style={s.link}>
+                  Tableau de bord
+                </Link>
+                {"  ·  "}
+                <Link href={`mailto:${B.supportEmail}`} style={s.link}>
+                  Aide
+                </Link>
+              </Text>
+            )}
             <Hr style={s.hr} />
             {footnote ? <Text style={s.fine}>{footnote}</Text> : null}
             <Text style={s.fine}>
-              © {year} Traballo. Tous droits réservés.
+              {brand
+                ? `Envoyé par ${brand.name} via Traballo.`
+                : `© ${year} Traballo. Tous droits réservés.`}
             </Text>
           </Section>
         </Container>

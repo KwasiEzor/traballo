@@ -11,6 +11,8 @@ import { PaymentFailedEmail } from "@/lib/email/templates/payment-failed-email";
 import { SubscriptionStartedEmail } from "@/lib/email/templates/subscription-started-email";
 import { SubscriptionChangedEmail } from "@/lib/email/templates/subscription-changed-email";
 import { SubscriptionCanceledEmail } from "@/lib/email/templates/subscription-canceled-email";
+import { InvoiceReminderEmail } from "@/lib/email/templates/invoice-reminder-email";
+import { NotificationEmail } from "@/lib/email/templates/notification-email";
 import { EMAIL_BRAND } from "@/lib/email/brand";
 
 // React SSR injects <!-- --> markers around interpolated text; strip them so
@@ -295,5 +297,85 @@ describe("email templates — branded shell + content", () => {
     expect(text).toMatch(/paiement/i);
     expect(text).toMatch(/plan Free/);
     expect(raw).toContain("/mascot/removed/trabby-3D-error-rmv.png");
+  });
+
+  it("NotificationEmail (artisan notice through their preferences)", async () => {
+    const { raw, text } = await rendered(
+      NotificationEmail({
+        heading: "Facture F-2026-0042 en retard",
+        body: "Claire Martin — 1 234,50 € TTC, échéance le 1 septembre 2026.",
+        actionUrl: "/dashboard/invoices/abc",
+        cta: "Voir la facture",
+      })
+    );
+    expectShell(raw, text);
+    expect(text).toContain("Facture F-2026-0042 en retard");
+    expect(text).toContain("Claire Martin");
+    expect(raw).toContain(`${EMAIL_BRAND.app}/dashboard/invoices/abc`);
+    expect(text).toContain("Voir la facture");
+  });
+});
+
+describe("white-label email (artisan brand → their client)", () => {
+  const brand = {
+    name: "Plomberie Durand",
+    logoUrl: "https://blob.example.com/logo.png",
+    color: "#0f766e",
+  };
+  const base = {
+    brand,
+    clientName: "Claire Martin",
+    invoiceNumber: "F-2026-0042",
+    total: "1234.50",
+    dueDate: "2026-09-01",
+    artisanPhone: "06 12 34 56 78",
+  };
+
+  it("InvoiceReminderEmail J+7 carries the artisan's brand, not Traballo's", async () => {
+    const { raw, text } = await rendered(
+      InvoiceReminderEmail({ ...base, kind: "reminder_j7", daysLate: 7, pdfAttached: true })
+    );
+    expect(raw).toMatch(/^<!DOCTYPE html/i);
+    expect(raw).toContain(brand.logoUrl);
+    expect(raw).toContain(brand.color);
+    expect(raw).not.toContain(EMAIL_BRAND.logoUrl);
+    expect(raw).not.toContain(`${EMAIL_BRAND.app}/dashboard`);
+    expect(raw).not.toContain(`mailto:${EMAIL_BRAND.supportEmail}`);
+    expect(text).not.toMatch(/Tous droits réservés/);
+    expect(text).toMatch(/Plomberie Durand via Traballo/);
+
+    expect(text).toContain("Bonjour Claire Martin");
+    expect(text).toContain("F-2026-0042");
+    expect(text).toMatch(/1\s234,50\s€/);
+    expect(text).toContain("1 septembre 2026");
+    expect(text).toMatch(/Sauf erreur/);
+    expect(text).toMatch(/jointe/);
+    expect(text).toContain("06 12 34 56 78");
+    expect(text).not.toContain("undefined");
+  });
+
+  it("InvoiceReminderEmail J+30 is firmer", async () => {
+    const { text } = await rendered(
+      InvoiceReminderEmail({ ...base, kind: "reminder_j30", daysLate: 30, pdfAttached: false })
+    );
+    expect(text).toMatch(/30 jours/);
+    expect(text).toMatch(/meilleurs délais/);
+    expect(text).not.toMatch(/jointe/);
+  });
+
+  it("works without logo nor phone", async () => {
+    const { raw, text } = await rendered(
+      InvoiceReminderEmail({
+        ...base,
+        brand: { name: "X", logoUrl: null, color: EMAIL_BRAND.blue },
+        artisanPhone: null,
+        kind: "reminder_j7",
+        daysLate: 7,
+        pdfAttached: false,
+      })
+    );
+    expect(raw).not.toContain("<img");
+    expect(text).not.toContain("undefined");
+    expect(text).not.toContain("null");
   });
 });

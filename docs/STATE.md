@@ -3,7 +3,7 @@
 > Mis à jour à chaque fin de session. Toute affirmation ici est **à revérifier** avant d'agir
 > (git, `pnpm db:audit:live`, tests). En cas d'écart avec la réalité, la réalité gagne : corriger ce fichier.
 
-**Dernière vérification : 2026-09-26** (`origin/main` = `740f238` ; `pnpm check` vert, 215 tests ; `app.traballo.pro` servi par le déploiement Production de `740f238`)
+**Dernière vérification : 2026-09-26** (`origin/main` = `197b6b1` ; `pnpm check` vert, 241 tests ; `app.traballo.pro` servi par le déploiement Production de `197b6b1`)
 
 Du travail arrive aussi par des sessions Claude web (PR mergées sur GitHub) : **`git fetch` avant toute vérification**, la copie locale peut être en retard.
 
@@ -17,6 +17,7 @@ Système de notifications — voir `NOTIFICATIONS_PLAN.md`. Priorités bêta : `
 
 - Phase 0 : schéma `notifications` + `notification_deliveries`, `createNotification`, catalogue de types (commit `f7d7f09`).
 - Événements câblés : `leads.site_enquiry`, `leads.ai_lead`, `billing.payment_failed` (commit `b8ffe1c`).
+- Phase 2a **en production** le 2026-09-26 (PR #20, `197b6b1`) : e-mails + in-app abonnement activé / changé / annulé. Déclencheur = transition d'état lue sous verrou (`syncSubscriptionToTenant`) : vérifié sur la vraie base, 2 synchros simultanées → une seule transition. Phase 2b sans objet (voir `DECISIONS.md`).
 - Phase 1b **en production** le 2026-09-26 (PR #18, `e0baf23`) : préférences in-app / e-mail par catégorie (onglet Paramètres → Notifications), e-mail des demandes de contact verrouillé, `createNotification` respecte les préférences, lien « Notifications » + compteur dans la sidebar. Migration 0012 (`notification_prefs`) appliquée avant le merge ; `db:audit:live` 13/13 ; `test:security` 8/8 ; parcours vérifié à l'écran avec le compte QA.
 - Compte QA `qa-claude@traballo.test` (PR #19) : voir `.claude/rules/dev-workflow.md`, section Compte QA.
 - Phase 1a **en production** le 2026-09-26 (PR #16, commit `0783f32`) : cloche dans la topbar, page `/dashboard/notifications` (filtre, pagination), marquer lu / tout marquer lu. Requêtes vérifiées contre Postgres sous RLS dans une transaction annulée, isolation inter-tenant incluse ; cloche vue à l'écran par l'utilisateur sur `app.traballo.pro`. Au 2026-09-26 matin, la base ne contenait **aucune** notification.
@@ -27,13 +28,17 @@ Système de notifications — voir `NOTIFICATIONS_PLAN.md`. Priorités bêta : `
 
 ## Prochaine action exacte
 
-1. **Phase 2a** — e-mails + in-app abonnement activé / changé / annulé, branche `feat/notifications-billing-emails` (tests d'abord). Cadrage dans `NOTIFICATIONS_PLAN.md` (Phase 2) et `docs/DECISIONS.md` : déclencheur = transition d'état sous verrou dans `syncSubscriptionToTenant`, pas l'événement Stripe. Pas de migration.
-2. Phase 2b — alerte quota agent IA à 80 % (ouverte au Free), une fois par mois via `notification_deliveries`.
-3. Puis Phase 3 (white-label `EmailLayout`, relances factures + cron), voir `NOTIFICATIONS_PLAN.md`.
+1. **Phase 3a** — relances de factures, branche `feat/invoice-reminders` (tests d'abord). Cadrage : `NOTIFICATIONS_PLAN.md` (Phase 3) et `docs/DECISIONS.md`. **Migration 0013** (`artisan_profiles.invoice_reminders`) : `pnpm db:audit:live` avant / après, confirmation de l'utilisateur, appliquée **avant** le merge. Prérequis prod : `CRON_SECRET` dans Vercel, domaine Resend vérifié.
+2. Phase 3b — relance manuelle, template éditable, override par facture.
+3. Phase 4 — notifications de rendez-vous, voir `NOTIFICATIONS_PLAN.md`.
 
 Les notifs `leads.*` n'ont pas d'`actionUrl` : il n'existe pas encore de page « boîte de leads ».
 
 ## Ouvert — bloquant produit
+
+- **E-mails Resend** : avec la clé de `.env.local`, Resend répond `403 — The traballo.pro domain is not verified` (constaté le 2026-09-26). Clé de prod **non vérifiée** : si elle est dans le même cas, aucun e-mail ne part (vérification d'inscription, leads, abonnement). Contrôler le domaine dans le dashboard Resend.
+- **Limite Free « 10 factures / mois »** annoncée (page tarifs, FAQ) mais **non appliquée** (`create-invoice.ts` ne compte rien). À trancher avant le passage en GA : appliquer ou retirer.
+- **Quota de l'agent IA** (50 Free / 500 Pro dans `/api/agent`) : code mort, l'agent est réservé au plan Business, illimité.
 
 - **Numérotation des factures** : lecture puis incrément (race), aucun `UNIQUE(tenant_id, invoice_number)`, pas de séquence légale sans trou (`create-invoice.ts`, `schema/invoices.ts`).
 - **PDF en base64 dans la DB** : `generate-pdf.ts` écrit un data URL dans `invoices.pdf_url`. Migrer vers Vercel Blob.

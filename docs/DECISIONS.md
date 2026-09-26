@@ -75,3 +75,19 @@ Turnstile + rate limit en mémoire (par instance, best effort) + honeypot + **pl
 - **« Annulé »** part au retour effectif en Free, pas à la demande d'annulation (l'artisan garde son plan jusqu'à la fin de la période).
 - **Alerte quota ouverte au plan Free** : c'est là qu'elle sert (moment de passer au plan supérieur).
 - **White-label `EmailLayout` reporté en Phase 3** : aucun e-mail d'abonnement n'en a besoin (ils vont à l'artisan, marque Traballo).
+
+## 2026-09-26 — Phase 2b sans objet
+
+- Remplace la partie 2b de l'entrée « Phase 2 des notifications coupée en 2a / 2b ».
+- **Constat** : l'agent IA du site est réservé au plan Business (`loadAgentContext`), qui n'a pas de quota (`messageQuota("business") === null`). Le quota Free / Pro (50 / 500) de `/api/agent` n'est donc jamais atteint. La limite « 10 factures / mois » du plan Free, annoncée sur la page tarifs, n'est pas appliquée non plus.
+- **Conséquence** : aucun quota réel, pas d'alerte à construire. `billing.quota_warning` reste au catalogue, inutilisé. La limite Free non appliquée est un point ouvert (`STATE.md`).
+
+## 2026-09-26 — Phase 3 (relances de factures) : cadrage 3a / 3b
+
+- **3a** : relances automatiques + statut en retard + white-label. **3b** : relance manuelle, template éditable, override par facture.
+- **Qui** : relances automatiques pour Pro / Business (promesse de la page tarifs). Le passage en `overdue` vaut pour tous les plans.
+- **Jalons** : J+7 et J+30 après l'échéance, chacun une fois (`notification_deliveries`). Si le cron a raté un jalon, on envoie le plus récent atteint, jamais deux d'un coup. Le claim est libéré si l'envoi échoue : le cron du lendemain réessaie.
+- **E-mail au client** : marque de l'artisan, reply-to artisan, PDF en pièce jointe (il n'existe pas de page publique de facture et le PDF est un data URL en base).
+- **Interrupteur** `artisan_profiles.invoice_reminders`, défaut **on** : une seule facture en base au 2026-09-26 (un brouillon de démo), aucun client réel ne reçoit de relance surprise. L'artisan est notifié à chaque relance.
+- **« Facture en retard »** à l'artisan : premier e-mail artisan qui passe par les préférences (`createNotification` envoie l'e-mail si le canal est actif).
+- **Cron** : quotidien à 07:00 UTC ; « aujourd'hui » = date à Europe/Paris. Protégé par `CRON_SECRET`.

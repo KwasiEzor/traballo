@@ -5,5 +5,11 @@
   "framework": "nextjs",
   "env": {
     "NEXT_PUBLIC_ROOT_DOMAIN": "traballo.pro"
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/invoice-reminders",
+      "schedule": "0 7 * * *"
+    }
+  ]
 }
