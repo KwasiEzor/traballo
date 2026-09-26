@@ -11,9 +11,11 @@
 | **Câblage événements existants** (leads site/IA, paiement échoué) | ✅ commit `b8ffe1c` |
 | 1a — Centre in-app (cloche + page + marquer lu) | ✅ en production 2026-09-26 (PR #16, `0783f32`) |
 | 1b — Préférences (migration `notification_prefs` + onglet réglages) | ✅ en production 2026-09-26 (PR #18, `e0baf23`) · migration 0012 appliquée avant le merge |
-| 2a — E-mails abonnement (activé / changé / annulé) + in-app | en cours (`feat/notifications-billing-emails`) |
-| 2b — Alerte quota agent IA (80 %) | à faire |
-| 3→9 | à faire |
+| 2a — E-mails abonnement (activé / changé / annulé) + in-app | ✅ en production 2026-09-26 (PR #20, `197b6b1`) |
+| 2b — Alerte quota agent IA (80 %) | ❌ sans objet (aucun quota réel, voir `docs/DECISIONS.md`) |
+| 3a — Relances automatiques J+7 / J+30, statut en retard, white-label | en cours (`feat/invoice-reminders`) |
+| 3b — Relance manuelle, template éditable, override par facture | à faire |
+| 4→9 | à faire |
 
 ### Décisions prises par défaut (à confirmer)
 
@@ -165,13 +167,20 @@ Recadrée le 2026-09-26 (voir `docs/DECISIONS.md`).
 - « Annulé » = retour effectif en Free (abonnement supprimé ou impayé), texte selon `cancellation_details.reason` (demande vs impayé).
 - Tests : transition (pure), sync sous verrou, templates (`tests/lib/email/templates.test.ts`), webhook (un seul envoi pour plusieurs événements).
 
-**2b — Alerte quota agent IA**
+**2b — Alerte quota agent IA** — ❌ sans objet (2026-09-26) : l'agent IA est réservé au plan Business, qui est illimité ; le quota Free/Pro n'est jamais atteint. `billing.quota_warning` reste au catalogue, inutilisé.
 
-- `billing.quota_warning` à 80 % du quota mensuel de messages visiteurs (`messageQuota` : 50 Free, 500 Pro, illimité Business), une fois par mois et par tenant via `notification_deliveries`.
+- ~~`billing.quota_warning` à 80 % du quota mensuel de messages visiteurs (`messageQuota` : 50 Free, 500 Pro, illimité Business), une fois par mois et par tenant via `notification_deliveries`.
 - Ouverte au plan Free (catalogue : `minPlan` passe de `pro` à `free`).
-- Template `quota-warning` + in-app.
+- Template `quota-warning` + in-app.~~
 
 ### Phase 3 — Relances de factures / cron (~1,5 j) — TRB-056→060
+
+Cadrage du 2026-09-26 (voir `docs/DECISIONS.md`) :
+
+- **3a** : cron quotidien ; statut `overdue` pour tous les plans (+ notif artisan in-app / e-mail selon préférences, Pro+) ; relances client J+7 et J+30 pour Pro / Business, une fois chacune (registre, claim libéré si l'envoi échoue) ; e-mail aux couleurs de l'artisan, reply-to artisan, **PDF joint** (pas de page publique de facture) ; interrupteur `artisan_profiles.invoice_reminders` (défaut on, migration 0013).
+- **3b** : bouton « Relancer », template éditable, override par facture.
+
+Plan initial :
 
 - White-label `EmailLayout` → prop `brand` ; `artisanBrandFromProfile(profile)` (déplacé depuis la Phase 2 : premier e-mail envoyé au client de l'artisan).
 - Migration : settings tenant `invoice_reminder_enabled` (défaut on) + `invoice_reminder_template` ; `invoices` `reminder_override` (`default|off`).
