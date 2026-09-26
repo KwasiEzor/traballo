@@ -6,12 +6,14 @@ import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
 import {
   claimReminder,
+  loadInvoicePdf,
   loadReminderCandidate,
   releaseReminder,
 } from "@/lib/invoices/reminder-data";
 import { sendInvoiceReminder } from "@/lib/invoices/reminder-send";
 import { parisToday } from "@/lib/invoices/reminders";
 import { err, errors, ok, type Result } from "@/lib/result";
+import { generateInvoicePDF } from "./generate-pdf";
 
 const REMINDABLE = new Set(["sent", "viewed", "overdue"]);
 
@@ -55,6 +57,10 @@ export async function sendInvoiceReminderAction(
         message: "Une relance a déjà été envoyée aujourd'hui pour cette facture.",
       });
     }
+    // The dialog promises the PDF as attachment: generate it if the artisan
+    // never did (the cron cannot — no session — and sends without it).
+    if (!(await loadInvoicePdf(id, tenantId))) await generateInvoicePDF(id);
+
     if (!(await sendInvoiceReminder(invoice, "manual", today))) {
       await releaseReminder(id, kind);
       return err({

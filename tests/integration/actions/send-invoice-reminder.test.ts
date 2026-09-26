@@ -4,9 +4,11 @@ import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
 import {
   claimReminder,
+  loadInvoicePdf,
   loadReminderCandidate,
   releaseReminder,
 } from "@/lib/invoices/reminder-data";
+import { generateInvoicePDF } from "@/app/dashboard/invoices/actions/generate-pdf";
 import { sendInvoiceReminder } from "@/lib/invoices/reminder-send";
 import { sendInvoiceReminderAction } from "@/app/dashboard/invoices/actions/send-reminder";
 
@@ -14,8 +16,12 @@ vi.mock("@/lib/auth", () => ({ requireAuth: vi.fn() }));
 vi.mock("@/lib/db/tenant", () => ({ withTenant: vi.fn() }));
 vi.mock("@/lib/invoices/reminder-data", () => ({
   loadReminderCandidate: vi.fn(),
+  loadInvoicePdf: vi.fn(),
   claimReminder: vi.fn(),
   releaseReminder: vi.fn(),
+}));
+vi.mock("@/app/dashboard/invoices/actions/generate-pdf", () => ({
+  generateInvoicePDF: vi.fn(),
 }));
 vi.mock("@/lib/invoices/reminder-send", () => ({ sendInvoiceReminder: vi.fn() }));
 
@@ -45,6 +51,8 @@ beforeEach(() => {
   vi.mocked(loadReminderCandidate).mockResolvedValue(INVOICE as never);
   vi.mocked(claimReminder).mockResolvedValue(true);
   vi.mocked(sendInvoiceReminder).mockResolvedValue(true);
+  vi.mocked(loadInvoicePdf).mockResolvedValue(Buffer.from("%PDF"));
+  vi.mocked(generateInvoicePDF).mockResolvedValue({ success: true, pdfUrl: "data:x" });
 });
 afterEach(() => vi.useRealTimers());
 
@@ -58,6 +66,19 @@ describe("sendInvoiceReminderAction", () => {
     expect(claimReminder).toHaveBeenCalledWith("t_1", ID, "manual:2026-09-26");
     expect(sendInvoiceReminder).toHaveBeenCalledWith(INVOICE, "manual", "2026-09-26");
     expect(revalidatePath).toHaveBeenCalledWith(`/dashboard/invoices/${ID}`);
+  });
+
+  it("generates the PDF first when the invoice has none, so it can be attached", async () => {
+    vi.mocked(loadInvoicePdf).mockResolvedValue(null);
+    await sendInvoiceReminderAction(ID);
+    expect(generateInvoicePDF).toHaveBeenCalledWith(ID);
+    expect(sendInvoiceReminder).toHaveBeenCalled();
+  });
+
+  it("reuses the stored PDF", async () => {
+    await sendInvoiceReminderAction(ID);
+    expect(loadInvoicePdf).toHaveBeenCalledWith(ID, "t_1");
+    expect(generateInvoicePDF).not.toHaveBeenCalled();
   });
 
   it("refuses a second reminder the same day", async () => {
