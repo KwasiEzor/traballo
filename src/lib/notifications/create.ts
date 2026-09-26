@@ -2,10 +2,13 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { notifications, tenants } from "@/db/schema";
 import {
+  notificationMeta,
   planAllows,
+  resolveChannels,
   type NotificationType,
   type PlanGate,
 } from "./types";
+import { disabledChannelsFor } from "./prefs";
 
 export type CreateNotificationInput = {
   tenantId: string;
@@ -26,8 +29,9 @@ export type CreateNotificationInput = {
 
 /**
  * The single entry point for emitting a notification. Writes the in-app
- * feed row; email / push fan-out is layered on in later phases and reads
- * the same input.
+ * feed row unless the type has no `in_app` channel or the recipient turned
+ * it off (`resolveChannels` keeps it for transactional types). Email / push
+ * fan-out is layered on in later phases and reads the same input.
  *
  * Best-effort: never throws. A notification failing must not break the
  * business action that triggered it.
@@ -45,6 +49,13 @@ export async function createNotification(
       if (!tenant) return null;
       if (!planAllows(input.type, tenant.plan as PlanGate)) return null;
     }
+
+    const disabled = await disabledChannelsFor(
+      input.tenantId,
+      input.userId ?? null,
+      notificationMeta(input.type).category
+    );
+    if (!resolveChannels(input.type, disabled).includes("in_app")) return null;
 
     const [row] = await db
       .insert(notifications)

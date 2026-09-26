@@ -7,6 +7,7 @@ import { withTenant } from "@/lib/db/tenant";
 import { db } from "@/lib/db";
 import { artisanProfiles, tenants } from "@/db/schema";
 import { PLANS } from "@/lib/marketing/plans";
+import { getNotificationPrefs } from "@/lib/notifications/prefs";
 import { stripeBillingEnabled } from "@/lib/stripe/plans";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -17,6 +18,7 @@ import { ProfileForm } from "./profile-form";
 import { PlanPicker } from "./plan-picker";
 import { openBillingPortal } from "./actions/billing";
 import { CheckoutToast } from "./checkout-toast";
+import { NotificationPrefsForm } from "./notification-prefs-form";
 
 export const metadata: Metadata = { title: "Paramètres" };
 export const dynamic = "force-dynamic";
@@ -26,9 +28,9 @@ export default async function SettingsPage({
 }: {
   searchParams: Promise<{ tab?: string; checkout?: string }>;
 }) {
-  const { tenantId, plan, email } = await requireAuth();
+  const { tenantId, userId, plan, email } = await requireAuth();
   const { tab, checkout } = await searchParams;
-  const [profile, user, tenantRow] = await Promise.all([
+  const [profile, user, tenantRow, notificationPrefs] = await Promise.all([
     withTenant(tenantId, (tx) =>
       tx.query.artisanProfiles.findFirst({
         where: eq(artisanProfiles.tenantId, tenantId),
@@ -40,6 +42,7 @@ export default async function SettingsPage({
       .from(tenants)
       .where(eq(tenants.id, tenantId))
       .limit(1),
+    getNotificationPrefs(tenantId, userId),
   ]);
 
   const currentPlan = PLANS.find((p) => p.id === plan) ?? PLANS[0];
@@ -47,20 +50,22 @@ export default async function SettingsPage({
   const marketingUrl = `https://www.${rootDomain}`;
   const stripeOn = stripeBillingEnabled();
   const hasCustomer = Boolean(tenantRow[0]?.customerId);
-  const onAbo = tab === "abonnement";
+  const initialTab =
+    tab === "abonnement" || tab === "notifications" ? tab : "profil";
 
   return (
     <>
       <CheckoutToast status={checkout} />
       <PageHeader
         title="Paramètres"
-        description="Profil professionnel, facturation et abonnement."
+        description="Profil professionnel, abonnement et notifications."
       />
 
-      <Tabs defaultValue={onAbo ? "abonnement" : "profil"}>
+      <Tabs defaultValue={initialTab}>
         <TabsList>
           <TabsTrigger value="profil">Profil</TabsTrigger>
           <TabsTrigger value="abonnement">Abonnement</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="equipe">Équipe</TabsTrigger>
         </TabsList>
 
@@ -128,6 +133,21 @@ export default async function SettingsPage({
                   aide@traballo.pro
                 </a>
               </p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <Card className="max-w-3xl">
+            <CardHeader>
+              <CardTitle>Notifications</CardTitle>
+              <CardDescription>
+                Choisissez comment Traballo vous prévient, catégorie par
+                catégorie.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <NotificationPrefsForm prefs={notificationPrefs} plan={plan} />
             </CardContent>
           </Card>
         </TabsContent>

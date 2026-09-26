@@ -12,13 +12,16 @@ const h = vi.hoisted(() => {
 });
 
 vi.mock("@/lib/db", () => ({ db: { insert: h.insert, select: h.select } }));
+vi.mock("@/lib/notifications/prefs", () => ({ disabledChannelsFor: vi.fn() }));
 
 import { createNotification } from "@/lib/notifications/create";
+import { disabledChannelsFor } from "@/lib/notifications/prefs";
 
 beforeEach(() => {
   vi.clearAllMocks();
   h.selectLimit.mockResolvedValue([{ plan: "free" }]);
   h.returning.mockResolvedValue([{ id: "notif_1" }]);
+  vi.mocked(disabledChannelsFor).mockResolvedValue([]);
 });
 
 describe("createNotification", () => {
@@ -84,5 +87,48 @@ describe("createNotification", () => {
       title: "x",
     });
     expect(res).toBeNull();
+  });
+
+  it("skips the feed row when the recipient turned in-app off", async () => {
+    vi.mocked(disabledChannelsFor).mockResolvedValue(["in_app"]);
+    const res = await createNotification({
+      tenantId: "t_1",
+      userId: "u_1",
+      type: "leads.site_enquiry",
+      title: "Nouvelle demande",
+    });
+    expect(res).toBeNull();
+    expect(disabledChannelsFor).toHaveBeenCalledWith("t_1", "u_1", "leads");
+    expect(h.insert).not.toHaveBeenCalled();
+  });
+
+  it("resolves a tenant-wide notification against the tenant's prefs", async () => {
+    await createNotification({
+      tenantId: "t_1",
+      type: "invoices.paid",
+      title: "Facture payée",
+    });
+    expect(disabledChannelsFor).toHaveBeenCalledWith("t_1", null, "invoices");
+    expect(h.insert).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a transactional notification in the feed whatever the prefs", async () => {
+    vi.mocked(disabledChannelsFor).mockResolvedValue(["in_app", "email"]);
+    const res = await createNotification({
+      tenantId: "t_1",
+      type: "billing.payment_failed",
+      title: "Paiement échoué",
+    });
+    expect(res).toEqual({ id: "notif_1" });
+  });
+
+  it("writes no feed row for a type without an in-app channel", async () => {
+    const res = await createNotification({
+      tenantId: "t_1",
+      type: "account.welcome", // email only
+      title: "Bienvenue",
+    });
+    expect(res).toBeNull();
+    expect(h.insert).not.toHaveBeenCalled();
   });
 });

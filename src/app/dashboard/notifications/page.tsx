@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings2 } from "lucide-react";
 import { requireAuth } from "@/lib/auth";
 import { listNotifications } from "@/lib/notifications/feed";
 import { cn } from "@/lib/utils";
@@ -50,7 +50,17 @@ export default async function NotificationsPage({
             ? `${unread} notification${unread > 1 ? "s" : ""} non lue${unread > 1 ? "s" : ""}`
             : "Vous êtes à jour."
         }
-        actions={unread > 0 ? <MarkAllReadButton /> : undefined}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            {unread > 0 && <MarkAllReadButton />}
+            <Button asChild variant="outline" size="sm">
+              <Link href="/dashboard/settings?tab=notifications">
+                <Settings2 className="size-4" />
+                Préférences
+              </Link>
+            </Button>
+          </div>
+        }
       />
 
       <nav aria-label="Filtrer les notifications" className="mb-4 flex gap-1.5">
