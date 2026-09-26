@@ -68,23 +68,96 @@ export function planFromSubscription(sub: Stripe.Subscription): PaidPlan | null 
   return planForPriceId(priceId);
 }
 
+export type TenantPlan = "free" | PaidPlan;
+
+/** What the tenant row says about billing. */
+export type BillingState = { plan: TenantPlan; subscriptionId: string | null };
+
+export type BillingTransition =
+  | { kind: "started"; plan: PaidPlan }
+  | { kind: "changed"; from: PaidPlan; to: PaidPlan }
+  | { kind: "canceled"; from: PaidPlan };
+
+function paying(state: BillingState): state is BillingState & { plan: PaidPlan } {
+  return state.subscriptionId !== null && state.plan !== "free";
+}
+
+/**
+ * What changed for the artisan between two billing states, if anything. A
+ * plan without a subscription (comped by an admin) does not count as paying.
+ * Pure: the same before/after always gives the same answer, so a replayed
+ * webhook that finds the state already applied yields `null`.
+ */
+export function billingTransition(
+  before: BillingState,
+  after: BillingState
+): BillingTransition | null {
+  const was = paying(before);
+  const is = paying(after);
+  if (!was && is) return { kind: "started", plan: after.plan as PaidPlan };
+  if (was && !is) return { kind: "canceled", from: before.plan as PaidPlan };
+  if (was && is && before.plan !== after.plan) {
+    return {
+      kind: "changed",
+      from: before.plan as PaidPlan,
+      to: after.plan as PaidPlan,
+    };
+  }
+  return null;
+}
+
+/** Why a subscription stopped granting a plan: the artisan, or payment. */
+export function cancellationCause(
+  sub: Stripe.Subscription | null
+): "requested" | "payment" {
+  const reason = sub?.cancellation_details?.reason;
+  if (reason === "payment_failed" || reason === "payment_disputed") {
+    return "payment";
+  }
+  if (sub && ["unpaid", "incomplete_expired"].includes(sub.status)) {
+    return "payment";
+  }
+  return "requested";
+}
+
 /**
  * Apply a subscription's state to the tenant. Declarative + idempotent —
  * safe to replay from any webhook event.
+ *
+ * Reads the previous state under a row lock and returns the transition, so
+ * that among the several events Stripe sends for one change (and its
+ * retries), exactly one sees it — even when they arrive concurrently.
  */
 export async function syncSubscriptionToTenant(
   tenantId: string,
   sub: Stripe.Subscription | null
-): Promise<void> {
+): Promise<BillingTransition | null> {
   const plan = sub ? planFromSubscription(sub) : null;
+  const next: BillingState = {
+    plan: plan ?? "free",
+    subscriptionId: sub && plan ? sub.id : null,
+  };
 
-  await db
-    .update(tenants)
-    .set({
-      plan: plan ?? "free",
-      stripeSubscriptionId:
-        sub && plan ? sub.id : null,
-      updatedAt: new Date(),
-    })
-    .where(eq(tenants.id, tenantId));
+  return db.transaction(async (tx) => {
+    const [before] = await tx
+      .select({
+        plan: tenants.plan,
+        subscriptionId: tenants.stripeSubscriptionId,
+      })
+      .from(tenants)
+      .where(eq(tenants.id, tenantId))
+      .for("update");
+    if (!before) return null;
+
+    await tx
+      .update(tenants)
+      .set({
+        plan: next.plan,
+        stripeSubscriptionId: next.subscriptionId,
+        updatedAt: new Date(),
+      })
+      .where(eq(tenants.id, tenantId));
+
+    return billingTransition(before, next);
+  });
 }

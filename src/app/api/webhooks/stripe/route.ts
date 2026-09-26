@@ -10,6 +10,7 @@ import {
 import { sendEmail } from "@/lib/email/send";
 import { PaymentFailedEmail } from "@/lib/email/templates/payment-failed-email";
 import { createNotification } from "@/lib/notifications/create";
+import { notifyBillingTransition } from "@/lib/notifications/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,21 @@ export async function POST(request: Request): Promise<Response> {
   return Response.json({ received: true });
 }
 
+/**
+ * Sync the tenant to `state` (null = no subscription), then tell the artisan
+ * if this event is the one that changed their subscription. Stripe sends
+ * several events per change and retries them: only the first to flip the
+ * state gets a transition back, so the artisan hears about it once.
+ */
+async function applySubscription(
+  tenantId: string,
+  state: Stripe.Subscription | null,
+  sub: Stripe.Subscription
+): Promise<void> {
+  const transition = await syncSubscriptionToTenant(tenantId, state);
+  if (transition) await notifyBillingTransition(tenantId, transition, sub);
+}
+
 async function handle(stripe: Stripe, event: Stripe.Event): Promise<void> {
   switch (event.type) {
     case "checkout.session.completed": {
@@ -70,7 +86,7 @@ async function handle(stripe: Stripe, event: Stripe.Event): Promise<void> {
       const sub = await stripe.subscriptions.retrieve(
         session.subscription as string
       );
-      await syncSubscriptionToTenant(tenantId, sub);
+      await applySubscription(tenantId, sub, sub);
       return;
     }
 
@@ -84,9 +100,10 @@ async function handle(stripe: Stripe, event: Stripe.Event): Promise<void> {
           ? await tenantIdForCustomer(sub.customer)
           : null);
       if (!tenantId) return;
-      await syncSubscriptionToTenant(
+      await applySubscription(
         tenantId,
-        event.type === "customer.subscription.deleted" ? null : sub
+        event.type === "customer.subscription.deleted" ? null : sub,
+        sub
       );
       return;
     }
@@ -102,7 +119,7 @@ async function handle(stripe: Stripe, event: Stripe.Event): Promise<void> {
           : null;
       if (!tenantId) return;
       const sub = await stripe.subscriptions.retrieve(subId);
-      await syncSubscriptionToTenant(tenantId, sub);
+      await applySubscription(tenantId, sub, sub);
       return;
     }
 

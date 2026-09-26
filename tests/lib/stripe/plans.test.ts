@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  isUpgrade,
   priceIdFor,
   planForPriceId,
   stripeBillingEnabled,
@@ -41,5 +42,13 @@ describe("stripe price map", () => {
     expect(planForPriceId("price_by")).toBe("business");
     expect(planForPriceId("price_unknown")).toBeNull();
     expect(planForPriceId(null)).toBeNull();
+  });
+});
+
+describe("isUpgrade", () => {
+  it("ranks Business above Pro", () => {
+    expect(isUpgrade("pro", "business")).toBe(true);
+    expect(isUpgrade("business", "pro")).toBe(false);
+    expect(isUpgrade("pro", "pro")).toBe(false);
   });
 });

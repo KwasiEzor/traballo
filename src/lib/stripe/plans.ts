@@ -7,6 +7,12 @@
 export type PaidPlan = "pro" | "business";
 export type BillingInterval = "month" | "year";
 
+const PAID_RANK: Record<PaidPlan, number> = { pro: 1, business: 2 };
+
+export function isUpgrade(from: PaidPlan, to: PaidPlan): boolean {
+  return PAID_RANK[to] > PAID_RANK[from];
+}
+
 type PriceMap = Record<PaidPlan, Record<BillingInterval, string | undefined>>;
 
 function priceMap(): PriceMap {

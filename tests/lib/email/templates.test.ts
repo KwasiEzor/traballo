@@ -8,6 +8,9 @@ import { MarketingLeadEmail } from "@/lib/email/templates/marketing-lead-email";
 import { UpgradeRequestEmail } from "@/lib/email/templates/upgrade-request-email";
 import { InvoiceEmail } from "@/lib/email/templates/invoice-email";
 import { PaymentFailedEmail } from "@/lib/email/templates/payment-failed-email";
+import { SubscriptionStartedEmail } from "@/lib/email/templates/subscription-started-email";
+import { SubscriptionChangedEmail } from "@/lib/email/templates/subscription-changed-email";
+import { SubscriptionCanceledEmail } from "@/lib/email/templates/subscription-canceled-email";
 import { EMAIL_BRAND } from "@/lib/email/brand";
 
 // React SSR injects <!-- --> markers around interpolated text; strip them so
@@ -228,5 +231,69 @@ describe("email templates — branded shell + content", () => {
     );
     expectShell(raw, text);
     expect(text).not.toMatch(/Télécharger la facture/);
+  });
+
+  it("SubscriptionStartedEmail", async () => {
+    const { raw, text } = await rendered(
+      SubscriptionStartedEmail({ businessName: "Plomberie Durand", plan: "pro" })
+    );
+    expectShell(raw, text);
+    expect(text).toContain("Plomberie Durand");
+    expect(text).toMatch(/plan Pro/);
+    expect(text).toContain("Factures illimitées"); // what the plan unlocks
+    expect(text).not.toMatch(/Tout le plan Free, plus :/);
+    expect(raw).toContain(`${EMAIL_BRAND.app}/dashboard`);
+    expect(raw).toContain("/mascot/removed/trabby-3D-onboarding-rmv.png");
+  });
+
+  it("SubscriptionChangedEmail — upgrade", async () => {
+    const { raw, text } = await rendered(
+      SubscriptionChangedEmail({
+        businessName: "Plomberie Durand",
+        from: "pro",
+        to: "business",
+      })
+    );
+    expectShell(raw, text);
+    expect(text).toMatch(/plan Business/);
+    expect(text).toMatch(/Pro/);
+    expect(text).not.toMatch(/ne sont plus disponibles/);
+    expect(raw).toContain(`${EMAIL_BRAND.app}/dashboard/settings?tab=abonnement`);
+  });
+
+  it("SubscriptionChangedEmail — downgrade", async () => {
+    const { raw, text } = await rendered(
+      SubscriptionChangedEmail({ businessName: "X", from: "business", to: "pro" })
+    );
+    expectShell(raw, text);
+    expect(text).toMatch(/plan Pro/);
+    expect(text).toMatch(/ne sont plus disponibles/);
+  });
+
+  it("SubscriptionCanceledEmail — requested", async () => {
+    const { raw, text } = await rendered(
+      SubscriptionCanceledEmail({
+        businessName: "Plomberie Durand",
+        from: "pro",
+        cause: "requested",
+      })
+    );
+    expectShell(raw, text);
+    expect(text).toContain("Plomberie Durand");
+    expect(text).toMatch(/plan Free/);
+    expect(text).toMatch(/restent accessibles/);
+    expect(text).not.toMatch(/paiement/i);
+    expect(raw).toContain(`${EMAIL_BRAND.app}/dashboard/settings?tab=abonnement`);
+    expect(raw).not.toContain("/mascot/removed/");
+  });
+
+  it("SubscriptionCanceledEmail — unpaid", async () => {
+    const { raw, text } = await rendered(
+      SubscriptionCanceledEmail({ businessName: "X", from: "business", cause: "payment" })
+    );
+    expectShell(raw, text);
+    expect(text).toMatch(/paiement/i);
+    expect(text).toMatch(/plan Free/);
+    expect(raw).toContain("/mascot/removed/trabby-3D-error-rmv.png");
   });
 });
