@@ -57,3 +57,21 @@ Turnstile + rate limit en mémoire (par instance, best effort) + honeypot + **pl
 - **Rafraîchissement** de la cloche : `router.refresh()` toutes les 60 s, seulement si l'onglet est visible. Pas de websocket à cette échelle.
 - **`actionUrl`** limité aux chemins internes (`safeActionUrl`) : il est rendu comme lien, un `javascript:` ou `//hôte` serait une faille.
 - Les requêtes du fil prennent la transaction en paramètre (`readSummary`, `readPage`, `stampRead`) pour être testables contre la vraie base dans une transaction annulée.
+
+## 2026-09-26 — Préférences de notification (Phase 1b)
+
+- **Réglables** : in-app et e-mail, par catégorie (`leads`, `invoices`, `appointments`). `billing` reste transactionnel, non réglable. Push en Phase 5.
+- **E-mail des demandes de contact verrouillé** (`alwaysOn` dans le catalogue) : une demande manquée, c'est un client perdu.
+- **Stockage par utilisateur** (pk `user_id, category`, pas de ligne = défauts). Une notification adressée au tenant (`userId` null) suit les préférences du **propriétaire**. Avec les équipes, il faudra une ligne de notification par destinataire.
+- **Échec ouvert** : si la lecture des préférences échoue à la livraison, on livre avec les défauts. Une notification coupée par erreur coûte moins qu'une demande perdue.
+- **Reportés** : *quiet hours* (utile seulement au SMS, Phase 6) et *digest* (conversations IA).
+- Enregistrement refusé en mode support (impersonation) : c'est un réglage personnel de l'artisan.
+- Migration 0012 appliquée **avant** le merge : la page Paramètres lit la table.
+
+## 2026-09-26 — Phase 2 des notifications coupée en 2a / 2b
+
+- **Pourquoi** : le seul quota réel est celui des messages de l'agent IA ; l'alerte touche une route publique et demande une garde « une fois par mois ». Les e-mails d'abonnement n'en dépendent pas.
+- **Déclencheur des e-mails d'abonnement = transition d'état**, pas l'événement Stripe : Stripe émet 3 à 4 événements pour une souscription (`checkout.session.completed`, `customer.subscription.created`, `invoice.paid`, `customer.subscription.updated`) et les rejoue. L'état `(plan, abonnement)` est lu et écrit sous verrou de ligne : une transition = un envoi, même avec des événements concurrents.
+- **« Annulé »** part au retour effectif en Free, pas à la demande d'annulation (l'artisan garde son plan jusqu'à la fin de la période).
+- **Alerte quota ouverte au plan Free** : c'est là qu'elle sert (moment de passer au plan supérieur).
+- **White-label `EmailLayout` reporté en Phase 3** : aucun e-mail d'abonnement n'en a besoin (ils vont à l'artisan, marque Traballo).

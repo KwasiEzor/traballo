@@ -65,6 +65,10 @@ export const PLANS: Plan[] = [
   },
 ];
 
+export function planById(id: PlanId): Plan {
+  return PLANS.find((p) => p.id === id) ?? PLANS[0];
+}
+
 export interface FeatureRow {
   label: string;
   free: string | boolean;

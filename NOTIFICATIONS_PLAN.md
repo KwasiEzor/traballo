@@ -10,8 +10,10 @@
 | **0 — Fondations** (schéma + `createNotification` + types + tests) | ✅ commit `f7d7f09` · migration 0010 appliquée en base |
 | **Câblage événements existants** (leads site/IA, paiement échoué) | ✅ commit `b8ffe1c` |
 | 1a — Centre in-app (cloche + page + marquer lu) | ✅ en production 2026-09-26 (PR #16, `0783f32`) |
-| 1b — Préférences (migration `notification_prefs` + onglet réglages) | à faire |
-| 2→9 | à faire |
+| 1b — Préférences (migration `notification_prefs` + onglet réglages) | ✅ en production 2026-09-26 (PR #18, `e0baf23`) · migration 0012 appliquée avant le merge |
+| 2a — E-mails abonnement (activé / changé / annulé) + in-app | en cours (`feat/notifications-billing-emails`) |
+| 2b — Alerte quota agent IA (80 %) | à faire |
+| 3→9 | à faire |
 
 ### Décisions prises par défaut (à confirmer)
 
@@ -154,13 +156,24 @@ Le **client final n'a pas de compte** → email + SMS/WhatsApp uniquement. L'op�
 
 ### Phase 2 — Emails abonnement manquants (~0,5 j)
 
-- White-label `EmailLayout` → prop `brand` ; `artisanBrandFromProfile(profile)`.
-- Nouveaux templates : `subscription-started`, `subscription-changed`, `subscription-canceled`, `quota-warning`.
-- Câbler dans `src/app/api/webhooks/stripe/route.ts` : `checkout.session.completed` → started ; `customer.subscription.updated` (changement de prix) → changed ; `customer.subscription.deleted` → canceled.
-- Tests dans `tests/lib/email/templates.test.ts` (harnais existant).
+Recadrée le 2026-09-26 (voir `docs/DECISIONS.md`).
+
+**2a — Abonnement activé / changé / annulé**
+
+- Templates `subscription-started`, `subscription-changed`, `subscription-canceled` (marque Traballo, destinataire = e-mail pro de l'artisan, comme `PaymentFailedEmail`) + notifications in-app `billing.subscription_*` (transactionnelles).
+- Déclencheur = **transition d'état** `(plan, stripe_subscription_id)` avant → après, lue et écrite sous verrou de ligne dans `syncSubscriptionToTenant`, pas le type d'événement Stripe. Tous les handlers du webhook synchronisent ; celui qui fait basculer l'état notifie, les suivants et les rejeux ne voient aucune transition.
+- « Annulé » = retour effectif en Free (abonnement supprimé ou impayé), texte selon `cancellation_details.reason` (demande vs impayé).
+- Tests : transition (pure), sync sous verrou, templates (`tests/lib/email/templates.test.ts`), webhook (un seul envoi pour plusieurs événements).
+
+**2b — Alerte quota agent IA**
+
+- `billing.quota_warning` à 80 % du quota mensuel de messages visiteurs (`messageQuota` : 50 Free, 500 Pro, illimité Business), une fois par mois et par tenant via `notification_deliveries`.
+- Ouverte au plan Free (catalogue : `minPlan` passe de `pro` à `free`).
+- Template `quota-warning` + in-app.
 
 ### Phase 3 — Relances de factures / cron (~1,5 j) — TRB-056→060
 
+- White-label `EmailLayout` → prop `brand` ; `artisanBrandFromProfile(profile)` (déplacé depuis la Phase 2 : premier e-mail envoyé au client de l'artisan).
 - Migration : settings tenant `invoice_reminder_enabled` (défaut on) + `invoice_reminder_template` ; `invoices` `reminder_override` (`default|off`).
 - `vercel.json` : `crons: [{ path: "/api/cron/invoice-reminders", schedule: "0 7 * * *" }]`.
 - `src/app/api/cron/invoice-reminders/route.ts` — garde `CRON_SECRET` ; factures statut ∈ (`sent`,`viewed`,`overdue`), `due_date < today` ; fonction pure `dueReminders(invoice, today, ledger)` → jalons J+7 / J+30 non déjà envoyés → `InvoiceReminderEmail` (marque artisan, reply-to artisan) au client + `createNotification` artisan ; passe statut `overdue` ; écrit le registre.
