@@ -9,7 +9,11 @@ import { unstable_rethrow } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { createTenantClient } from "@/lib/db/tenant";
 import { sendEmail } from "@/lib/email/send";
+import { artisanSender } from "@/lib/email/brand";
 import { InvoiceEmail } from "@/lib/email/templates/invoice-email";
+import { paymentDetails } from "@/lib/invoices/payment";
+import { pdfFromDataUrl } from "@/lib/invoices/reminders";
+import { generateInvoicePDF } from "./generate-pdf";
 import { updateInvoiceStatus } from "./update-status";
 
 export async function sendInvoiceEmail(invoiceId: string) {
@@ -42,8 +46,19 @@ export async function sendInvoiceEmail(invoiceId: string) {
       return { error: "Artisan profile not found" };
     }
 
+    // The PDF travels as an attachment (a data: URL link is blocked by mail
+    // clients); generate it first if the artisan never did.
+    let pdf = pdfFromDataUrl(invoice.pdfUrl);
+    if (!pdf) {
+      const generated = await generateInvoicePDF(invoiceId);
+      if ("pdfUrl" in generated && generated.pdfUrl) {
+        pdf = pdfFromDataUrl(generated.pdfUrl);
+      }
+    }
+
     // Send email
     const result = await sendEmail({
+      from: artisanSender(artisanProfile.businessName),
       to: invoice.client.email,
       subject: `Facture ${invoice.invoiceNumber} de ${artisanProfile.businessName}`,
       react: InvoiceEmail({
@@ -52,17 +67,31 @@ export async function sendInvoiceEmail(invoiceId: string) {
         total: invoice.total,
         dueDate: invoice.dueDate,
         artisanBusinessName: artisanProfile.businessName,
-        pdfUrl: invoice.pdfUrl || undefined,
+        pdfAttached: pdf !== null,
+        payment: paymentDetails({
+          iban: artisanProfile.iban,
+          invoiceNumber: invoice.invoiceNumber,
+        }),
       }),
       replyTo: artisanProfile.email,
+      ...(pdf
+        ? {
+            attachments: [
+              { filename: `facture-${invoice.invoiceNumber}.pdf`, content: pdf },
+            ],
+          }
+        : {}),
     });
 
     if (result.error) {
       return { error: result.error };
     }
 
-    // Mark as sent
-    await updateInvoiceStatus(invoiceId, "sent");
+    // Mark as sent — only a draft: re-sending an overdue invoice must not
+    // pull it back to "sent" (the cron would flag it overdue again).
+    if (invoice.status === "draft") {
+      await updateInvoiceStatus(invoiceId, "sent");
+    }
 
     revalidatePath(`/dashboard/invoices/${invoiceId}`);
     revalidatePath("/dashboard/invoices");

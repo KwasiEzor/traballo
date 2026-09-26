@@ -378,4 +378,62 @@ describe("white-label email (artisan brand → their client)", () => {
     expect(text).not.toContain("undefined");
     expect(text).not.toContain("null");
   });
+
+  const payment = { iban: "FR76 3000 6000 0112 3456 7890 189", reference: "F-2026-0042" };
+
+  it("InvoiceReminderEmail shows how to pay when the artisan has an IBAN", async () => {
+    const { text } = await rendered(
+      InvoiceReminderEmail({ ...base, kind: "reminder_j7", daysLate: 7, pdfAttached: true, payment })
+    );
+    expect(text).toContain("FR76 3000 6000 0112 3456 7890 189");
+    expect(text).toMatch(/Référence/);
+    expect(text).toContain("F-2026-0042");
+  });
+
+  it("InvoiceReminderEmail has no payment block without IBAN", async () => {
+    const { text } = await rendered(
+      InvoiceReminderEmail({ ...base, kind: "reminder_j7", daysLate: 7, pdfAttached: true })
+    );
+    expect(text).not.toMatch(/IBAN/);
+  });
+
+  it("manual reminder before the due date is a friendly heads-up", async () => {
+    const { text } = await rendered(
+      InvoiceReminderEmail({ ...base, kind: "manual", daysLate: -3, pdfAttached: true })
+    );
+    expect(text).toMatch(/arrive à échéance le 1 septembre 2026/);
+    expect(text).not.toMatch(/Sauf erreur/);
+  });
+
+  it("manual reminder after the due date reads like the J+7 one", async () => {
+    const { text } = await rendered(
+      InvoiceReminderEmail({ ...base, kind: "manual", daysLate: 4, pdfAttached: true })
+    );
+    expect(text).toMatch(/Sauf erreur/);
+  });
+});
+
+describe("InvoiceEmail — attachment and payment", () => {
+  const invoice = {
+    invoiceNumber: "F-2026-0042",
+    clientName: "Claire Martin",
+    total: "1234.50",
+    dueDate: "2026-09-01",
+    artisanBusinessName: "Plomberie Durand",
+  };
+
+  it("says the PDF is attached and never links a data: URL", async () => {
+    const { raw, text } = await rendered(
+      InvoiceEmail({
+        ...invoice,
+        pdfUrl: "data:application/pdf;base64,JVBERi0=",
+        pdfAttached: true,
+        payment: { iban: "FR76 3000 6000 0112 3456 7890 189", reference: "F-2026-0042" },
+      })
+    );
+    expect(text).toMatch(/jointe/);
+    expect(raw).not.toContain("data:application/pdf");
+    expect(text).not.toMatch(/Télécharger la facture/);
+    expect(text).toContain("FR76 3000 6000 0112 3456 7890 189");
+  });
 });

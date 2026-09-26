@@ -6,6 +6,8 @@ import * as React from "react";
 import { Section, Text } from "@react-email/components";
 import { EmailLayout, P, Btn } from "@/lib/email/layout";
 import { EMAIL_BRAND as B } from "@/lib/email/brand";
+import { PaymentBlock } from "@/lib/email/payment-block";
+import type { PaymentDetails } from "@/lib/invoices/payment";
 
 interface InvoiceEmailProps {
   invoiceNumber: string;
@@ -13,7 +15,11 @@ interface InvoiceEmailProps {
   total: string;
   dueDate: string;
   artisanBusinessName: string;
+  /** Download link — only an https URL is shown (a data: URL is useless in mail). */
   pdfUrl?: string;
+  /** The PDF travels as an attachment. */
+  pdfAttached?: boolean;
+  payment?: PaymentDetails | null;
 }
 
 export function InvoiceEmail({
@@ -23,6 +29,8 @@ export function InvoiceEmail({
   dueDate = "2026-01-31",
   artisanBusinessName = "Mon Entreprise",
   pdfUrl,
+  pdfAttached,
+  payment,
 }: InvoiceEmailProps) {
   const due = new Date(dueDate).toLocaleDateString("fr-FR", {
     year: "numeric",
@@ -49,7 +57,13 @@ export function InvoiceEmail({
         <Text style={boxDue}>À régler avant le {due}</Text>
       </Section>
 
-      {pdfUrl ? <Btn href={pdfUrl}>Télécharger la facture (PDF)</Btn> : null}
+      {payment ? <PaymentBlock payment={payment} /> : null}
+
+      {pdfAttached ? <P>La facture est jointe à cet e-mail.</P> : null}
+
+      {pdfUrl?.startsWith("https://") ? (
+        <Btn href={pdfUrl}>Télécharger la facture (PDF)</Btn>
+      ) : null}
 
       <P muted>
         Pour toute question sur cette facture, répondez directement à cet

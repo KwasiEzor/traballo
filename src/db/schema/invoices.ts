@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, numeric, date, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, numeric, date, index, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { tenants } from "./tenants";
 import { clients } from "./clients";
@@ -26,6 +26,8 @@ export const invoices = pgTable(
     taxAmount: numeric("tax_amount", { precision: 10, scale: 2 }).notNull(),
     total: numeric("total", { precision: 10, scale: 2 }).notNull(),
     pdfUrl: text("pdf_url"),
+    /** The artisan paused the automatic reminders for this invoice. */
+    remindersPaused: boolean("reminders_paused").notNull().default(false),
     sentAt: timestamp("sent_at"),
     paidAt: timestamp("paid_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),

@@ -4,7 +4,8 @@ import { and, eq } from "drizzle-orm";
 import { FileCheck2 } from "lucide-react";
 import { requireAuth } from "@/lib/auth";
 import { withTenant } from "@/lib/db/tenant";
-import { invoices as invoicesTable } from "@/db/schema";
+import { artisanProfiles, invoices as invoicesTable } from "@/db/schema";
+import { remindersIncluded } from "@/lib/invoices/reminders";
 import { formatEUR, formatDate } from "@/lib/utils";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { InvoiceStatusBadge } from "@/components/dashboard/status-badge";
@@ -12,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { InvoiceActions } from "../invoice-actions";
+import { InvoiceReminderPause } from "../invoice-reminder-pause";
 
 export const dynamic = "force-dynamic";
 
@@ -21,15 +23,26 @@ export default async function InvoiceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { tenantId } = await requireAuth();
+  const { tenantId, plan } = await requireAuth();
 
-  const invoice = await withTenant(tenantId, (tx) =>
-    tx.query.invoices.findFirst({
-      where: and(eq(invoicesTable.id, id), eq(invoicesTable.tenantId, tenantId)),
-      with: { client: true, items: true },
-    })
-  );
+  const [invoice, [settings]] = await Promise.all([
+    withTenant(tenantId, (tx) =>
+      tx.query.invoices.findFirst({
+        where: and(eq(invoicesTable.id, id), eq(invoicesTable.tenantId, tenantId)),
+        with: { client: true, items: true },
+      })
+    ),
+    withTenant(tenantId, (tx) =>
+      tx
+        .select({ invoiceReminders: artisanProfiles.invoiceReminders })
+        .from(artisanProfiles)
+        .where(eq(artisanProfiles.tenantId, tenantId))
+        .limit(1)
+    ),
+  ]);
   if (!invoice) notFound();
+  const showReminders =
+    ["sent", "viewed", "overdue"].includes(invoice.status) && remindersIncluded(plan);
 
   return (
     <>
@@ -167,6 +180,19 @@ export default async function InvoiceDetailPage({
                 Voir la fiche
               </Link>
             </div>
+            {showReminders && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <div className="font-medium text-foreground">Relances automatiques</div>
+                  <InvoiceReminderPause
+                    invoiceId={invoice.id}
+                    paused={invoice.remindersPaused}
+                    enabledInSettings={settings?.invoiceReminders ?? true}
+                  />
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

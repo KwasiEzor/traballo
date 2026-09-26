@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { FileDown, Send, CheckCircle2, Loader2 } from "lucide-react";
+import { FileDown, Send, CheckCircle2, Loader2, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,6 +18,7 @@ import {
 import { celebrate } from "@/components/shared/celebrate";
 import { generateInvoicePDF } from "./actions/generate-pdf";
 import { sendInvoiceEmail } from "./actions/send-invoice";
+import { sendInvoiceReminderAction } from "./actions/send-reminder";
 import { updateInvoiceStatus } from "./actions/update-status";
 
 interface Props {
@@ -31,7 +32,10 @@ interface Props {
 
 export function InvoiceActions({ invoice }: Props) {
   const router = useRouter();
-  const [busy, setBusy] = React.useState<null | "pdf" | "send" | "paid">(null);
+  const [busy, setBusy] = React.useState<null | "pdf" | "send" | "remind" | "paid">(
+    null
+  );
+  const unpaid = ["sent", "viewed", "overdue"].includes(invoice.status);
 
   async function onPdf() {
     setBusy("pdf");
@@ -51,6 +55,15 @@ export function InvoiceActions({ invoice }: Props) {
     setBusy(null);
     if ("error" in res && res.error) return toast.error(res.error);
     toast.success(`Facture envoyée à ${invoice.client.name}.`);
+    router.refresh();
+  }
+
+  async function onRemind() {
+    setBusy("remind");
+    const res = await sendInvoiceReminderAction(invoice.id);
+    setBusy(null);
+    if (!res.ok) return toast.error(res.error.message);
+    toast.success(`Relance envoyée à ${invoice.client.name}.`);
     router.refresh();
   }
 
@@ -74,7 +87,7 @@ export function InvoiceActions({ invoice }: Props) {
         PDF
       </Button>
 
-      {(invoice.status === "draft" || invoice.status === "overdue") && (
+      {invoice.status === "draft" && (
         <Dialog>
           <DialogTrigger asChild>
             <Button disabled={busy !== null || !invoice.client.email}>
@@ -104,7 +117,40 @@ export function InvoiceActions({ invoice }: Props) {
         </Dialog>
       )}
 
-      {["sent", "viewed", "overdue"].includes(invoice.status) && (
+      {unpaid && (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" disabled={busy !== null || !invoice.client.email}>
+              {busy === "remind" ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <BellRing className="size-4" />
+              )}
+              Relancer
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Relancer {invoice.client.name}</DialogTitle>
+              <DialogDescription>
+                Un rappel de paiement pour la facture {invoice.invoiceNumber} sera
+                envoyé à {invoice.client.email}, facture en pièce jointe. Une
+                relance par jour au maximum.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="ghost">Annuler</Button>
+              </DialogClose>
+              <DialogClose asChild>
+                <Button onClick={onRemind}>Envoyer la relance</Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {unpaid && (
         <Button variant="success" onClick={onPaid} disabled={busy !== null}>
           {busy === "paid" ? (
             <Loader2 className="size-4 animate-spin" />
