@@ -19,6 +19,7 @@ import { PlanPicker } from "./plan-picker";
 import { openBillingPortal } from "./actions/billing";
 import { CheckoutToast } from "./checkout-toast";
 import { NotificationPrefsForm } from "./notification-prefs-form";
+import { InvoiceRemindersToggle } from "./invoice-reminders-toggle";
 
 export const metadata: Metadata = { title: "Paramètres" };
 export const dynamic = "force-dynamic";
@@ -61,7 +62,7 @@ export default async function SettingsPage({
         description="Profil professionnel, abonnement et notifications."
       />
 
-      <Tabs defaultValue={initialTab}>
+      <Tabs key={initialTab} defaultValue={initialTab}>
         <TabsList>
           <TabsTrigger value="profil">Profil</TabsTrigger>
           <TabsTrigger value="abonnement">Abonnement</TabsTrigger>
@@ -148,6 +149,21 @@ export default async function SettingsPage({
             </CardHeader>
             <CardContent>
               <NotificationPrefsForm prefs={notificationPrefs} plan={plan} />
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6 max-w-3xl">
+            <CardHeader>
+              <CardTitle>Relances de factures</CardTitle>
+              <CardDescription>
+                Les rappels de paiement envoyés à vos clients.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <InvoiceRemindersToggle
+                enabled={profile?.invoiceReminders ?? true}
+                plan={plan}
+              />
             </CardContent>
           </Card>
         </TabsContent>

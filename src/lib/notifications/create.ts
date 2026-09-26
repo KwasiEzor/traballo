@@ -9,6 +9,8 @@ import {
   type PlanGate,
 } from "./types";
 import { disabledChannelsFor } from "./prefs";
+import { sendArtisanEmail } from "./email";
+import { NotificationEmail } from "@/lib/email/templates/notification-email";
 
 export type CreateNotificationInput = {
   tenantId: string;
@@ -20,6 +22,12 @@ export type CreateNotificationInput = {
   data?: Record<string, unknown>;
   actionUrl?: string;
   /**
+   * Also e-mail the artisan (generic `NotificationEmail` built from title /
+   * body / actionUrl), if the type has an e-mail channel and the recipient
+   * kept it on. Callers that send their own dedicated e-mail leave it out.
+   */
+  email?: { subject: string; cta?: string };
+  /**
    * Skip the plan-gate check — used when the caller already knows the tenant
    * is entitled, or for operator notifications that are not tenant-scoped in
    * the product sense.
@@ -28,10 +36,10 @@ export type CreateNotificationInput = {
 };
 
 /**
- * The single entry point for emitting a notification. Writes the in-app
- * feed row unless the type has no `in_app` channel or the recipient turned
- * it off (`resolveChannels` keeps it for transactional types). Email / push
- * fan-out is layered on in later phases and reads the same input.
+ * The single entry point for emitting a notification. Resolves the channels
+ * once (`resolveChannels`: catalogue defaults minus the recipient's
+ * preferences), then e-mails the artisan if asked and allowed, and writes the
+ * in-app feed row unless that channel is off. Push is layered on later.
  *
  * Best-effort: never throws. A notification failing must not break the
  * business action that triggered it.
@@ -55,7 +63,21 @@ export async function createNotification(
       input.userId ?? null,
       notificationMeta(input.type).category
     );
-    if (!resolveChannels(input.type, disabled).includes("in_app")) return null;
+    const channels = resolveChannels(input.type, disabled);
+
+    if (input.email && channels.includes("email")) {
+      await sendArtisanEmail(input.tenantId, {
+        subject: input.email.subject,
+        react: NotificationEmail({
+          heading: input.title,
+          body: input.body,
+          actionUrl: input.actionUrl,
+          cta: input.email.cta,
+        }),
+      });
+    }
+
+    if (!channels.includes("in_app")) return null;
 
     const [row] = await db
       .insert(notifications)

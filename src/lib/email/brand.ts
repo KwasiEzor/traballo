@@ -25,3 +25,47 @@ export const EMAIL_BRAND = {
   app: process.env.NEXT_PUBLIC_APP_URL || `https://app.${ROOT}`,
   supportEmail: "aide@traballo.pro",
 } as const;
+
+/** Identity shown on e-mails sent on the artisan's behalf to their clients. */
+export type EmailBrand = {
+  name: string;
+  logoUrl: string | null;
+  color: string;
+};
+
+/**
+ * The artisan's brand for white-label e-mails. The logo and colour end up in
+ * HTML attributes / inline styles: only an https URL and a `#rrggbb` colour
+ * are kept, anything else falls back to Traballo's defaults.
+ */
+export function artisanBrand({
+  businessName,
+  logoUrl,
+  primaryColor,
+}: {
+  businessName: string;
+  logoUrl: string | null;
+  primaryColor: string | null;
+}): EmailBrand {
+  return {
+    name: businessName,
+    logoUrl: logoUrl && /^https:\/\/[^\s"'<>]+$/.test(logoUrl) ? logoUrl : null,
+    color:
+      primaryColor && /^#[0-9a-fA-F]{6}$/.test(primaryColor)
+        ? primaryColor
+        : EMAIL_BRAND.blue,
+  };
+}
+
+/**
+ * `From` header for a white-label mail: the artisan's name, Traballo's
+ * sending address (the only verified domain). Quotes, angle brackets,
+ * backslashes and line breaks are stripped so a business name can neither
+ * break the quoting nor inject headers.
+ */
+export function artisanSender(businessName: string): string {
+  const configured = process.env.EMAIL_FROM?.match(/<([^<>\s]+@[^<>\s]+)>/)?.[1];
+  const address = configured ?? "noreply@traballo.pro";
+  const name = businessName.replace(/["<>\\\r\n]/g, "").replace(/\s+/g, " ").trim();
+  return `"${name} via Traballo" <${address}>`;
+}

@@ -13,9 +13,11 @@ const h = vi.hoisted(() => {
 
 vi.mock("@/lib/db", () => ({ db: { insert: h.insert, select: h.select } }));
 vi.mock("@/lib/notifications/prefs", () => ({ disabledChannelsFor: vi.fn() }));
+vi.mock("@/lib/notifications/email", () => ({ sendArtisanEmail: vi.fn() }));
 
 import { createNotification } from "@/lib/notifications/create";
 import { disabledChannelsFor } from "@/lib/notifications/prefs";
+import { sendArtisanEmail } from "@/lib/notifications/email";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -130,5 +132,58 @@ describe("createNotification", () => {
     });
     expect(res).toBeNull();
     expect(h.insert).not.toHaveBeenCalled();
+  });
+
+  describe("e-mail channel", () => {
+    const overdue = {
+      tenantId: "t_1",
+      type: "invoices.overdue" as const, // in_app + email, Pro+
+      title: "Facture F-42 en retard",
+      body: "Claire Martin — 120,00 € TTC",
+      actionUrl: "/dashboard/invoices/inv_1",
+      email: { subject: "Facture F-42 en retard de paiement", cta: "Voir la facture" },
+    };
+
+    beforeEach(() => {
+      h.selectLimit.mockResolvedValue([{ plan: "pro" }]);
+    });
+
+    it("e-mails the artisan when they kept the channel on", async () => {
+      const res = await createNotification(overdue);
+      expect(res).toEqual({ id: "notif_1" });
+      expect(sendArtisanEmail).toHaveBeenCalledWith(
+        "t_1",
+        expect.objectContaining({ subject: "Facture F-42 en retard de paiement" })
+      );
+    });
+
+    it("respects an artisan who turned the e-mail off", async () => {
+      vi.mocked(disabledChannelsFor).mockResolvedValue(["email"]);
+      const res = await createNotification(overdue);
+      expect(sendArtisanEmail).not.toHaveBeenCalled();
+      expect(res).toEqual({ id: "notif_1" }); // in-app still written
+    });
+
+    it("still e-mails when only the in-app notice is off", async () => {
+      vi.mocked(disabledChannelsFor).mockResolvedValue(["in_app"]);
+      const res = await createNotification(overdue);
+      expect(sendArtisanEmail).toHaveBeenCalledTimes(1);
+      expect(res).toBeNull();
+      expect(h.insert).not.toHaveBeenCalled();
+    });
+
+    it("sends no e-mail unless the caller provides one", async () => {
+      const { email: _email, ...inAppOnly } = overdue;
+      await createNotification(inAppOnly);
+      expect(sendArtisanEmail).not.toHaveBeenCalled();
+    });
+
+    it("sends no e-mail for a type without an e-mail channel", async () => {
+      await createNotification({
+        ...overdue,
+        type: "invoices.reminder_sent", // in_app only
+      });
+      expect(sendArtisanEmail).not.toHaveBeenCalled();
+    });
   });
 });

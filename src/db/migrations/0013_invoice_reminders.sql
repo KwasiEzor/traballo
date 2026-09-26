@@ -1,0 +1,1 @@
+ALTER TABLE "artisan_profiles" ADD COLUMN "invoice_reminders" boolean DEFAULT true NOT NULL;

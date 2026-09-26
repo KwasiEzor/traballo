@@ -5,6 +5,7 @@ import {
   uuid,
   index,
   doublePrecision,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { tenants } from "./tenants";
 
@@ -28,6 +29,8 @@ export const artisanProfiles = pgTable(
     iban: text("iban"),
     logoUrl: text("logo_url"),
     tradeType: text("trade_type"),
+    /** Automatic payment reminders to clients (J+7 / J+30, Pro+). */
+    invoiceReminders: boolean("invoice_reminders").notNull().default(true),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },
