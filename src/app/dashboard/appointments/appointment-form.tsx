@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectTrigger,
@@ -30,6 +31,8 @@ export function AppointmentForm({
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [clientId, setClientId] = React.useState(defaultClientId ?? "none");
+  const [confirm, setConfirm] = React.useState(true);
+  const hasClient = clientId !== "none";
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,6 +46,7 @@ export function AppointmentForm({
       startTime: String(fd.get("startTime") ?? ""),
       endTime: String(fd.get("endTime") ?? ""),
       notes: String(fd.get("notes") ?? ""),
+      sendConfirmation: hasClient && confirm,
     });
     if (res?.error) {
       setError(res.error);
@@ -106,6 +110,23 @@ export function AppointmentForm({
       <div className="space-y-1.5">
         <Label htmlFor="notes">Notes</Label>
         <Textarea id="notes" name="notes" rows={3} placeholder="Adresse, précisions…" />
+      </div>
+
+      <div className="flex items-start gap-3">
+        <Checkbox
+          id="sendConfirmation"
+          checked={hasClient && confirm}
+          disabled={!hasClient}
+          onCheckedChange={(v) => setConfirm(v === true)}
+          className="mt-0.5"
+        />
+        <div className="space-y-0.5">
+          <Label htmlFor="sendConfirmation">Envoyer une confirmation au client</Label>
+          <p className="text-sm text-muted-foreground">
+            Par e-mail, à vos couleurs, avec le rendez-vous à ajouter à son
+            agenda. Le rendez-vous passe en « confirmé ».
+          </p>
+        </div>
       </div>
 
       <div className="flex gap-3">

@@ -10,12 +10,6 @@ vi.mock("@/app/dashboard/invoices/actions/pause-reminders", () => ({
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-globalThis.ResizeObserver ??= class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 const NAME = "Relances automatiques pour cette facture";
 
 beforeEach(() => {

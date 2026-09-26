@@ -10,13 +10,6 @@ vi.mock("@/app/dashboard/settings/actions/save-notification-prefs", () => ({
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-// Radix Switch measures itself; jsdom has no ResizeObserver.
-globalThis.ResizeObserver ??= class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 const PREFS = {
   leads: { in_app: true, email: true },
   invoices: { in_app: true, email: true },

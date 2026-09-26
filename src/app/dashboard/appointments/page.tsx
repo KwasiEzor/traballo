@@ -10,11 +10,17 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { AppointmentStatusBadge } from "@/components/dashboard/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { AppointmentNoticeToast } from "./appointment-notice-toast";
 
 export const dynamic = "force-dynamic";
 
-export default async function AppointmentsPage() {
+export default async function AppointmentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ confirmation?: string }>;
+}) {
   const { tenantId } = await requireAuth();
+  const { confirmation } = await searchParams;
   const rows = await withTenant(tenantId, (tx) =>
     tx.query.appointments.findMany({
       where: eq(apptTable.tenantId, tenantId),
@@ -31,6 +37,7 @@ export default async function AppointmentsPage() {
 
   return (
     <>
+      <AppointmentNoticeToast status={confirmation} />
       <PageHeader
         title="Rendez-vous"
         description={`${upcoming.length} à venir`}

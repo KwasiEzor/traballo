@@ -10,13 +10,6 @@ vi.mock("@/app/dashboard/settings/actions/save-invoice-reminders", () => ({
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-// Radix Switch measures itself; jsdom has no ResizeObserver.
-globalThis.ResizeObserver ??= class {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
-};
-
 const NAME = "Relances automatiques des factures";
 
 beforeEach(() => {

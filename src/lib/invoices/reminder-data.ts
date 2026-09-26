@@ -1,13 +1,11 @@
 import { and, eq, inArray, lt } from "drizzle-orm";
 import { db, type DB } from "@/lib/db";
+import { artisanProfiles, clients, invoices, sites, tenants } from "@/db/schema";
 import {
-  artisanProfiles,
-  clients,
-  invoices,
-  notificationDeliveries,
-  sites,
-  tenants,
-} from "@/db/schema";
+  claimDelivery,
+  deliveredKinds,
+  releaseDelivery,
+} from "@/lib/notifications/ledger";
 import type { PlanGate } from "@/lib/notifications/types";
 import { pdfFromDataUrl } from "./reminders";
 
@@ -129,64 +127,31 @@ export async function markOverdue(
 const LEDGER = { entityType: "invoice", channel: "email" } as const;
 
 /** Reminder kinds already sent, per invoice. */
-export async function sentReminderKinds(
+export function sentReminderKinds(
   invoiceIds: string[]
 ): Promise<Map<string, Set<string>>> {
-  const sent = new Map<string, Set<string>>();
-  if (invoiceIds.length === 0) return sent;
-  const rows = await db
-    .select({
-      invoiceId: notificationDeliveries.entityId,
-      kind: notificationDeliveries.kind,
-    })
-    .from(notificationDeliveries)
-    .where(
-      and(
-        eq(notificationDeliveries.entityType, LEDGER.entityType),
-        eq(notificationDeliveries.channel, LEDGER.channel),
-        inArray(notificationDeliveries.entityId, invoiceIds)
-      )
-    );
-  for (const r of rows) {
-    if (!sent.has(r.invoiceId)) sent.set(r.invoiceId, new Set());
-    sent.get(r.invoiceId)!.add(r.kind);
-  }
-  return sent;
+  return deliveredKinds(LEDGER.entityType, invoiceIds, LEDGER.channel);
 }
 
 /**
- * Reserve a reminder in the ledger before sending it. The unique key
- * `(entity_type, entity_id, kind, channel)` makes a concurrent or replayed
- * run back off: false = someone else holds it.
+ * Reserve a reminder in the ledger before sending it: false = a concurrent
+ * or earlier run holds it.
  */
-export async function claimReminder(
+export function claimReminder(
   tenantId: string,
   invoiceId: string,
   kind: string
 ): Promise<boolean> {
-  const rows = await db
-    .insert(notificationDeliveries)
-    .values({ tenantId, entityId: invoiceId, kind, ...LEDGER })
-    .onConflictDoNothing()
-    .returning({ id: notificationDeliveries.id });
-  return rows.length > 0;
+  return claimDelivery({ tenantId, entityId: invoiceId, kind, ...LEDGER });
 }
 
 /** Drop a claim whose e-mail failed, so the next run retries it. */
-export async function releaseReminder(
+export function releaseReminder(
+  tenantId: string,
   invoiceId: string,
   kind: string
 ): Promise<void> {
-  await db
-    .delete(notificationDeliveries)
-    .where(
-      and(
-        eq(notificationDeliveries.entityType, LEDGER.entityType),
-        eq(notificationDeliveries.channel, LEDGER.channel),
-        eq(notificationDeliveries.entityId, invoiceId),
-        eq(notificationDeliveries.kind, kind)
-      )
-    );
+  return releaseDelivery({ tenantId, entityId: invoiceId, kind, ...LEDGER });
 }
 
 /** The invoice PDF, loaded only when a reminder actually goes out. */

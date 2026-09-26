@@ -27,6 +27,14 @@ afterAll(() => {
   server.close();
 });
 
+// ─── jsdom ─────────────────────────────────────────────────────────────────
+// Radix (Switch, Checkbox…) measures its elements; jsdom has no ResizeObserver.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // ─── Mocks globaux Next.js ──────────────────────────────────────────────────
 
 vi.mock("next/navigation", () => ({

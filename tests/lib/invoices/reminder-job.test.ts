@@ -175,7 +175,7 @@ describe("runInvoiceReminders — client reminders", () => {
     const summary = await runInvoiceReminders(J7);
     spy.mockRestore();
 
-    expect(h.releaseReminder).toHaveBeenCalledWith("inv_1", "reminder_j7");
+    expect(h.releaseReminder).toHaveBeenCalledWith("t_1", "inv_1", "reminder_j7");
     expect(types()).not.toContain("invoices.reminder_sent");
     expect(summary).toMatchObject({ remindersSent: 0, remindersFailed: 1 });
   });

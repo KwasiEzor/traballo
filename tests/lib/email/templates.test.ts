@@ -13,6 +13,7 @@ import { SubscriptionChangedEmail } from "@/lib/email/templates/subscription-cha
 import { SubscriptionCanceledEmail } from "@/lib/email/templates/subscription-canceled-email";
 import { InvoiceReminderEmail } from "@/lib/email/templates/invoice-reminder-email";
 import { NotificationEmail } from "@/lib/email/templates/notification-email";
+import { AppointmentEmail } from "@/lib/email/templates/appointment-email";
 import { EMAIL_BRAND } from "@/lib/email/brand";
 
 // React SSR injects <!-- --> markers around interpolated text; strip them so
@@ -435,5 +436,57 @@ describe("InvoiceEmail — attachment and payment", () => {
     expect(raw).not.toContain("data:application/pdf");
     expect(text).not.toMatch(/Télécharger la facture/);
     expect(text).toContain("FR76 3000 6000 0112 3456 7890 189");
+  });
+});
+
+describe("AppointmentEmail (artisan brand → their client)", () => {
+  const appt = {
+    brand: { name: "Plomberie Durand", logoUrl: null, color: "#0f766e" },
+    clientName: "Claire Martin",
+    title: "Devis salle de bain",
+    // 09:00–10:30 in Paris (summer).
+    start: new Date("2026-07-01T07:00:00Z"),
+    end: new Date("2026-07-01T08:30:00Z"),
+    location: "12 rue des Lilas, Lyon",
+    artisanPhone: "06 12 34 56 78",
+  };
+
+  it("confirmation: when, where, add to calendar — in Paris time", async () => {
+    const { raw, text } = await rendered(
+      AppointmentEmail({ ...appt, kind: "confirmation", calendarAttached: true })
+    );
+    expect(raw).toContain("#0f766e");
+    expect(raw).not.toContain(`${EMAIL_BRAND.app}/dashboard`);
+    expect(text).toMatch(/Plomberie Durand via Traballo/);
+    expect(text).toMatch(/Rendez-vous confirmé/);
+    expect(text).toContain("Bonjour Claire Martin");
+    expect(text).toContain("Devis salle de bain");
+    expect(text).toMatch(/mercredi 1 juillet 2026/);
+    expect(text).toContain("09:00 – 10:30");
+    expect(text).toContain("12 rue des Lilas, Lyon");
+    expect(text).toMatch(/agenda/);
+    expect(text).toContain("06 12 34 56 78");
+    expect(text).not.toContain("undefined");
+    expect(text).not.toContain("null");
+  });
+
+  it("reminder: tomorrow", async () => {
+    const { text } = await rendered(
+      AppointmentEmail({ ...appt, kind: "reminder", calendarAttached: false })
+    );
+    expect(text).toMatch(/demain/);
+    expect(text).toContain("09:00 – 10:30");
+    expect(text).not.toMatch(/agenda/);
+  });
+
+  it("cancellation: apologises and invites to rebook", async () => {
+    const { text } = await rendered(
+      AppointmentEmail({ ...appt, kind: "cancellation", calendarAttached: true, location: null })
+    );
+    expect(text).toMatch(/annulé/);
+    expect(text).toMatch(/excuser/);
+    expect(text).toMatch(/autre créneau/);
+    expect(text).toMatch(/mercredi 1 juillet 2026/);
+    expect(text).not.toContain("null");
   });
 });
