@@ -7,6 +7,10 @@
 - Tuiles Stadia : authentification **par domaine**. `localhost` marche d'office ; en prod `traballo.pro` et `*.traballo.pro` doivent être allow-listés chez Stadia, sinon définir `NEXT_PUBLIC_STADIA_MAPS_API_KEY`.
 - CLI Vercel : version ≥ 53 requise (`env add` par stdin est sans effet avant). Les suppressions de stores Blob et `env rm` isolés passent par un script committé ou par l'utilisateur.
 - Après chaque `vercel deploy` de preview : `vercel alias set <url> traballo-preview.vercel.app`.
+- **Tester une PR en preview** : on ne peut **pas se connecter** sur l'URL brute du déploiement (`traballo-xxxx-….vercel.app`) : Better Auth refuse l'origine (`trustedOrigins` = `BETTER_AUTH_URL` preview + domaines `traballo.pro`). Pointer l'alias sur la preview de la PR (`vercel alias set <url-preview-PR> traballo-preview.vercel.app`), puis ouvrir `/auth/signin` puis `/dashboard` (sur ce domaine, `/` ne redirige pas vers le dashboard). L'alias n'est pas mis à jour automatiquement : il peut pointer sur un vieux déploiement (constaté : 22 jours de retard le 2026-09-26).
+- **Merger sur `main` = déploiement production automatique** (Vercel, ~2 min). Vérifier la PR sur la preview **avant** de merger. Preuve de mise en prod : déploiement GitHub `Production` avec le SHA du merge + `vercel inspect app.traballo.pro`.
+- En prod, sans session, `app.traballo.pro` redirige **toute** URL vers la connexion, y compris une route inexistante : un `curl` non connecté ne prouve pas qu'une page existe.
+- Le merge des PR est fait par l'utilisateur : le classifieur du mode auto refuse `gh pr merge` (« Merge Without Review »).
 - Variables d'environnement : les pousser avec `scripts/vercel-env-sync.sh <APP_URL> <environnements...>`.
 
 ## Hooks (`.claude/settings.json` → `.claude/hooks/`)

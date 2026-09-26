@@ -3,7 +3,7 @@
 > Mis à jour à chaque fin de session. Toute affirmation ici est **à revérifier** avant d'agir
 > (git, `pnpm db:audit:live`, tests). En cas d'écart avec la réalité, la réalité gagne : corriger ce fichier.
 
-**Dernière vérification : 2026-09-26** (branche `feat/notifications-phase-1` sur `origin/main` `360aadf` ; `pnpm check` vert, 180 tests ; `pnpm build` vert)
+**Dernière vérification : 2026-09-26** (`origin/main` = `0783f32` ; `pnpm check` vert, 180 tests ; prod Vercel construite depuis `0783f32`)
 
 Du travail arrive aussi par des sessions Claude web (PR mergées sur GitHub) : **`git fetch` avant toute vérification**, la copie locale peut être en retard.
 
@@ -17,15 +17,18 @@ Système de notifications — voir `NOTIFICATIONS_PLAN.md`. Priorités bêta : `
 
 - Phase 0 : schéma `notifications` + `notification_deliveries`, `createNotification`, catalogue de types (commit `f7d7f09`).
 - Événements câblés : `leads.site_enquiry`, `leads.ai_lead`, `billing.payment_failed` (commit `b8ffe1c`).
-- Phase 1a (commit `634f4eb`, branche `feat/notifications-phase-1`) : cloche dans la topbar, page `/dashboard/notifications` (filtre, pagination), marquer lu / tout marquer lu. Requêtes vérifiées contre Postgres sous RLS dans une transaction annulée, isolation inter-tenant incluse. **Interface non vérifiée visuellement** (pas de session de test locale sur la base partagée) : à contrôler sur la preview Vercel de la PR. Au 2026-09-26, la base ne contient **aucune** notification.
+- Phase 1a **en production** le 2026-09-26 (PR #16, commit `0783f32`) : cloche dans la topbar, page `/dashboard/notifications` (filtre, pagination), marquer lu / tout marquer lu. Requêtes vérifiées contre Postgres sous RLS dans une transaction annulée, isolation inter-tenant incluse ; cloche vue à l'écran par l'utilisateur sur `app.traballo.pro`. Au 2026-09-26 matin, la base ne contenait **aucune** notification.
+- Socle agent (2026-09-25) : `docs/STATE.md`, `docs/DECISIONS.md`, `.claude/rules/`, skills `resume` / `wrap-up`, hooks (`.claude/hooks/`), CI GitHub Actions, protection de `main`.
 - Migrations 0000 → 0011 **toutes enregistrées en base** (vérifié le 2026-09-25 via `pnpm db:audit:live`), dont 0010 (notifications) et 0011 (lat/long profils).
 - Anti-abus formulaires publics : Turnstile, rate limit, honeypot, plafond de leads par tenant/jour (voir `docs/SECURITY_FORMS.md`).
 - Signal bêta (`NEXT_PUBLIC_SITE_PHASE`).
 
 ## Prochaine action exacte
 
-1. Merger la PR de la Phase 1a après contrôle visuel sur la preview Vercel.
-2. Phase 1b — préférences (tests d'abord) : migration `notification_prefs` (RLS + `REVOKE` comme 0010), lecture/merge des défauts dans `src/lib/notifications/prefs.ts` (`db.select()` core), onglet Notifications dans `/dashboard/settings` (matrice email / in-app par catégorie), prise en compte dans `createNotification` via `resolveChannels`. Le toggle push attend la Phase 5.
+1. **Décisions à obtenir de l'utilisateur avant de coder la Phase 1b** (proposées, non tranchées) :
+   - canaux réglables : in-app + email, par catégorie (`leads`, `invoices`, `appointments`) ; `billing` verrouillée (transactionnel) ; push reporté en Phase 5 ;
+   - l'email « nouvelle demande de contact » reste **toujours actif** (recommandé : le couper ferait rater des clients).
+2. Phase 1b — préférences, sur une branche `feat/notifications-prefs` (tests d'abord) : migration `notification_prefs` (RLS + policies comme 0010), `src/lib/notifications/prefs.ts` (lecture + merge des défauts, `db.select()` core), onglet Notifications dans `/dashboard/settings`, prise en compte dans `createNotification` via `resolveChannels`. **La migration touche la base partagée dev/prod : `pnpm db:audit:live` avant et après, confirmation de l'utilisateur.**
 3. Puis Phase 2 (emails abonnement) et Phase 3 (relances factures + cron), voir `NOTIFICATIONS_PLAN.md`.
 
 Les notifs `leads.*` n'ont pas d'`actionUrl` : il n'existe pas encore de page « boîte de leads ».

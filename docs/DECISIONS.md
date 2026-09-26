@@ -49,3 +49,11 @@ Turnstile + rate limit en mémoire (par instance, best effort) + honeypot + **pl
 
 - **Pourquoi** : les mémoires « état du projet » périment (contradictions constatées le 2026-09-25 : migration 0010 à la fois « non appliquée » et « appliquée »).
 - **Conséquence** : l'état vit dans `docs/STATE.md` (versionné, daté, revérifié). `memory/` ne garde que préférences, leçons et références externes.
+
+## 2026-09-26 — Phase 1 des notifications coupée en 1a / 1b
+
+- **1a** (cloche, page, marquer lu) livrée seule : aucune migration, donc aucun risque sur la base partagée dev/prod.
+- **1b** (préférences) à part : elle exige une nouvelle table `notification_prefs` (absente de la migration 0010 malgré le plan) et une migration sur la base partagée.
+- **Rafraîchissement** de la cloche : `router.refresh()` toutes les 60 s, seulement si l'onglet est visible. Pas de websocket à cette échelle.
+- **`actionUrl`** limité aux chemins internes (`safeActionUrl`) : il est rendu comme lien, un `javascript:` ou `//hôte` serait une faille.
+- Les requêtes du fil prennent la transaction en paramètre (`readSummary`, `readPage`, `stampRead`) pour être testables contre la vraie base dans une transaction annulée.
