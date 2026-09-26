@@ -12,11 +12,13 @@ export function SidebarContent({
   name,
   plan,
   chrome,
+  unread = 0,
   onNavigate,
 }: {
   name: string;
   plan: string;
   chrome: DashboardChrome;
+  unread?: number;
   onNavigate?: () => void;
 }) {
   const { setup } = chrome;
@@ -28,7 +30,7 @@ export function SidebarContent({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3">
-        <SidebarNav onNavigate={onNavigate} />
+        <SidebarNav onNavigate={onNavigate} unread={unread} />
 
         {!setup.complete && (
           <div className="mt-6">

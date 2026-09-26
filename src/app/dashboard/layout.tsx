@@ -75,7 +75,12 @@ export default async function DashboardLayout({
           <BetaBadge />
         </div>
         <div className="min-h-0 flex-1">
-          <SidebarContent name={displayName} plan={plan} chrome={chrome} />
+          <SidebarContent
+            name={displayName}
+            plan={plan}
+            chrome={chrome}
+            unread={notifications.unread}
+          />
         </div>
       </aside>
 
