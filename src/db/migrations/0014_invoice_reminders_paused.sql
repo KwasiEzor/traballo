@@ -1,0 +1,1 @@
+ALTER TABLE "invoices" ADD COLUMN "reminders_paused" boolean DEFAULT false NOT NULL;

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render } from "@react-email/render";
 
 const h = vi.hoisted(() => ({
   findReminderCandidates: vi.fn(),
@@ -45,7 +46,9 @@ const invoice: ReminderCandidate = {
   artisanPhone: "06 12 34 56 78",
   logoUrl: null,
   primaryColor: "#0f766e",
+  iban: "FR7630006000011234567890189",
   remindersEnabled: true,
+  remindersPaused: false,
 };
 
 function given(...rows: Partial<ReminderCandidate>[]) {
@@ -123,6 +126,12 @@ describe("runInvoiceReminders — client reminders", () => {
     expect(summary.remindersSent).toBe(1);
   });
 
+  it("tells the client how to pay when the artisan has an IBAN", async () => {
+    await runInvoiceReminders(J7);
+    const html = await render(h.sendEmail.mock.calls[0][0].react);
+    expect(html).toContain("FR76 3000 6000 0112 3456 7890 189");
+  });
+
   it("sends without attachment when the invoice has no PDF", async () => {
     h.loadInvoicePdf.mockResolvedValue(null);
     await runInvoiceReminders(J7);
@@ -133,6 +142,7 @@ describe("runInvoiceReminders — client reminders", () => {
     ["on the Free plan", { plan: "free" as const }],
     ["when the artisan turned reminders off", { remindersEnabled: false }],
     ["when the client has no e-mail", { clientEmail: null }],
+    ["when the artisan paused this invoice", { remindersPaused: true }],
   ])("sends nothing %s (but still marks overdue)", async (_l, row) => {
     given(row);
     await runInvoiceReminders(J7);

@@ -1,13 +1,16 @@
 /**
- * Payment reminder → the artisan's client (Phase 3a, sent by the cron at
- * J+7 and J+30 after the due date). White-label: the artisan's name, logo
- * and colour, reply-to the artisan; the invoice PDF is attached when there
- * is one.
+ * Payment reminder → the artisan's client: sent by the cron at J+7 and J+30
+ * after the due date (Phase 3a), or by the artisan's "Relancer" button
+ * (`manual`, Phase 3b). White-label: the artisan's name, logo and colour,
+ * reply-to the artisan; the invoice PDF is attached when there is one, and
+ * the transfer details when the artisan gave an IBAN.
  */
 import * as React from "react";
 import { Section, Text } from "@react-email/components";
 import { EmailLayout, P } from "@/lib/email/layout";
 import { EMAIL_BRAND as B, type EmailBrand } from "@/lib/email/brand";
+import { PaymentBlock } from "@/lib/email/payment-block";
+import type { PaymentDetails } from "@/lib/invoices/payment";
 import type { ReminderKind } from "@/lib/invoices/reminders";
 import { formatDate, formatEUR } from "@/lib/utils";
 
@@ -21,9 +24,10 @@ export function InvoiceReminderEmail({
   daysLate,
   pdfAttached,
   artisanPhone,
+  payment,
 }: {
   brand: EmailBrand;
-  kind: ReminderKind;
+  kind: ReminderKind | "manual";
   clientName: string;
   invoiceNumber: string;
   /** Numeric string as stored (`"1234.50"`). */
@@ -33,10 +37,12 @@ export function InvoiceReminderEmail({
   daysLate: number;
   pdfAttached: boolean;
   artisanPhone?: string | null;
+  payment?: PaymentDetails | null;
 }) {
   const amount = formatEUR(total);
   const due = formatDate(dueDate);
   const firm = kind === "reminder_j30";
+  const upcoming = kind === "manual" && daysLate <= 0;
 
   return (
     <EmailLayout
@@ -50,6 +56,11 @@ export function InvoiceReminderEmail({
           La facture <strong>{invoiceNumber}</strong> est en attente de
           règlement depuis {daysLate} jours. Merci de procéder au paiement dans
           les meilleurs délais.
+        </P>
+      ) : upcoming ? (
+        <P>
+          Petit rappel : la facture <strong>{invoiceNumber}</strong> arrive à
+          échéance le {due}.
         </P>
       ) : (
         <P>
@@ -65,6 +76,8 @@ export function InvoiceReminderEmail({
         <Text style={boxAmount}>{amount} TTC</Text>
         <Text style={boxDue}>Échéance : {due}</Text>
       </Section>
+
+      {payment ? <PaymentBlock payment={payment} /> : null}
 
       {pdfAttached ? <P>La facture est jointe à cet e-mail.</P> : null}
 

@@ -1,5 +1,5 @@
 import { and, eq, inArray, lt } from "drizzle-orm";
-import { db } from "@/lib/db";
+import { db, type DB } from "@/lib/db";
 import {
   artisanProfiles,
   clients,
@@ -9,7 +9,7 @@ import {
   tenants,
 } from "@/db/schema";
 import type { PlanGate } from "@/lib/notifications/types";
-import { pdfFromDataUrl, type ReminderKind } from "./reminders";
+import { pdfFromDataUrl } from "./reminders";
 
 /**
  * Data access for the invoice-reminder cron. A system job across tenants: it
@@ -33,34 +33,37 @@ export type ReminderCandidate = {
   artisanPhone: string | null;
   logoUrl: string | null;
   primaryColor: string | null;
+  iban: string | null;
   remindersEnabled: boolean;
+  remindersPaused: boolean;
 };
 
 const UNPAID = ["sent", "viewed", "overdue"] as const;
 
-/** Unpaid invoices past their due date, for active tenants. */
-export async function findReminderCandidates(
-  today: string,
-  limit = 500
-): Promise<ReminderCandidate[]> {
-  const rows = await db
-    .select({
-      invoiceId: invoices.id,
-      tenantId: invoices.tenantId,
-      plan: tenants.plan,
-      status: invoices.status,
-      invoiceNumber: invoices.invoiceNumber,
-      total: invoices.total,
-      dueDate: invoices.dueDate,
-      clientName: clients.name,
-      clientEmail: clients.email,
-      businessName: artisanProfiles.businessName,
-      artisanEmail: artisanProfiles.email,
-      artisanPhone: artisanProfiles.phone,
-      logoUrl: artisanProfiles.logoUrl,
-      primaryColor: sites.primaryColor,
-      remindersEnabled: artisanProfiles.invoiceReminders,
-    })
+const candidateColumns = {
+  invoiceId: invoices.id,
+  tenantId: invoices.tenantId,
+  plan: tenants.plan,
+  status: invoices.status,
+  invoiceNumber: invoices.invoiceNumber,
+  total: invoices.total,
+  dueDate: invoices.dueDate,
+  clientName: clients.name,
+  clientEmail: clients.email,
+  businessName: artisanProfiles.businessName,
+  artisanEmail: artisanProfiles.email,
+  artisanPhone: artisanProfiles.phone,
+  logoUrl: artisanProfiles.logoUrl,
+  primaryColor: sites.primaryColor,
+  iban: artisanProfiles.iban,
+  remindersEnabled: artisanProfiles.invoiceReminders,
+  remindersPaused: invoices.remindersPaused,
+};
+
+/** Invoice + client + artisan identity, everything a reminder needs. */
+function candidates(executor: DB) {
+  return executor
+    .select(candidateColumns)
     .from(invoices)
     .innerJoin(tenants, eq(tenants.id, invoices.tenantId))
     .innerJoin(
@@ -68,7 +71,15 @@ export async function findReminderCandidates(
       and(eq(clients.id, invoices.clientId), eq(clients.tenantId, invoices.tenantId))
     )
     .innerJoin(artisanProfiles, eq(artisanProfiles.tenantId, invoices.tenantId))
-    .leftJoin(sites, eq(sites.tenantId, invoices.tenantId))
+    .leftJoin(sites, eq(sites.tenantId, invoices.tenantId));
+}
+
+/** Unpaid invoices past their due date, for active tenants (cron). */
+export async function findReminderCandidates(
+  today: string,
+  limit = 500
+): Promise<ReminderCandidate[]> {
+  const rows = await candidates(db)
     .where(
       and(
         inArray(invoices.status, [...UNPAID]),
@@ -79,6 +90,21 @@ export async function findReminderCandidates(
     .orderBy(invoices.dueDate)
     .limit(limit);
   return rows as ReminderCandidate[];
+}
+
+/**
+ * One invoice of the tenant, for the artisan's "Relancer" button. Takes the
+ * caller's `withTenant` transaction (RLS) and filters `tenant_id` too.
+ */
+export async function loadReminderCandidate(
+  tx: DB,
+  invoiceId: string,
+  tenantId: string
+): Promise<(Omit<ReminderCandidate, "status"> & { status: string }) | null> {
+  const [row] = await candidates(tx)
+    .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)))
+    .limit(1);
+  return row ?? null;
 }
 
 /** `sent` / `viewed` → `overdue`. False if another run already did it. */
@@ -136,7 +162,7 @@ export async function sentReminderKinds(
 export async function claimReminder(
   tenantId: string,
   invoiceId: string,
-  kind: ReminderKind
+  kind: string
 ): Promise<boolean> {
   const rows = await db
     .insert(notificationDeliveries)
@@ -149,7 +175,7 @@ export async function claimReminder(
 /** Drop a claim whose e-mail failed, so the next run retries it. */
 export async function releaseReminder(
   invoiceId: string,
-  kind: ReminderKind
+  kind: string
 ): Promise<void> {
   await db
     .delete(notificationDeliveries)

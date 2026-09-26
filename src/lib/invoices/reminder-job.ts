@@ -1,19 +1,15 @@
-import { sendEmail } from "@/lib/email/send";
-import { artisanBrand, artisanSender } from "@/lib/email/brand";
-import { InvoiceReminderEmail } from "@/lib/email/templates/invoice-reminder-email";
 import { createNotification } from "@/lib/notifications/create";
 import { formatDate, formatEUR } from "@/lib/utils";
 import {
   claimReminder,
   findReminderCandidates,
-  loadInvoicePdf,
   markOverdue,
   releaseReminder,
   sentReminderKinds,
   type ReminderCandidate,
 } from "./reminder-data";
+import { sendInvoiceReminder } from "./reminder-send";
 import {
-  daysOverdue,
   dueReminder,
   parisToday,
   remindersIncluded,
@@ -36,7 +32,8 @@ const LABEL: Record<ReminderKind, string> = {
 /**
  * Daily invoice job (cron, Phase 3a): flip unpaid invoices past their due
  * date to `overdue` and tell the artisan, then send the J+7 / J+30 payment
- * reminders to their clients (Pro+, if the artisan kept them on).
+ * reminders to their clients (Pro+, if the artisan kept them on and did not
+ * pause them for that invoice).
  *
  * Idempotent: the status flip and the ledger claim each happen once, so a
  * re-run the same day sends nothing twice. One invoice failing does not stop
@@ -66,7 +63,7 @@ export async function runInvoiceReminders(
       const kind = reminderToSend(c, today, sent.get(c.invoiceId));
       if (!kind || !(await claimReminder(c.tenantId, c.invoiceId, kind))) continue;
 
-      if (await sendReminder(c, kind, today)) {
+      if (await sendInvoiceReminder(c, kind, today)) {
         summary.remindersSent++;
         await createNotification({
           tenantId: c.tenantId,
@@ -92,7 +89,12 @@ function reminderToSend(
   today: string,
   sent: ReadonlySet<string> = new Set()
 ): ReminderKind | null {
-  if (!remindersIncluded(c.plan) || !c.remindersEnabled || !c.clientEmail) {
+  if (
+    !remindersIncluded(c.plan) ||
+    !c.remindersEnabled ||
+    c.remindersPaused ||
+    !c.clientEmail
+  ) {
     return null;
   }
   return dueReminder(c.dueDate, today, sent);
@@ -110,46 +112,4 @@ function announceOverdue(c: ReminderCandidate): Promise<unknown> {
       cta: "Voir la facture",
     },
   });
-}
-
-/** True if the e-mail went out. */
-async function sendReminder(
-  c: ReminderCandidate,
-  kind: ReminderKind,
-  today: string
-): Promise<boolean> {
-  try {
-    const pdf = await loadInvoicePdf(c.invoiceId, c.tenantId);
-    const res = await sendEmail({
-      from: artisanSender(c.businessName),
-      to: c.clientEmail!,
-      replyTo: c.artisanEmail,
-      subject:
-        kind === "reminder_j30"
-          ? `Facture ${c.invoiceNumber} impayée — ${c.businessName}`
-          : `Rappel : facture ${c.invoiceNumber} — ${c.businessName}`,
-      react: InvoiceReminderEmail({
-        brand: artisanBrand(c),
-        kind,
-        clientName: c.clientName,
-        invoiceNumber: c.invoiceNumber,
-        total: c.total,
-        dueDate: c.dueDate,
-        daysLate: daysOverdue(c.dueDate, today),
-        pdfAttached: pdf !== null,
-        artisanPhone: c.artisanPhone,
-      }),
-      ...(pdf
-        ? { attachments: [{ filename: `facture-${c.invoiceNumber}.pdf`, content: pdf }] }
-        : {}),
-    });
-    if ("error" in res && res.error) {
-      console.error(`[invoice-reminders] ${c.invoiceId} not sent`, res.error);
-      return false;
-    }
-    return true;
-  } catch (err) {
-    console.error(`[invoice-reminders] ${c.invoiceId} send failed`, err);
-    return false;
-  }
 }
