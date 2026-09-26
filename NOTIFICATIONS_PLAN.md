@@ -13,8 +13,8 @@
 | 1b — Préférences (migration `notification_prefs` + onglet réglages) | ✅ en production 2026-09-26 (PR #18, `e0baf23`) · migration 0012 appliquée avant le merge |
 | 2a — E-mails abonnement (activé / changé / annulé) + in-app | ✅ en production 2026-09-26 (PR #20, `197b6b1`) |
 | 2b — Alerte quota agent IA (80 %) | ❌ sans objet (aucun quota réel, voir `docs/DECISIONS.md`) |
-| 3a — Relances automatiques J+7 / J+30, statut en retard, white-label | en cours (`feat/invoice-reminders`) |
-| 3b — Relance manuelle, template éditable, override par facture | à faire |
+| 3a — Relances automatiques J+7 / J+30, statut en retard, white-label | ✅ en production 2026-09-26 (PR #21, `9c32f59`) · migration 0013 · cron enregistré, **`CRON_SECRET` absent en prod** |
+| 3b — Relance manuelle, IBAN dans les relances, suspension par facture, PDF joint à l'envoi | en cours (`feat/invoice-reminders-manual`) |
 | 4→9 | à faire |
 
 ### Décisions prises par défaut (à confirmer)
@@ -178,7 +178,7 @@ Recadrée le 2026-09-26 (voir `docs/DECISIONS.md`).
 Cadrage du 2026-09-26 (voir `docs/DECISIONS.md`) :
 
 - **3a** : cron quotidien ; statut `overdue` pour tous les plans (+ notif artisan in-app / e-mail selon préférences, Pro+) ; relances client J+7 et J+30 pour Pro / Business, une fois chacune (registre, claim libéré si l'envoi échoue) ; e-mail aux couleurs de l'artisan, reply-to artisan, **PDF joint** (pas de page publique de facture) ; interrupteur `artisan_profiles.invoice_reminders` (défaut on, migration 0013).
-- **3b** : bouton « Relancer », template éditable, override par facture.
+- **3b** (recadrée le 2026-09-26) : bouton « Relancer » (tous plans, 1 / jour / facture, sans changer le statut, remplace « Envoyer » sur une facture en retard) ; IBAN + référence dans les relances ; « Suspendre les relances » par facture (migration 0014 `invoices.reminders_paused`) ; PDF réellement joint à l'envoi initial. Template éditable abandonné.
 
 Plan initial :
 

@@ -91,3 +91,11 @@ Turnstile + rate limit en mémoire (par instance, best effort) + honeypot + **pl
 - **Interrupteur** `artisan_profiles.invoice_reminders`, défaut **on** : une seule facture en base au 2026-09-26 (un brouillon de démo), aucun client réel ne reçoit de relance surprise. L'artisan est notifié à chaque relance.
 - **« Facture en retard »** à l'artisan : premier e-mail artisan qui passe par les préférences (`createNotification` envoie l'e-mail si le canal est actif).
 - **Cron** : quotidien à 07:00 UTC ; « aujourd'hui » = date à Europe/Paris. Protégé par `CRON_SECRET`.
+
+## 2026-09-26 — Phase 3b recadrée
+
+- **Bouton « Relancer »** pour tous les plans, 1 par jour et par facture (registre, kind `manual:<date>`), **sans changer le statut**. Il remplace « Envoyer » sur une facture en retard : renvoyer la facture la repassait en `sent`, le cron la remettait `overdue` et renvoyait la notif « en retard » (doublon introduit par la 3a).
+- **IBAN + référence** ajoutés aux relances (et à l'envoi initial) quand l'artisan a renseigné son IBAN : aujourd'hui l'IBAN n'apparaît nulle part, ni sur le PDF ni dans les e-mails.
+- **Template éditable abandonné** : peu de valeur face au texte par défaut, pour un éditeur, un aperçu et une surface d'injection. L'IBAN apporte davantage.
+- **Suspension par facture** (`invoices.reminders_paused`, migration 0014) : cas d'un échéancier convenu avec le client.
+- **PDF réellement joint** à l'envoi initial (`sendInvoiceEmail`) : le dialogue le promettait, l'e-mail portait un lien data URL que les clients mail bloquent.
