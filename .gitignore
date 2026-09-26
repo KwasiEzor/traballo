@@ -44,3 +44,6 @@ next-env.d.ts
 # Drizzle
 drizzle/
 .neon
+
+# QA account (local credentials, never committed)
+.qa/
